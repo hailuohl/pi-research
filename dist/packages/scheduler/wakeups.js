@@ -1,3 +1,4 @@
+import { assertTextCorpusGrantActor } from '../policy/text-corpus-grants.js';
 import { assertModelRestoreCurrent } from '../pi-adapter/model-connections.js';
 import { assertResearchReference } from '../policy/research-automation.js';
 import { SYSTEM } from '../domain/types.js';
@@ -148,6 +149,7 @@ export class WakeupService {
         }
         let source;
         let model;
+        let preparedWait;
         if (w.sourceKind === 'approval-result') {
             try {
                 this.app.sessionPermissions.assert(w.resumePermission, false);
@@ -180,6 +182,8 @@ export class WakeupService {
                         const job = this.app.store.get(development ? 'sandbox-job' : 'run', a.jobId, w.projectId);
                         ensure(('jobId' in subject ? subject.jobId : subject.runId) === job.id && ('developmentTaskId' in job ? job.developmentTaskId : job.intentId) === subject.id && job.manifestDigest === a.manifestDigest && digest(job.manifest) === a.manifestDigest && ('developmentTaskId' in job ? job.sessionId === c.rootSessionId && job.grantId === a.approvalId : job.experimentId === subject.experimentId), 'AUTOMATION_STALE', '已提交作业与原准确准备单不符');
                     }
+                    if (!a.jobId)
+                        preparedWait = this.app.automaticApprovals.preparedDecisionWait(a.subjectId);
                 }
                 else if (w.jobKind === 'review') {
                     ensure(c.policy, 'AUTOMATION_SCOPE_DENIED', '旧授权不包含阶段续接');
@@ -236,7 +240,7 @@ export class WakeupService {
             return { valid: false, reason: '结果版本或研究目标已变化' };
         if (digest(model) !== digest(root.model))
             return { valid: true, deferred: true, reason: '主会话模型与原批准配置不同，需要重新授权' };
-        return { valid: true };
+        return preparedWait ? { valid: true, deferred: true, reason: preparedWait } : { valid: true };
     }
     block(w, reason) {
         if (w.blockReason !== reason)
@@ -534,6 +538,18 @@ export class WakeupService {
             for (const e of this.app.store.list('evidence', pid))
                 if (artifactIds.has(e.artifactId))
                     evidenceIds.add(e.id);
+            if (this.app.automaticApprovals.isContinuation(actor)) {
+                try {
+                    const grant = assertTextCorpusGrantActor(this.app.store, actor, pid);
+                    for (const use of this.app.store.list('text-corpus-grant-use', pid).filter(u => u.grantId === grant.id && u.grantDigest === grant.digest && u.sessionId === actor.sessionId)) {
+                        const search = this.app.store.get('text-evidence-search', use.searchId, pid);
+                        for (const hit of search.hits)
+                            if (hit.evidenceId)
+                                evidenceIds.add(hit.evidenceId);
+                    }
+                }
+                catch { /* Revoked text contributes no additional resources. */ }
+            }
             return { evidenceIds, artifactIds, runIds, taskIds };
         }
         else if (w.sourceKind === 'team') {

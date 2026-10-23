@@ -4,6 +4,8 @@ import type { ResearchApp } from '../research-app.js';
 import { type ResearchActionInput, type ResearchActionDecision } from '../contracts/operations/research-action-schemas.js';
 export type { ResearchActionInput, ResearchActionDecision } from '../contracts/operations/research-action-schemas.js';
 export interface ResearchAction {
+    automaticApproval?: import('../policy/automatic-approvals.js').AutomaticApprovalReference;
+    automaticExecution?: import('../policy/automatic-approvals.js').AutomaticExecution;
     sessionId: string;
     originMessageId: string;
     originDigest: string;
@@ -37,6 +39,8 @@ export type ResearchActionDTO = Row<ResearchAction> & {
 };
 export type ResearchActionSummary = Pick<ResearchActionDTO, 'id' | 'sessionId' | 'state' | 'effectiveState' | 'expiresAt' | 'resultRef'> & {
     kind: ResearchActionInput['kind'];
+    automaticApproval?: ResearchAction['automaticApproval'];
+    automaticExecution?: ResearchAction['automaticExecution'];
 };
 export declare class ResearchActionService {
     private app;
@@ -50,5 +54,11 @@ export declare class ResearchActionService {
     list(actor: Actor, pid: string, sessionId: string): ResearchActionDTO[];
     inspect(actor: Actor, pid: string, sessionId: string, requestId: string): ResearchActionSummary;
     prepare(actor: Actor, pid: string, sessionId: string, value: unknown, receiptId?: string): ResearchActionSummary;
+    decideAutomatic(actor: Actor, ref: import('../policy/automatic-approvals.js').AutomaticApprovalReference, pid: string, sessionId: string, input: {
+        requestId: string;
+        expectedVersion: number;
+        decision: ResearchActionDecision;
+    }): ResearchActionSummary;
     decide(actor: Actor, pid: string, sessionId: string, value: unknown): ResearchActionSummary;
+    private decideCore;
 }

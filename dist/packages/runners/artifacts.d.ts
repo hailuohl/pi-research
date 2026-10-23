@@ -6,7 +6,7 @@ export declare function collectRunArtifacts(run: Row<Run>, evidence: EvidenceSer
     artifactIds: string[];
     evidenceIds: string[];
     metrics: Record<string, number> | undefined;
-    integrity: "incomplete" | "complete" | "invalid";
+    integrity: "complete" | "incomplete" | "invalid";
     errors: string[];
     diagnosticSafe: boolean;
 };

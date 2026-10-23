@@ -138,6 +138,8 @@ export interface MessageAttachment {
     size:number;
 }
 export interface Approval {
+    automaticApproval?:import('../policy/automatic-approvals.js').AutomaticApprovalReference;
+    automaticExecution?:import('../policy/automatic-approvals.js').AutomaticExecution;
     fullAccess?: import('../policy/research-automation.js').FullAccessReference;
     runGrant?: import('../policy/run-grant-types.js').RunGrantReference;
     workingGrant?: import('../execution/contracts.js').WorkingGrantReference;

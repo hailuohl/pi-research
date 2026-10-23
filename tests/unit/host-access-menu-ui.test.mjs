@@ -9,6 +9,16 @@ const status=(patch={})=>({version:2,epoch:2,available:true,enabled:false,pendin
 function control(patch={}){const view=synchronousState(new HostAccessControl({sessionId:'session-fixture',archived:false,busy:false,perform:fn=>fn()}));view.state.status=status(patch);view.state.permission={mode:patch.enabled?'fullAccess':'confirm',version:4,epoch:4,available:true,reason:'Session tools',hostAccess:view.state.status};return view;}
 const modal=view=>elements(view.render()).find(node=>node.type===Modal);
 
+test('current full access distinguishes old grants from the explicitly enabled automatic approval scope',()=>{
+ for(const authority of [{enabled:true},{researchAutomation:true,enabled:false}]){
+  for(const automaticApprovalScope of [undefined,1]){
+   const view=control({...authority,automaticApprovalScope});view.showDetails();const copy=text(modal(view).props.children);
+   assert.equal(copy.includes('流程自动审批已授权'),automaticApprovalScope===1);
+   assert.equal(copy.includes('当前授权未包含流程自动审批；撤销后重新启用一次生效'),automaticApprovalScope!==1);
+  }
+ }
+});
+
 test('all four menu rows use server state and only the current mode is selected',()=>{
  const view=control();let rows=elements(view.render()).filter(node=>node.props?.role==='menuitemradio');assert.equal(rows.length,4);assert.ok(rows.every(n=>n.props.disabled===false));assert.ok(rows.every(n=>!text(n).includes('待接入')));assert.deepEqual(rows.map(n=>n.props['aria-checked']),[false,true,false,false]);assert.match(text(rows[3]),/完全访问/);view.state.status=status({enabled:true});view.state.permission.mode='fullAccess';rows=elements(view.render()).filter(node=>node.props?.role==='menuitemradio');assert.equal(rows.filter(n=>n.props['aria-checked']===true).length,1);assert.equal(rows[3].props['aria-checked'],true);
  view.state.status=status({available:false,reason:'Fixed grant needs a fresh session'});assert.equal(elements(view.render()).find(n=>n.props?.role==='menuitemradio'&&text(n).includes('完全访问')).props.disabled,true);assert.match(text(view.render()),/Fixed grant/);
@@ -23,7 +33,7 @@ test('polling cannot turn an open enable confirmation into revocation or silentl
 });
 
 test('new confirmed enable explicitly records scope2 unlimited recovery policy and follows returned state',async()=>{
- const view=control({unknownCommands:1}),saved=globalThis.fetch,requests=[];globalThis.fetch=async(url,opts)=>{requests.push({url,opts});return {ok:true,json:async()=>url.endsWith('/permissions')?{...view.state.permission,mode:'fullAccess',hostAccess:status({version:3,enabled:true})}:status({version:3,enabled:true})};};try{await view.save(true);const post=requests.find(r=>r.opts.method==='POST');assert.deepEqual(JSON.parse(post.opts.body),{enabled:true,expectedVersion:2,acknowledgedSameUserAccess:true,acknowledgedResearchAutomation:true,researchAutomationPolicy:{version:2,limits:{development:null,run:null,continuations:null,durationMs:null},recoverAfterRestart:true},acknowledgedUnknownEffects:true});assert.equal(requests.filter(r=>r.opts.method==='POST').length,1);assert.equal(view.state.status.enabled,true);assert.equal(view.state.permission.mode,'fullAccess');}finally{globalThis.fetch=saved;}
+ const view=control({unknownCommands:1}),saved=globalThis.fetch,requests=[];globalThis.fetch=async(url,opts)=>{requests.push({url,opts});return {ok:true,json:async()=>url.endsWith('/permissions')?{...view.state.permission,mode:'fullAccess',hostAccess:status({version:3,enabled:true})}:status({version:3,enabled:true})};};try{await view.save(true);const post=requests.find(r=>r.opts.method==='POST');assert.deepEqual(JSON.parse(post.opts.body),{enabled:true,expectedVersion:2,acknowledgedSameUserAccess:true,acknowledgedResearchAutomation:true,acknowledgedAutomaticApprovals:true,researchAutomationPolicy:{version:2,limits:{development:null,run:null,continuations:null,durationMs:null},recoverAfterRestart:true},acknowledgedUnknownEffects:true});assert.equal(requests.filter(r=>r.opts.method==='POST').length,1);assert.equal(view.state.status.enabled,true);assert.equal(view.state.permission.mode,'fullAccess');}finally{globalThis.fetch=saved;}
 });
 
 test('restricted mode changes send both versions and selection changes only after the server accepts',async()=>{

@@ -16,6 +16,7 @@ export declare class CampaignService {
     create(actor: Actor, projectId: string, value: unknown): Row<Campaign>;
     prepare(actor: Actor, projectId: string, sessionId: string, value: unknown): Row<Campaign>;
     private createDraft;
+    activateAutomatic(actor: Actor, ref: import('../policy/automatic-approvals.js').AutomaticApprovalReference, id: string, version: number): Row<Campaign>;
     activate(actor: Actor, id: string, expectedVersion: number): Row<Campaign>;
     pause(actor: Actor, id: string, expectedVersion: number): Row<Campaign>;
     resume(actor: Actor, id: string, expectedVersion: number): Row<Campaign>;

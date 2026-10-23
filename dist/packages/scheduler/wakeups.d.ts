@@ -190,7 +190,7 @@ export declare class WakeupService {
             imageId: string | undefined;
             grantId: string;
             state: import("../execution/contracts.js").SandboxState;
-            integrity: "incomplete" | "pending" | "complete" | "invalid";
+            integrity: "pending" | "complete" | "incomplete" | "invalid";
             exitCode: number | null;
             error: string | undefined;
             startedAt: string | undefined;
@@ -229,10 +229,10 @@ export declare class WakeupService {
             })[] | undefined;
             assessmentRequiredAreas?: ("implementation_and_tests" | "input_evidence" | "independent_units_and_intervals" | "threshold_interpretation" | "claim_boundaries")[] | undefined;
             digest: string;
-            status: "failed" | "running" | "passed" | "stale" | "pending" | "rejected" | "disputed" | "awaiting_approval";
+            status: "failed" | "running" | "pending" | "passed" | "stale" | "rejected" | "disputed" | "awaiting_approval";
             protocolDocument?: import("../research-workflows/method-contracts.js").ProtocolDocument | undefined;
             draftRoles?: import("../research-workflows/method-contracts.js").DraftRole[] | undefined;
-            protocolVersion?: 1 | 2 | undefined;
+            protocolVersion?: 2 | 1 | undefined;
             researchBrief?: import("../domain/types.js").ResearchBriefRef | undefined;
             sourceInputs?: import("../research-workflows/source-inputs.js").ResearchSourceInput[] | undefined;
             testArtifacts?: import("../development/review-assessment.js").ReviewTestArtifact[] | undefined;
@@ -285,10 +285,10 @@ export declare class WakeupService {
             })[] | undefined;
             assessmentRequiredAreas?: ("implementation_and_tests" | "input_evidence" | "independent_units_and_intervals" | "threshold_interpretation" | "claim_boundaries")[] | undefined;
             digest: string;
-            status: "failed" | "running" | "passed" | "stale" | "pending" | "rejected" | "disputed" | "awaiting_approval";
+            status: "failed" | "running" | "pending" | "passed" | "stale" | "rejected" | "disputed" | "awaiting_approval";
             protocolDocument?: import("../research-workflows/method-contracts.js").ProtocolDocument | undefined;
             draftRoles?: import("../research-workflows/method-contracts.js").DraftRole[] | undefined;
-            protocolVersion?: 1 | 2 | undefined;
+            protocolVersion?: 2 | 1 | undefined;
             researchBrief?: import("../domain/types.js").ResearchBriefRef | undefined;
             sourceInputs?: import("../research-workflows/source-inputs.js").ResearchSourceInput[] | undefined;
             testArtifacts?: import("../development/review-assessment.js").ReviewTestArtifact[] | undefined;
@@ -338,8 +338,8 @@ export declare class WakeupService {
             } | undefined;
             id: string;
             experimentId: string;
-            state: "succeeded" | "failed" | "cancelled" | "unknown" | "queued" | "running" | "submitting" | "cancelling";
-            integrity: "incomplete" | "pending" | "complete" | "invalid";
+            state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "unknown" | "submitting" | "cancelling";
+            integrity: "pending" | "complete" | "incomplete" | "invalid";
             validation: "incomplete" | "invalid" | "verified";
             explanation: string;
         } | {
@@ -403,7 +403,7 @@ export declare class WakeupService {
         team: {
             id: string;
             goal: string;
-            state: "failed" | "cancelled" | "active" | "completed" | "partial" | "awaiting_approval" | "paused" | "draining";
+            state: "failed" | "cancelled" | "completed" | "partial" | "active" | "awaiting_approval" | "paused" | "draining";
         };
         tasks: {
             id: string;
@@ -450,8 +450,8 @@ export declare class WakeupService {
         purpose: string;
         run: {
             id: string;
-            state: "succeeded" | "failed" | "cancelled" | "unknown" | "queued" | "running" | "submitting" | "cancelling";
-            integrity: "incomplete" | "pending" | "complete" | "invalid";
+            state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "unknown" | "submitting" | "cancelling";
+            integrity: "pending" | "complete" | "incomplete" | "invalid";
             validation: "incomplete" | "invalid" | "verified";
             explanation: string;
             metrics: Record<string, number> | null;

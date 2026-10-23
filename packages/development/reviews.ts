@@ -24,7 +24,7 @@ export class DevelopmentReviewService {
             ensure(s.role===actor.role&&s.taskId===actor.taskId,'SCOPE_DENIED','会话身份不匹配',403);
             const reviewer=actor.taskId===r.taskId&&s.role==='reviewer'&&this.app.store.get<Task>('task',r.taskId,pid).reviewId===r.id;
             ensure(reviewer||s.id===r.producerSessionId&&s.role==='coordinator'&&!s.taskId,'TASK_SCOPE_DENIED','只能读取本会话生产或指定审查任务的目标',403);
-            if(current){assertProjectWritable(this.app.store,pid);if(reviewer)this.app.teams.active(actor);else{ensure(!actor.wakeupId&&s.state==='running'&&s.generation===actor.generation&&s.leaseUntil>Date.now(),'LEASE_EXPIRED','生产会话租约已失效');assertDevelopmentReviewTarget(this.app.store,pid,r);}}
+            if(current){assertProjectWritable(this.app.store,pid);if(reviewer)this.app.teams.active(actor);else{ensure((!actor.wakeupId||this.app.automaticApprovals.isContinuation(actor))&&s.state==='running'&&s.generation===actor.generation&&s.leaseUntil>Date.now(),'LEASE_EXPIRED','生产会话租约已失效');assertDevelopmentReviewTarget(this.app.store,pid,r);}}
         }
     }
     prepare(actor:Actor,pid:string,value:unknown) {

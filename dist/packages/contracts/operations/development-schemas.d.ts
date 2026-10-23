@@ -1,3 +1,4 @@
+import { type JsonSchema } from './schema.js';
 export declare const DEVELOPMENT_INPUT_SCHEMAS: {
     readonly development_prepare: {
         readonly type: "object";
@@ -349,6 +350,8 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                         readonly minLength: number;
                         readonly maxLength: number;
                     };
+                    readonly automaticApproval: JsonSchema;
+                    readonly automaticExecution: JsonSchema;
                     readonly fullAccess: {
                         readonly type: "object";
                         readonly properties: {
@@ -513,7 +516,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                         readonly maxLength: number;
                                     };
                                 };
-                                readonly required: ("id" | "size" | "digest" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
+                                readonly required: ("id" | "digest" | "size" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
                                 readonly additionalProperties: false;
                             };
                             readonly inputPath: {
@@ -569,7 +572,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                 readonly maxLength: number;
                             };
                         };
-                        readonly required: ("rootSessionId" | "id" | "digest" | "revision")[];
+                        readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
                         readonly additionalProperties: false;
                     };
                     readonly approvalResumeDigest: {
@@ -969,6 +972,8 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                         readonly minLength: number;
                         readonly maxLength: number;
                     };
+                    readonly automaticApproval: JsonSchema;
+                    readonly automaticExecution: JsonSchema;
                     readonly fullAccess: {
                         readonly type: "object";
                         readonly properties: {
@@ -1138,7 +1143,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                         readonly maxLength: number;
                                     };
                                 };
-                                readonly required: ("id" | "size" | "digest" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
+                                readonly required: ("id" | "digest" | "size" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
                                 readonly additionalProperties: false;
                             };
                             readonly inputPath: {
@@ -1194,7 +1199,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                 readonly maxLength: number;
                             };
                         };
-                        readonly required: ("rootSessionId" | "id" | "digest" | "revision")[];
+                        readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
                         readonly additionalProperties: false;
                     };
                     readonly approvalResumeDigest: {
@@ -1697,6 +1702,8 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                             readonly minLength: number;
                             readonly maxLength: number;
                         };
+                        readonly automaticApproval: JsonSchema;
+                        readonly automaticExecution: JsonSchema;
                         readonly fullAccess: {
                             readonly type: "object";
                             readonly properties: {
@@ -1861,7 +1868,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                             readonly maxLength: number;
                                         };
                                     };
-                                    readonly required: ("id" | "size" | "digest" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
+                                    readonly required: ("id" | "digest" | "size" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
                                     readonly additionalProperties: false;
                                 };
                                 readonly inputPath: {
@@ -1917,7 +1924,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                     readonly maxLength: number;
                                 };
                             };
-                            readonly required: ("rootSessionId" | "id" | "digest" | "revision")[];
+                            readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
                             readonly additionalProperties: false;
                         };
                         readonly approvalResumeDigest: {
@@ -2316,6 +2323,8 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                             readonly minLength: number;
                             readonly maxLength: number;
                         };
+                        readonly automaticApproval: JsonSchema;
+                        readonly automaticExecution: JsonSchema;
                         readonly fullAccess: {
                             readonly type: "object";
                             readonly properties: {
@@ -2485,7 +2494,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                             readonly maxLength: number;
                                         };
                                     };
-                                    readonly required: ("id" | "size" | "digest" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
+                                    readonly required: ("id" | "digest" | "size" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
                                     readonly additionalProperties: false;
                                 };
                                 readonly inputPath: {
@@ -2541,7 +2550,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                     readonly maxLength: number;
                                 };
                             };
-                            readonly required: ("rootSessionId" | "id" | "digest" | "revision")[];
+                            readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
                             readonly additionalProperties: false;
                         };
                         readonly approvalResumeDigest: {
@@ -3007,6 +3016,8 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                         readonly minLength: number;
                         readonly maxLength: number;
                     };
+                    readonly automaticApproval: JsonSchema;
+                    readonly automaticExecution: JsonSchema;
                     readonly fullAccess: {
                         readonly type: "object";
                         readonly properties: {
@@ -3176,7 +3187,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                         readonly maxLength: number;
                                     };
                                 };
-                                readonly required: ("id" | "size" | "digest" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
+                                readonly required: ("id" | "digest" | "size" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
                                 readonly additionalProperties: false;
                             };
                             readonly inputPath: {
@@ -3232,7 +3243,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                 readonly maxLength: number;
                             };
                         };
-                        readonly required: ("rootSessionId" | "id" | "digest" | "revision")[];
+                        readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
                         readonly additionalProperties: false;
                     };
                     readonly approvalResumeDigest: {

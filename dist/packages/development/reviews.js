@@ -30,7 +30,7 @@ export class DevelopmentReviewService {
                 if (reviewer)
                     this.app.teams.active(actor);
                 else {
-                    ensure(!actor.wakeupId && s.state === 'running' && s.generation === actor.generation && s.leaseUntil > Date.now(), 'LEASE_EXPIRED', '生产会话租约已失效');
+                    ensure((!actor.wakeupId || this.app.automaticApprovals.isContinuation(actor)) && s.state === 'running' && s.generation === actor.generation && s.leaseUntil > Date.now(), 'LEASE_EXPIRED', '生产会话租约已失效');
                     assertDevelopmentReviewTarget(this.app.store, pid, r);
                 }
             }

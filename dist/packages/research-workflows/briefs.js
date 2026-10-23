@@ -82,7 +82,7 @@ export function fixedResearchBrief(store, projectId, ref, phase) {
 }
 function briefRow(row) {
     return { id: row.id, kind: row.kind, projectId: row.projectId, version: row.version, createdAt: row.createdAt, updatedAt: row.updatedAt,
-        ...payload(row), status: row.status, digest: row.digest };
+        ...payload(row), status: row.status, digest: row.digest, ...(row.automaticApproval ? { automaticApproval: row.automaticApproval } : {}), ...(row.automaticExecution ? { automaticExecution: row.automaticExecution } : {}) };
 }
 export class ResearchBriefService {
     app;
@@ -225,6 +225,7 @@ export class ResearchBriefService {
             return { brief: briefRow(row), latestId, history, evidenceChecks: checks };
         });
     }
+    confirmAutomatic(actor, ref, pid, sessionId, input) { return this.confirm(this.app.automaticApprovals.delegate(actor, ref, 'research-brief', input.briefId), pid, sessionId, input); }
     confirm(actor, projectId, sessionId, input) {
         userOnly(actor);
         const x = exactObject(input, ['briefId', 'expectedVersion'], '研究简报确认');

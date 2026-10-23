@@ -2,6 +2,7 @@ import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api } from "./api.js";
 import { Icon } from "./ui.js";
+import { automaticApprovalLabel } from "./models.js";
 const names = { document_page_image_read: "\u5141\u8BB8\u56FA\u5B9A\u539F\u6587\u9875\u8303\u56F4\u89C6\u89C9\u8BFB\u53D6", publication_page_image_read: "\u53D1\u9001\u56FA\u5B9A\u6587\u7A3F\u9875\u7ED9\u6A21\u578B", workspace_write: "\u7F16\u8F91\u6587\u4EF6", workspace_prepare_from_revision: "\u51C6\u5907\u4F1A\u8BDD\u5DE5\u4F5C\u533A", workspace_history_set_mode: "\u4FEE\u6539\u6587\u4EF6\u6743\u9650", workspace_history_commit: "\u4FDD\u5B58\u6E90\u7801\u63D0\u4EA4", literature_search: "\u8054\u7F51\u68C0\u7D22", literature_discover: "\u8054\u7F51\u53D1\u73B0\u6587\u732E", paper_read: "\u83B7\u53D6\u8BBA\u6587", artifact_create: "\u4FDD\u5B58\u4EA7\u7269", evidence_register: "\u767B\u8BB0\u8BC1\u636E", text_evidence_search: "\u68C0\u7D22\u5E76\u767B\u8BB0\u6587\u672C\u8BC1\u636E", research_brief_save: "\u4FDD\u5B58\u7814\u7A76\u8BA1\u5212", experiment_plan_submit: "\u51C6\u5907\u5B9E\u9A8C\u65B9\u6848", development_prepare: "\u51C6\u5907\u5F00\u53D1\u6D4B\u8BD5", development_submit: "\u63D0\u4EA4\u5F00\u53D1\u6D4B\u8BD5", run_prepare: "\u51C6\u5907\u5B9E\u9A8C\u8FD0\u884C", run_submit: "\u63D0\u4EA4\u5B9E\u9A8C\u8FD0\u884C", collaboration_plan_submit: "\u51C6\u5907\u534F\u4F5C\u8BA1\u5212", agent_delegate: "\u51C6\u5907\u52A9\u624B\u4EFB\u52A1", manuscript_create: "\u4FDD\u5B58\u6587\u7A3F" };
 const labels = { pending: "\u7B49\u5F85\u786E\u8BA4", approved: "\u5DF2\u6279\u51C6\uFF0C\u7B49\u5F85\u6267\u884C", rejected: "\u5DF2\u62D2\u7EDD", stale: "\u5DF2\u5931\u6548", executing: "\u6B63\u5728\u6267\u884C", running: "\u6B63\u5728\u6267\u884C", completed: "\u5DF2\u6267\u884C", succeeded: "\u5DF2\u6267\u884C", failed: "\u6267\u884C\u5931\u8D25", unknown: "\u6548\u679C\u5F85\u6838\u5BF9", consumed: "\u5DF2\u4F7F\u7528\u672C\u6B21\u6279\u51C6" };
 class PermissionActions extends React.Component {
@@ -30,7 +31,7 @@ class PermissionActions extends React.Component {
       if (this.alive && request === this.request) {
         const actions = result.actions ?? [];
         this.setState({ actions, hasMore: !!result.hasMoreActions });
-        this.props.onPendingChange?.(actions.filter((action) => action.state === "pending" && action.approval.status === "pending").map((action) => action.approval.id));
+        this.props.onPendingChange?.(actions.filter((action) => !action.approval.automaticApproval && action.state === "pending" && action.approval.status === "pending").map((action) => action.approval.id));
       }
     } catch (error) {
       if (this.alive && request === this.request) this.setState({ error: error instanceof Error ? error.message : String(error) });
@@ -56,7 +57,7 @@ class PermissionActions extends React.Component {
   }
   fixedWorkspaceSource(action) {
     const { session, sessionId, projectId } = this.props, { experimentId, revision } = action.input;
-    if (!projectId || !session || session.id !== sessionId || session.projectId !== projectId || session.role !== "coordinator" || session.taskId || session.teamId || session.parentSessionId || action.sessionId !== sessionId || action.state !== "failed" || action.operation !== "workspace_prepare_from_revision" || ["rejected", "stale"].includes(action.approval.status)) return null;
+    if (action.approval.automaticApproval || !projectId || !session || session.id !== sessionId || session.projectId !== projectId || session.role !== "coordinator" || session.taskId || session.teamId || session.parentSessionId || action.sessionId !== sessionId || action.state !== "failed" || action.operation !== "workspace_prepare_from_revision" || ["rejected", "stale"].includes(action.approval.status)) return null;
     return Object.keys(action.input).length === 2 && typeof experimentId === "string" && experimentId.length > 0 && experimentId.length <= 100 && experimentId.trim() === experimentId && typeof revision === "number" && Number.isSafeInteger(revision) && revision >= 1 ? { experimentId, revision } : null;
   }
   workspacePreparationDisabled() {
@@ -86,12 +87,12 @@ class PermissionActions extends React.Component {
     }
   }
   card(action) {
-    const status = ["rejected", "stale"].includes(action.approval.status) ? action.approval.status : action.state === "pending" ? action.approval.status : action.state, pending = status === "pending", path = typeof action.input.path === "string" ? action.input.path : null, source = this.fixedWorkspaceSource(action);
+    const status = ["rejected", "stale"].includes(action.approval.status) ? action.approval.status : action.state === "pending" ? action.approval.status : action.state, pending = status === "pending" && !action.approval.automaticApproval, path = typeof action.input.path === "string" ? action.input.path : null, source = this.fixedWorkspaceSource(action);
     return /* @__PURE__ */ jsxs("article", { className: "workflow-card permission-action", children: [
       /* @__PURE__ */ jsxs("div", { className: "permission-action-heading", children: [
         /* @__PURE__ */ jsx(Icon, { name: path ? "edit" : "settings", size: 16 }),
         /* @__PURE__ */ jsx("strong", { children: names[action.operation] ?? "\u786E\u8BA4\u7814\u7A76\u64CD\u4F5C" }),
-        /* @__PURE__ */ jsx("span", { className: "permission-action-status", children: labels[status] ?? status })
+        /* @__PURE__ */ jsx("span", { className: "permission-action-status", children: automaticApprovalLabel(action.approval) ?? labels[status] ?? status })
       ] }),
       /* @__PURE__ */ jsx("p", { className: "small", children: path ? /* @__PURE__ */ jsxs(Fragment, { children: [
         /* @__PURE__ */ jsx("code", { children: path }),

@@ -1,3 +1,4 @@
+import { AUTOMATIC_APPROVAL_REFERENCE_SCHEMA, AUTOMATIC_EXECUTION_SCHEMA } from './automatic-approval-schemas.js';
 import { s } from './schema.js';
 import { METHOD_CONTRACT_INPUT_SCHEMA, FROZEN_METHOD_CONTRACT_SCHEMA, METHOD_REQUIREMENTS_SCHEMA, DRAFT_ROLE_SCHEMA, PROTOCOL_DOCUMENT_SCHEMA } from './method-contract-schemas.js';
 const str = { type: 'string' };
@@ -12,13 +13,13 @@ const draftFile = object({ sessionId: id, workspace: s.string(1000), path: s.str
 export const RESEARCH_SOURCE_INPUT_SCHEMA = object({ path: s.string(1000), workspace: s.string(1000), artifactId: id, digest: s.string(64, 64), size: s.integer(0, 2 * 1024 * 1024), readId: id });
 export const RESEARCH_BRIEF_REFERENCE_SCHEMA = object({ id, digest: s.string(64, 64), revision: s.integer(1), rootSessionId: id });
 const brief = row('research-brief', {
-    rootSessionId: id, revision: s.integer(1), previousRevisionId: id, question: s.string(4000), scope: s.string(4000, 0),
+    automaticApproval: AUTOMATIC_APPROVAL_REFERENCE_SCHEMA, automaticExecution: AUTOMATIC_EXECUTION_SCHEMA, rootSessionId: id, revision: s.integer(1), previousRevisionId: id, question: s.string(4000), scope: s.string(4000, 0),
     constraints: array(s.string(1000), 16), successCriteria: array(s.string(1000), 12), clarificationQuestions: array(s.string(1000), 12),
     literatureSummary: s.string(8000, 0), hypotheses: array(hypothesis, 12), evidenceIds: array(id, 60), steps: array(step, 16),
     status: s.enum(['clarifying', 'ready', 'confirmed']), digest: s.string(64, 64), draftFiles: array(draftFile, 5000), sourceInputs: array(RESEARCH_SOURCE_INPUT_SCHEMA, 32),
     methodContract: FROZEN_METHOD_CONTRACT_SCHEMA, methodRequirements: METHOD_REQUIREMENTS_SCHEMA,
     draftRoles: array(DRAFT_ROLE_SCHEMA, 5000), protocolDocument: PROTOCOL_DOCUMENT_SCHEMA,
-}, ['previousRevisionId', 'draftFiles', 'sourceInputs', 'methodContract', 'methodRequirements', 'draftRoles', 'protocolDocument']);
+}, ['automaticApproval', 'automaticExecution', 'previousRevisionId', 'draftFiles', 'sourceInputs', 'methodContract', 'methodRequirements', 'draftRoles', 'protocolDocument']);
 export const RESEARCH_BRIEF_INPUT_SCHEMAS = {
     research_brief_save: object({
         question: s.string(4000), scope: s.string(4000, 0), constraints: array(s.string(1000), 16),

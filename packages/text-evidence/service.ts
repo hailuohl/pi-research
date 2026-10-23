@@ -140,7 +140,7 @@ export class TextEvidenceService {
             if (grant) sources = sources.filter(s => grant.artifactIds.has(s.artifactId));
             documents = [];
             pmcDocuments=undefined;
-            if(!actor.taskId&&!actor.wakeupId){try{const fixed=assertTextCorpusGrantActor(this.app.store,actor,projectId);documents=(corpus?.documents??[]).filter(ref=>fixed.documents.some(p=>pairKey(p)===pairKey(ref)));if(fixed.pmcDocuments)pmcDocuments=corpus?.pmcDocuments?.filter(ref=>fixed.pmcDocuments!.some(p=>p.documentVersionId===ref.documentVersionId));}catch{/* Unavailable grants disclose no fixed document sources. */}}
+            if(!actor.taskId&&(!actor.wakeupId||this.app.automaticApprovals.isContinuation(actor))){try{const fixed=assertTextCorpusGrantActor(this.app.store,actor,projectId);documents=(corpus?.documents??[]).filter(ref=>fixed.documents.some(p=>pairKey(p)===pairKey(ref)));if(fixed.pmcDocuments)pmcDocuments=corpus?.pmcDocuments?.filter(ref=>fixed.pmcDocuments!.some(p=>p.documentVersionId===ref.documentVersionId));}catch{/* Unavailable grants disclose no fixed document sources. */}}
         }
         return { enabled: config?.enabled ?? false, version: config?.version ?? 0, corpusId: config?.corpusId ?? null,
             sources, documents: documents.map(({ documentVersionId, parseResultId, title, pageCount }) => ({ documentVersionId, parseResultId, title, pageCount })),

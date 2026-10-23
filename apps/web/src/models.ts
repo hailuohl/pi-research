@@ -169,6 +169,12 @@ export const number = (value: number | undefined) => value === undefined ? '—'
 export const date = (value: string) => new Date(value).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 const names: Record<string, string> = { draft: '草案', stopped: '已停止', proposed: '待批准提案', applied: '已应用', repair: '原节点修复', refill: '补充候选', promote: '晋级下一轮', stop: '停止研究', open: '进行中', closed: '已结束', decided: '已决策', pending: '待处理', queued: '排队中', running: '运行中', succeeded: '执行成功', failed: '失败', cancelled: '已取消', cancelling: '取消中', unknown: '待对账', provisional: '草案', frozen: '已冻结', archived: '已归档', complete: '完整', incomplete: '不完整', invalid: '无效', accepted: '已验收', rejected: '未通过', disputed: '有争议', output_submitted: '已提交成果', waiting_user: '待人工处理', superseded: '旧版本', blocked: '已阻塞', awaiting_approval: '待批准', active: '进行中', paused: '已暂停', draining: '正在收尾', completed: '已完成', partial: '部分完成', approved: '已批准', stale: '已失效', idle: '空闲', interrupted: '已中止', waiting: '等待中', literature: '文献', designer: '设计', implementer: '实现', analyst: '分析', reviewer: '审查', writer: '写作', coordinator: '主协调者', proposal: '候选', implemented: '已实现', verified: '已实测', integration_unverified: '待真实接入验证', not_implemented: '未实现' };
 export const label = (value: string) => names[value] ?? value;
+export function automaticApprovalLabel(record?:Pick<Approval,'automaticApproval'|'automaticExecution'>){
+    if(!record?.automaticApproval)return null;
+    const execution=record.automaticExecution;
+    const state=execution?{completed:'本项自动处理已完成',failed:'自动处理失败',unknown:'自动处理效果未知',needs_attention:'自动处理需要补充信息',waiting:'等待自动执行'}[execution.state]:'等待自动处理';
+    return `自动审批 · ${state}${execution?.reason?'：'+execution.reason:''}`;
+}
 export function comparisonMetric(data:ProjectState,selected:string) {
     const e=data.experiments.find(e=>e.id===selected)??data.experiments[0];
     const definitions=e?.contract?.metrics??data.runs.find(r=>r.manifest.contractDigest===e?.contractDigest)?.manifest.contract?.metrics;

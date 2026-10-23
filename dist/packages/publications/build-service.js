@@ -8,7 +8,7 @@ import { join, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { object, text, integer, strings } from '../contracts/validation.js';
 import { ensure, DomainError } from '../domain/errors.js';
-import { interactiveCoordinator, userOnly, scope } from '../policy/permissions.js';
+import { userOnly, scope } from '../policy/permissions.js';
 import { assertProjectReadable, assertProjectWritable, assertExperimentSourceCurrent } from '../policy/lifecycle.js';
 import { verifyRunRecord } from '../evidence/run-verifier.js';
 import { digest } from '../storage/store.js';
@@ -98,7 +98,7 @@ export class PublicationBuildService {
         scope(actor, pid);
         assertProjectReadable(this.app.store, pid, actor);
         return undefined;
-    } ensure(actor.type === 'agent' && actor.sessionId && actor.generation !== undefined, 'PERMISSION_DENIED', '需要用户或主协调会话身份', 403); scope(actor, pid); ensure(!this.app.store.get('project', pid).archived, 'PROJECT_ARCHIVED', '归档项目不可由 Agent 访问', 403); return interactiveCoordinator(actor, pid, this.app.store.get('session', actor.sessionId, pid)); }
+    } ensure(actor.type === 'agent' && actor.sessionId && actor.generation !== undefined, 'PERMISSION_DENIED', '需要用户或主协调会话身份', 403); scope(actor, pid); ensure(!this.app.store.get('project', pid).archived, 'PROJECT_ARCHIVED', '归档项目不可由 Agent 访问', 403); return this.app.automaticApprovals.coordinator(actor, pid, this.app.store.get('session', actor.sessionId, pid)); }
     assertAgentEvidence(actor, pid, rootSessionId, ids) { for (const id of ids) {
         this.app.textCorpusGrants.authorizeContent(actor, pid, 'evidence_read', { evidenceId: id });
         const e = this.app.evidence.verify(pid, id), a = this.app.store.get('artifact', e.artifactId, pid), runId = e.runId ?? a.runId;
@@ -256,7 +256,7 @@ export class PublicationBuildService {
         const sourceDigest = digest({ engine, mainFile, bibliography, files: staged.map(f => ({ path: f.path, digest: (f.artifact ?? f.prepared).digest, size: (f.artifact ?? f.prepared).size })) });
         const fields = { ...(rootSessionId ? { rootSessionId } : {}), ...(owner ? { researchBrief, evidenceIds } : {}), ...(previousRevisionId ? { previousRevisionId } : {}) }, manifestPrepared = this.app.evidence.prepareArtifact(pid, 'manuscript-manifest.json', Buffer.from(JSON.stringify({ formatVersion: 1, title, engine, mainFile, bibliography, templateId: templateId ?? null, ...fields, sourceDigest, files: staged.map(f => ({ path: f.path, digest: (f.artifact ?? f.prepared).digest, size: (f.artifact ?? f.prepared).size, mediaType: f.mediaType, provenance: f.provenance })) })), 'application/json', 'manuscript');
         return this.app.store.transaction(() => { validate(); assertProjectWritable(this.app.store, pid); if (owner) {
-            interactiveCoordinator(actor, pid, this.app.store.get('session', owner.id, pid));
+            this.app.automaticApprovals.coordinator(actor, pid, this.app.store.get('session', owner.id, pid));
             this.app.researchBriefs.assertReference(actor, pid, owner.id, researchBrief);
             this.assertAgentEvidence(actor, pid, owner.id, evidenceIds);
         }
@@ -300,7 +300,7 @@ export class PublicationBuildService {
         const x = closed(value, ['revisionId']);
         assertProjectWritable(this.app.store, pid);
         if (owner)
-            interactiveCoordinator(actor, pid, this.app.store.get('session', owner.id, pid));
+            this.app.automaticApprovals.coordinator(actor, pid, this.app.store.get('session', owner.id, pid));
         const revision = this.revision(actor, pid, text(x.revisionId, 'revisionId', 100));
         this.assertRevision(revision, true);
         revision.files.forEach(f => this.assertSource(actor, pid, f, true, false, revision));
@@ -322,10 +322,12 @@ export class PublicationBuildService {
         const inputSnapshot = this.app.store.paths.referenceSnapshot(snapshotDirectory(source, join(this.app.context.dataDir, 'snapshots')));
         const manifest = { purpose: 'publication-build', revisionId: revision.id, revisionDigest: digest(revision), sourceDigest: revision.sourceDigest, engine: revision.engine, mainFile: revision.mainFile, bibliography: revision.bibliography, ...profile, dockerContext: config.dockerContext, environmentImageDigest: config.imageDigest, command: ['python', '-I', '/opt/pi-document-build/build.py', revision.engine, revision.mainFile, revision.bibliography, revision.sourceDigest, '/output'], inputSnapshot, dataArtifacts: [], resources: { ...PUBLICATION_RESOURCES } }, manifestDigest = digest(manifest);
         return this.app.store.transaction(() => { validate(); const publish = () => { validate(); assertProjectWritable(this.app.store, pid); if (owner)
-            interactiveCoordinator(actor, pid, this.app.store.get('session', owner.id, pid)); ensure(digest(this.revision(actor, pid, revision.id)) === manifest.revisionDigest && this.app.store.get('publication-compiler-settings', 'global').version === config.version, 'PUBLICATION_SOURCE_STALE', '准备期间版本或配置改变'); revision.files.forEach(f => this.assertSource(actor, pid, f, false, false, revision)); const approval = this.app.approvals.request(pid, 'publication-build-job', id, manifestDigest, 'publication.build', '仅批准固定文稿、固定编译镜像及资源；编译成功不代表科学正确性'); this.app.store.create('publication-build-job', pid, { revisionId: revision.id, manifest, manifestDigest, approvalId: approval.id, state: 'prepared', integrity: 'pending', containerName: 'pi-publication-' + id, outputDir: this.app.store.paths.reference(outputDir), controlDir: this.app.store.paths.reference(controlDir), generation: 0, leaseUntil: 0, startRequested: false, cancelRequested: false, recoveryCount: 0, artifactIds: [] }, id); this.app.store.event(pid, 'publication.build_prepared', { jobId: id, revisionId: revision.id }); return this.inspect(actor, pid, id); }; return key ? this.app.store.operation(scopeId, key, request, publish) : publish(); });
+            this.app.automaticApprovals.coordinator(actor, pid, this.app.store.get('session', owner.id, pid)); ensure(digest(this.revision(actor, pid, revision.id)) === manifest.revisionDigest && this.app.store.get('publication-compiler-settings', 'global').version === config.version, 'PUBLICATION_SOURCE_STALE', '准备期间版本或配置改变'); revision.files.forEach(f => this.assertSource(actor, pid, f, false, false, revision)); const approval = this.app.approvals.request(pid, 'publication-build-job', id, manifestDigest, 'publication.build', '仅批准固定文稿、固定编译镜像及资源；编译成功不代表科学正确性'); this.app.store.create('publication-build-job', pid, { revisionId: revision.id, manifest, manifestDigest, approvalId: approval.id, state: 'prepared', integrity: 'pending', containerName: 'pi-publication-' + id, outputDir: this.app.store.paths.reference(outputDir), controlDir: this.app.store.paths.reference(controlDir), generation: 0, leaseUntil: 0, startRequested: false, cancelRequested: false, recoveryCount: 0, artifactIds: [] }, id); this.app.store.event(pid, 'publication.build_prepared', { jobId: id, revisionId: revision.id }); return this.inspect(actor, pid, id); }; return key ? this.app.store.operation(scopeId, key, request, publish) : publish(); });
     }
-    assertCurrent(job, verifyBytes = true) { assertProjectWritable(this.app.store, job.projectId); ensure(digest(job.manifest) === job.manifestDigest, 'PUBLICATION_JOB_CORRUPTED', '编译清单改变'); const r = this.revision({ type: 'user' }, job.projectId, job.revisionId); this.assertRevision(r, verifyBytes); ensure(digest(r) === job.manifest.revisionDigest && r.sourceDigest === job.manifest.sourceDigest, 'PUBLICATION_SOURCE_CORRUPTED', '文稿版本改变'); this.app.approvals.assert(job.approvalId, job.projectId, job.id, job.manifestDigest, 'publication.build'); r.files.forEach(f => this.assertSource({ type: 'user' }, job.projectId, f, verifyBytes)); ensure(job.manifest.inputSnapshot.digest === digest(job.manifest.inputSnapshot.files) && job.manifest.inputSnapshot.files.length === r.files.length && r.files.every(f => job.manifest.inputSnapshot.files.some(s => s.path === 'source/' + f.path && s.digest === f.digest && s.size === f.size)), 'PUBLICATION_SOURCE_CORRUPTED', '编译输入快照与固定文稿不符'); if (verifyBytes)
+    assertCurrent(job, verifyBytes = true) { assertProjectWritable(this.app.store, job.projectId); ensure(digest(job.manifest) === job.manifestDigest, 'PUBLICATION_JOB_CORRUPTED', '编译清单改变'); const r = this.revision({ type: 'user' }, job.projectId, job.revisionId); this.assertRevision(r, verifyBytes); ensure(digest(r) === job.manifest.revisionDigest && r.sourceDigest === job.manifest.sourceDigest, 'PUBLICATION_SOURCE_CORRUPTED', '文稿版本改变'); const approval = this.app.approvals.assert(job.approvalId, job.projectId, job.id, job.manifestDigest, 'publication.build'); if (!terminal(job.state) && approval.automaticApproval)
+        this.app.automaticApprovals.assert(approval.automaticApproval); r.files.forEach(f => this.assertSource({ type: 'user' }, job.projectId, f, verifyBytes)); ensure(job.manifest.inputSnapshot.digest === digest(job.manifest.inputSnapshot.files) && job.manifest.inputSnapshot.files.length === r.files.length && r.files.every(f => job.manifest.inputSnapshot.files.some(s => s.path === 'source/' + f.path && s.digest === f.digest && s.size === f.size)), 'PUBLICATION_SOURCE_CORRUPTED', '编译输入快照与固定文稿不符'); if (verifyBytes)
         verifySnapshot(this.app.store.paths.physical(job.manifest.inputSnapshot.path), job.manifest.inputSnapshot.files); return r; }
+    submitAutomatic(actor, ref, pid, id) { return this.submit(this.app.automaticApprovals.delegate(actor, ref, 'publication-build-job', id), pid, id); }
     submit(actor, pid, id) { userOnly(actor); const before = this.get(actor, pid, id); if (before.state === 'prepared')
         this.assertCurrent(before, true); return this.app.store.transaction(() => { const job = this.get(actor, pid, id); if (job.state !== 'prepared')
         return this.inspect(actor, pid, id); this.assertCurrent(job, false); this.app.compute.assertEnqueue('publication', pid, job.manifest.dockerContext); this.app.store.update('publication-build-job', id, job.version, { state: 'queued' }); return this.inspect(actor, pid, id); }); }
@@ -363,7 +365,7 @@ export class PublicationBuildService {
         return { publicationResultId: r.id, pageNumber: page.pageNumber, digest: page.digest, bytes: page.bytes, width: page.width, height: page.height, manifestDigest: r.manifestDigest, sourceDigest: r.sourceDigest, revisionId: r.revisionId, data: bytes.toString('base64') };
     }
     readPageImage(actor, pid, resultId, pageNumber) {
-        interactiveCoordinator(actor, pid, this.app.store.get('session', actor.sessionId, pid));
+        this.app.automaticApprovals.coordinator(actor, pid, this.app.store.get('session', actor.sessionId, pid));
         ensure(actor.permissionActionId, 'PERMISSION_IMAGE_UNAPPROVED', '固定页需要准确操作批准', 403);
         const page = this.pageImage(actor, pid, resultId, pageNumber), reference = { actionId: actor.permissionActionId, publicationResultId: resultId, pageNumber, digest: page.digest, bytes: page.bytes, width: page.width, height: page.height };
         this.app.sessionPermissions.assertImageAction(actor, reference);

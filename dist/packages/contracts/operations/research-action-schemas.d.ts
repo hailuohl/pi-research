@@ -1,4 +1,4 @@
-import { type InferSchema } from './schema.js';
+import { type JsonSchema, type InferSchema } from './schema.js';
 export declare const RESEARCH_ACTION_INPUT_SCHEMA: {
     readonly type: "object";
     readonly anyOf: readonly [{
@@ -94,6 +94,28 @@ export declare const RESEARCH_ACTION_INPUT_SCHEMA: {
                         readonly type: "integer";
                         readonly minimum: number;
                         readonly maximum: number;
+                    };
+                    readonly proposedDecision: {
+                        readonly enum: readonly ["accepted", "rejected", "disputed"];
+                    };
+                    readonly reason: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly evidenceIds: {
+                        readonly maxItems?: number | undefined;
+                        readonly type: "array";
+                        readonly items: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly minItems: number;
                     };
                 };
                 readonly required: readonly ["claimId", "expectedVersion"];
@@ -292,6 +314,28 @@ export declare const RESEARCH_ACTION_INPUT_SCHEMAS: {
                             readonly minimum: number;
                             readonly maximum: number;
                         };
+                        readonly proposedDecision: {
+                            readonly enum: readonly ["accepted", "rejected", "disputed"];
+                        };
+                        readonly reason: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly evidenceIds: {
+                            readonly maxItems?: number | undefined;
+                            readonly type: "array";
+                            readonly items: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly minItems: number;
+                        };
                     };
                     readonly required: readonly ["claimId", "expectedVersion"];
                     readonly additionalProperties: false;
@@ -433,6 +477,8 @@ export declare const RESEARCH_ACTION_OUTPUT_SCHEMAS: {
     readonly research_action_prepare: {
         readonly type: "object";
         readonly properties: {
+            readonly automaticApproval: JsonSchema;
+            readonly automaticExecution: JsonSchema;
             readonly id: {
                 readonly pattern?: string | undefined;
                 readonly type: "string";
@@ -499,6 +545,8 @@ export declare const RESEARCH_ACTION_OUTPUT_SCHEMAS: {
     readonly research_action_inspect: {
         readonly type: "object";
         readonly properties: {
+            readonly automaticApproval: JsonSchema;
+            readonly automaticExecution: JsonSchema;
             readonly id: {
                 readonly pattern?: string | undefined;
                 readonly type: "string";
@@ -565,6 +613,8 @@ export declare const RESEARCH_ACTION_OUTPUT_SCHEMAS: {
     readonly research_action_decide: {
         readonly type: "object";
         readonly properties: {
+            readonly automaticApproval: JsonSchema;
+            readonly automaticExecution: JsonSchema;
             readonly id: {
                 readonly pattern?: string | undefined;
                 readonly type: "string";

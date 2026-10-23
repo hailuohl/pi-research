@@ -2,7 +2,7 @@ import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api } from "./api.js";
 import { Badge } from "./ui.js";
-import { short, date } from "./models.js";
+import { automaticApprovalLabel, short, date } from "./models.js";
 import { LiteratureView, EvidenceView, ReportsView } from "./data-views.js";
 const titles = { text_grant: "\u786E\u8BA4\u539F\u6587\u68C0\u7D22\u8303\u56F4", claim_decision: "\u786E\u8BA4\u7814\u7A76\u7ED3\u8BBA", report_compose: "\u786E\u8BA4\u62A5\u544A\u6765\u6E90", history: "\u67E5\u770B\u9879\u76EE\u5386\u53F2" };
 class ResearchActionCards extends React.Component {
@@ -76,13 +76,14 @@ class ResearchActionCard extends React.Component {
   render() {
     const { data, session, request } = this.props;
     if (request.projectId !== data.project.id || request.sessionId !== session.id) return null;
-    const input = request.input, pending = request.effectiveState === "pending", disabled = this.props.busy || this.state.saving || !!data.project.archived || session.state === "archived";
+    const input = request.input, pending = request.effectiveState === "pending" && !request.automaticApproval, disabled = this.props.busy || this.state.saving || !!data.project.archived || session.state === "archived";
     const claim = input.kind === "claim_decision" ? data.claims.find((c) => c.id === input.claim.claimId) : void 0, reportRef = request.resultRef && "reportId" in request.resultRef ? request.resultRef.reportId : void 0, grantRef = request.resultRef && "grantId" in request.resultRef ? request.resultRef.grantId : void 0;
     return /* @__PURE__ */ jsxs("details", { className: "workflow-card research-action-card", open: request.state === "pending", children: [
       /* @__PURE__ */ jsxs("summary", { children: [
         titles[input.kind],
-        /* @__PURE__ */ jsx(Badge, { value: request.effectiveState })
+        /* @__PURE__ */ jsx(Badge, { value: request.effectiveState, caption: request.automaticApproval && request.effectiveState === "pending" ? "\u81EA\u52A8\u5904\u7406" : void 0 })
       ] }),
+      request.automaticApproval ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: automaticApprovalLabel(request) }) : null,
       /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
         "\u5F53\u524D\u4F1A\u8BDD\uFF1A",
         session.title,
@@ -171,7 +172,7 @@ class ResearchActionCard extends React.Component {
         ] }) : null
       ] }) : null,
       input.kind === "history" ? this.historyView() : null,
-      request.state === "pending" ? /* @__PURE__ */ jsx("button", { type: "button", className: "text-button", disabled, onClick: () => void this.decide(input.kind === "claim_decision" || input.kind === "history" ? "dismiss" : "reject"), children: input.kind === "claim_decision" || input.kind === "history" ? "\u5173\u95ED\u8FD9\u5F20\u5361\u7247" : "\u62D2\u7EDD\u6B64\u8BF7\u6C42" }) : null,
+      request.state === "pending" && !request.automaticApproval ? /* @__PURE__ */ jsx("button", { type: "button", className: "text-button", disabled, onClick: () => void this.decide(input.kind === "claim_decision" || input.kind === "history" ? "dismiss" : "reject"), children: input.kind === "claim_decision" || input.kind === "history" ? "\u5173\u95ED\u8FD9\u5F20\u5361\u7247" : "\u62D2\u7EDD\u6B64\u8BF7\u6C42" }) : null,
       this.state.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: this.state.error }) : null
     ] });
   }

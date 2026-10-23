@@ -47,5 +47,6 @@ export declare class ChangeProposalService {
             after: string | null;
         }[];
     };
+    applyAutomatic(actor: Actor, ref: import('../policy/automatic-approvals.js').AutomaticApprovalReference, id: string): Row<Experiment>;
     apply(actor: Actor, id: string): Row<Experiment>;
 }

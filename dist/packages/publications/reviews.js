@@ -1,7 +1,7 @@
 import { assertRunGrantRun } from '../policy/run-grant-validation.js';
 import { basename, dirname } from 'node:path';
 import { readStableFile } from '../workspace/stable-file.js';
-import { interactiveCoordinator, scope, userOnly } from '../policy/permissions.js';
+import { scope, userOnly } from '../policy/permissions.js';
 import { isPdfArtifact } from '../policy/text-corpus-grants.js';
 import { isPmcArtifact } from '../documents/pmc-text.js';
 import { assertProjectReadable, assertProjectWritable, assertExperimentSourceCurrent } from '../policy/lifecycle.js';
@@ -52,7 +52,7 @@ export class PublicationReviewService {
         scope(actor, pid);
         assertProjectReadable(this.app.store, pid, actor);
         return undefined;
-    } ensure(actor.type === 'agent' && actor.sessionId && actor.generation !== undefined, 'PERMISSION_DENIED', '需要用户或主协调会话身份', 403); scope(actor, pid); ensure(!this.app.store.get('project', pid).archived, 'PROJECT_ARCHIVED', '归档项目不可由 Agent 访问', 403); return interactiveCoordinator(actor, pid, this.app.store.get('session', actor.sessionId, pid)); }
+    } ensure(actor.type === 'agent' && actor.sessionId && actor.generation !== undefined, 'PERMISSION_DENIED', '需要用户或主协调会话身份', 403); scope(actor, pid); ensure(!this.app.store.get('project', pid).archived, 'PROJECT_ARCHIVED', '归档项目不可由 Agent 访问', 403); return this.app.automaticApprovals.coordinator(actor, pid, this.app.store.get('session', actor.sessionId, pid)); }
     assertAgentReview(actor, pid, r) { const root = this.coordinator(actor, pid); if (!root)
         return; ensure(r.rootSessionId === root.id, 'SCOPE_DENIED', '审查不属于当前主会话', 403); const revision = this.app.publicationBuilds.revision(actor, pid, r.revisionId); ensure(revision.rootSessionId === root.id, 'SCOPE_DENIED', '审查文稿不属于当前主会话', 403); for (const id of r.requiredEvidenceIds)
         this.inputEvidence(actor, pid, id, true, r.id); }
@@ -115,7 +115,7 @@ export class PublicationReviewService {
         return this.app.store.transaction(() => {
             assertProjectWritable(this.app.store, pid);
             if (owner)
-                interactiveCoordinator(actor, pid, this.app.store.get('session', owner.id, pid));
+                this.app.automaticApprovals.coordinator(actor, pid, this.app.store.get('session', owner.id, pid));
             const root = this.app.store.get('session', rootSessionId, pid);
             ensure(root.role === 'coordinator' && !root.taskId && !root.teamId && (actor.type !== 'agent' || root.state !== 'archived'), 'PUBLICATION_REVIEW_ROOT_REQUIRED', '请选择未归档的主协调会话');
             const { result, revision, job } = this.target(actor, pid, resultId);

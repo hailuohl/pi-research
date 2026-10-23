@@ -5,7 +5,7 @@ import { routePaperId, parseSearch } from '../../connectors/contracts.js';
 import { ensure, DomainError } from '../../domain/errors.js';
 import { publicRecords } from '../../domain/public-record.js';
 import { text, object, integer } from '../validation.js';
-import { CONTINUATION_TOOLS, APPROVAL_RESUME_TOOLS } from '../../policy/research-automation.js';
+import { APPROVAL_RESUME_TOOLS } from '../../policy/research-automation.js';
 import { interactiveCoordinator, scope, userOnly, toolAllowed, AUTOMATION_TOOLS } from '../../policy/permissions.js';
 import { assertProjectWritable, assertProjectReadable } from '../../policy/lifecycle.js';
 import { readText, writeText, listFiles } from '../../workspace/files.js';
@@ -32,7 +32,7 @@ const workspaceScope = (c, x) => {
 const noPrecondition = () => { };
 const make = (id, definition) => ({ id, inputSchema: INPUT_SCHEMAS[id], outputSchema: OUTPUT_SCHEMAS[id], ...definition });
 const publicationAccess = (c, name) => { if (c.actor.type === 'agent')
-    interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, name));
+    c.app.automaticApprovals.coordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, name));
 else
     userOnly(c.actor); };
 function paperReplay(c, x) {
@@ -69,7 +69,7 @@ function authorizeRegistered(c, name, x) {
         const campaign = c.app.campaigns.get(c.actor, x.campaignId);
         ensure(campaign.projectId === c.projectId, 'SCOPE_DENIED', '研究活动不属于当前项目', 403);
         c.app.campaigns.coordinator(c.actor, campaign);
-        if (c.actor.wakeupId) {
+        if (c.actor.wakeupId && !c.app.automaticApprovals.isContinuation(c.actor)) {
             const w = c.app.wakeups.assertActive(c.actor);
             ensure(w.sourceKind === 'campaign-result' && w.ownerId === campaign.id, 'AUTOMATION_SCOPE_DENIED', '只能分析本次通知所属研究活动', 403);
         }
@@ -97,7 +97,7 @@ function executeRegistered(c, name, x) {
     const ownOrProject = () => { ensure(!x.source || x.source === 'session' || x.source === 'project' && (session?.role ?? 'coordinator') === 'coordinator', 'SCOPE_DENIED', '助手只能访问自己的工作区', 403); return app.store.paths.physical(x.source === 'project' ? app.projects.read(actor, pid).workspace : session.workspace); };
     if (name.startsWith('campaign_')) {
         const campaignId = text(x.campaignId, 'campaignId', 100);
-        if (actor.wakeupId) {
+        if (actor.wakeupId && !app.automaticApprovals.isContinuation(actor)) {
             const w = app.wakeups.assertActive(actor);
             ensure(w.sourceKind === 'campaign-result' && w.ownerId === campaignId, 'AUTOMATION_SCOPE_DENIED', '只能分析本次通知所属研究活动', 403);
         }
@@ -191,11 +191,11 @@ function executeRegistered(c, name, x) {
     }
 }
 const SPECS = [
-    make('research_action_prepare', { requiresSession: true, idempotencyPolicy: 'key-required', authorize: c => { interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'research_action_prepare')); }, preconditions: noPrecondition, execute: (c, x) => c.app.researchActions.prepare(c.actor, c.projectId, c.session.id, x) }),
-    make('research_action_inspect', { requiresSession: true, idempotencyPolicy: 'read-only', authorize: c => { interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'research_action_inspect')); }, preconditions: noPrecondition, execute: (c, x) => c.app.researchActions.inspect(c.actor, c.projectId, c.session.id, x.requestId) }),
+    make('research_action_prepare', { requiresSession: true, idempotencyPolicy: 'key-required', authorize: c => { c.app.automaticApprovals.coordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'research_action_prepare')); }, preconditions: noPrecondition, execute: (c, x) => c.app.researchActions.prepare(c.actor, c.projectId, c.session.id, x) }),
+    make('research_action_inspect', { requiresSession: true, idempotencyPolicy: 'read-only', authorize: c => { c.app.automaticApprovals.coordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'research_action_inspect')); }, preconditions: noPrecondition, execute: (c, x) => c.app.researchActions.inspect(c.actor, c.projectId, c.session.id, x.requestId) }),
     make('research_action_decide', { requiresSession: true, idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.researchActions.decide(c.actor, c.projectId, c.session.id, x) }),
     make('research_history_list', { idempotencyPolicy: 'read-only', authorize: c => { if (c.actor.type === 'agent')
-            interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'research_history_list'));
+            c.app.automaticApprovals.coordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'research_history_list'));
         else
             userOnly(c.actor); }, preconditions: noPrecondition, execute: (c, x) => c.app.store.readSnapshot(() => {
             const kinds = { documents: 'document-version', evidence: 'evidence', claims: 'claim', reports: 'report' }, kind = x.kind, cursor = x.cursor ?? 0, limit = x.limit ?? 20;
@@ -267,7 +267,7 @@ const SPECS = [
     make('publication_submit', { asynchronous: true, idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.submit(c.actor, c.projectId, x.jobId) }),
     make('publication_inspect', { idempotencyPolicy: 'read-only', authorize: c => publicationAccess(c, 'publication_inspect'), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.inspect(c.actor, c.projectId, x.jobId) }),
     make('publication_cancel', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.cancel(c.actor, c.projectId, x.jobId) }),
-    make('publication_page_image_read', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: c => interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'publication_page_image_read')), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.readPageImage(c.actor, c.projectId, x.publicationResultId, x.pageNumber) }),
+    make('publication_page_image_read', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: c => c.app.automaticApprovals.coordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'publication_page_image_read')), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.readPageImage(c.actor, c.projectId, x.publicationResultId, x.pageNumber) }),
     make('publication_result', { idempotencyPolicy: 'read-only', authorize: c => publicationAccess(c, 'publication_result'), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.result(c.actor, c.projectId, x.resultId) }),
     make('publication_build_list', { idempotencyPolicy: 'read-only', authorize: c => publicationAccess(c, 'publication_build_list'), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.jobs(c.actor, c.projectId, x) }),
     make('skill_package_import', { asynchronous: true, idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.skills.import(c.actor, c.projectId, x, c.idempotencyKey) }),
@@ -296,7 +296,7 @@ const SPECS = [
     make('document_parse_submit', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.submit(c.actor, c.projectId, x.jobId) }),
     make('document_parse_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.inspect(c.actor, c.projectId, x.jobId) }),
     make('document_parse_cancel', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.cancel(c.actor, c.projectId, x.jobId) }),
-    make('document_page_image_read', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: c => interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'document_page_image_read')), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.readPageImage(c.actor, c.projectId, x) }),
+    make('document_page_image_read', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: c => c.app.automaticApprovals.coordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'document_page_image_read')), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.readPageImage(c.actor, c.projectId, x) }),
     make('document_pages', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.pages(c.actor, c.projectId, x.parseResultId, x.cursor, x.limit) }),
     make('document_page_read', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.readPage(c.actor, c.projectId, x.parseResultId, x.pageNumber, x.cursor, x.limit) }),
     make('document_evidence_register', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.evidence.registerDocument(c.actor, c.projectId, x) }),
@@ -305,7 +305,7 @@ const SPECS = [
             if (c.actor.continuationId)
                 c.app.researchAutomation.assertActor(c.actor);
             else
-                interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'execution_environment_list'));
+                c.app.automaticApprovals.coordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'execution_environment_list'));
         }
         else
             userOnly(c.actor); }, preconditions: noPrecondition, execute: c => { const runtimes = c.app.localRuntimes.list(), currentDockerContext = c.app.computeMonitor.currentDockerContext; return { local: { platform: process.platform, hostId: runtimes[0]?.hostId ?? 'unconfigured', runtimes, runTargets: runtimes.map(r => ({ runner: 'local', localRuntimeId: r.id })), status: runtimes.length ? 'configured' : 'unconfigured', hardware: localHardware(), isolation: 'none', resourceEnforcement: 'advisory', networkIsolation: false }, connections: { ...new ComputeConnectionService(c.app.context).list(c.actor, c.app.sshTargets), ...(currentDockerContext ? { currentDockerContext } : {}) }, gpuTargets: c.app.gpus.list(), sshTargets: c.app.sshTargets.list({ type: 'user' }) }; } }),
@@ -348,7 +348,7 @@ const SPECS = [
     make('report_reference_read', { idempotencyPolicy: 'read-only', authorize: (c, x) => { userOnly(c.actor); recordScope('report', 'reportId')(c, x); }, preconditions: noPrecondition, execute: (c, x) => c.app.reports.readReference(c.actor, c.projectId, x.reportId, x.referenceId, x.cursor, x.limit) }),
     make('report_export', { idempotencyPolicy: 'key-required', asynchronous: true, authorize: (c, x) => { userOnly(c.actor); recordScope('report', 'reportId')(c, x); }, preconditions: noPrecondition, execute: (c, x) => c.app.exports.create(c.actor, c.projectId, { reportId: x.reportId }, c.idempotencyKey, c.validate) }),
     make('formal_report_review_prepare', { idempotencyPolicy: 'key-required', authorize: c => { if (c.actor.type === 'agent')
-            interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'formal_report_review_prepare'));
+            c.app.automaticApprovals.coordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'formal_report_review_prepare'));
         else
             userOnly(c.actor); }, preconditions: noPrecondition, execute: (c, x) => c.app.formalReportReviews.prepare(c.actor, c.projectId, x) }),
     make('formal_report_review_inspect', { idempotencyPolicy: 'read-only', authorize: (c, x) => { c.app.formalReportReviews.authorize(c.actor, c.projectId, x.reviewId); }, preconditions: noPrecondition, execute: (c, x) => c.app.formalReportReviews.inspect(c.actor, c.projectId, x.reviewId) }),
@@ -389,12 +389,12 @@ const SPECS = [
     make('research_skill_list', { idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'research_skill_list', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'research_skill_list', x) }),
     make('research_skill_read', { idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'research_skill_read', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'research_skill_read', x) }),
     make('connector_status', { idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'connector_status', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'connector_status', x) }),
-    make('session_action_inspect', { idempotencyPolicy: 'read-only', requiresSession: true, authorize: (c) => { interactiveCoordinator(c.actor, c.projectId, c.session); }, preconditions: noPrecondition, execute: (c, x) => c.app.sessionPermissions.inspectAction(c.actor, c.session.id, x.actionId) }),
-    make('session_action_execute', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: (c) => { interactiveCoordinator(c.actor, c.projectId, c.session); }, preconditions: noPrecondition, execute: (c, x) => c.app.sessionPermissions.executeAction(c.actor, c.session.id, x.actionId, c.signal) }),
+    make('session_action_inspect', { idempotencyPolicy: 'read-only', requiresSession: true, authorize: (c) => { c.app.automaticApprovals.coordinator(c.actor, c.projectId, c.session); }, preconditions: noPrecondition, execute: (c, x) => c.app.sessionPermissions.inspectAction(c.actor, c.session.id, x.actionId) }),
+    make('session_action_execute', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: (c) => { c.app.automaticApprovals.coordinator(c.actor, c.projectId, c.session); }, preconditions: noPrecondition, execute: (c, x) => c.app.sessionPermissions.executeAction(c.actor, c.session.id, x.actionId, c.signal) }),
     make('session_action_resume', { idempotencyPolicy: 'key-required', asynchronous: true, requiresSession: true, authorize: (c) => { c.app.sessionPermissions.boundNoticeAction(c.actor, c.session.id); }, preconditions: noPrecondition, execute: (c) => c.app.sessionPermissions.resumeAction(c.actor, c.session.id, c.signal) }),
     make('session_notice_read', { idempotencyPolicy: 'read-only', requiresSession: true, authorize: (c, x) => authorizeRegistered(c, 'session_notice_read', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'session_notice_read', x) }),
     make('project_inspect', { idempotencyPolicy: 'read-only', authorize: (c, x) => { if (x.githubCommit !== undefined && c.actor.type === 'agent')
-            interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'project_inspect'));
+            c.app.automaticApprovals.coordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'project_inspect'));
         else
             authorizeRegistered(c, 'project_inspect', x); }, preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'project_inspect', x) }),
     make('workspace_list', { idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'workspace_list', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'workspace_list', x) }),
@@ -405,7 +405,7 @@ const SPECS = [
     make('experiment_plan_submit', { idempotencyPolicy: 'key-required', authorize: (c, x) => authorizeRegistered(c, 'experiment_plan_submit', x), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => executeRegistered(c, 'experiment_plan_submit', x) }),
     make('run_list', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.runs.list(c.actor, c.projectId, x.cursor, x.limit) }),
     make('run_inspect', { idempotencyPolicy: 'read-only', authorize: (c, x) => { if (x.includeScheduling === true && c.actor.type === 'agent')
-            interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'run_inspect'));
+            c.app.automaticApprovals.coordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'run_inspect'));
         else
             authorizeRegistered(c, 'run_inspect', x); }, preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'run_inspect', x) }),
     make('run_logs', { idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'run_logs', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'run_logs', x) }),
@@ -491,7 +491,7 @@ export class OperationRegistry {
         ensure(s.role === actor.role && s.projectId === actor.projectId && s.taskId === actor.taskId, 'SCOPE_DENIED', '角色或任务与会话归属不一致', 403);
         toolAllowed(actor, name);
         if (actor.wakeupId) {
-            ensure((actor.continuationId ? CONTINUATION_TOOLS : actor.approvalResumeId ? APPROVAL_RESUME_TOOLS : AUTOMATION_TOOLS).includes(name), 'AUTOMATION_TOOL_DENIED', '自动分析不能执行计算、修改工作区、批准或继续委派', 403);
+            ensure((actor.continuationId ? this.app.automaticApprovals.continuationTools(s.id) : actor.approvalResumeId ? APPROVAL_RESUME_TOOLS : AUTOMATION_TOOLS).includes(name), 'AUTOMATION_TOOL_DENIED', '自动分析不能执行计算、修改工作区、批准或继续委派', 403);
             const w = this.app.wakeups.get(actor, actor.wakeupId);
             ensure(w.rootSessionId === s.id && w.generation === actor.generation, 'SCOPE_DENIED', '通知与会话执行不匹配', 403);
         }
@@ -668,8 +668,9 @@ export class OperationRegistry {
             ensure(new Set(found.map(entry => digest(entry.value))).size <= 1, 'LEGACY_OPERATION_AMBIGUOUS', '旧版本存在不同幂等结果，禁止重复执行');
             return found[0];
         };
+        const preparedAfter = Number(this.app.store.db.prepare('SELECT COALESCE(MAX(rowid),0) n FROM records').get().n);
         const save = (value, fresh = true) => {
-            let result = output(value);
+            let result = output(fresh ? this.app.automaticApprovals.postPrepare(actor, id, input, value, preparedAfter) : value);
             if (fresh && id === 'research_skill_read' && actor.type === 'agent') {
                 context.validate();
                 this.app.methodContracts.recordSkillRead(actor, session, result);

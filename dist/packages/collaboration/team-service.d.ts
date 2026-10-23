@@ -32,9 +32,11 @@ export declare class TeamService {
         };
     };
     create(actor: Actor, rootSessionId: string, value: unknown, inheritSource?: boolean, developmentReviewInputs?: DevelopmentReviewInputBinding, formalReportReviewInputs?: ReturnType<typeof formalReviewInputs>): Row<Team>;
+    activateAutomatic(actor: Actor, ref: import('../policy/automatic-approvals.js').AutomaticApprovalReference, id: string): Row<Team>;
     activate(actor: Actor, id: string): Row<Team>;
     private assertInputsCurrent;
     private requireFormalReportRoute;
+    private assertAutomaticPermission;
     assertPermission(t: Row<Team>): void;
     private assertDispatchPlan;
     /** Claim and reserve atomically. No network, model or process launch in this transaction. */

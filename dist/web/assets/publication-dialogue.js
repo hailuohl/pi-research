@@ -3,7 +3,7 @@ import * as React from "react";
 import { api, downloadArtifact } from "./api.js";
 import { PublicationPreview } from "./publication-view.js";
 import { Badge } from "./ui.js";
-import { short } from "./models.js";
+import { automaticApprovalLabel, short } from "./models.js";
 class PublicationDialogue extends React.Component {
   constructor() {
     super(...arguments);
@@ -146,7 +146,7 @@ class PublicationDialogue extends React.Component {
         ] }) : null,
         !jobs.length ? /* @__PURE__ */ jsx("p", { children: "\u7A3F\u4EF6\u5DF2\u4FDD\u5B58\u3002\u5728\u5BF9\u8BDD\u4E2D\u8981\u6C42\u667A\u80FD\u4F53\u51C6\u5907\u7F16\u8BD1\u6216\u4FEE\u6539\u5185\u5BB9\u3002" }) : null,
         jobs.map((job) => {
-          const result = this.state.results[job.id], reviews = (data.publicationReviews ?? []).filter((r) => r.publicationResultId === job.resultId && r.rootSessionId === session.id), reportIds = new Set(data.reports.filter((r) => r.publicationResultIds?.includes(job.resultId ?? "")).map((r) => r.id));
+          const approval = data.approvals.find((a) => a.id === job.approvalId), result = this.state.results[job.id], reviews = (data.publicationReviews ?? []).filter((r) => r.publicationResultId === job.resultId && r.rootSessionId === session.id), reportIds = new Set(data.reports.filter((r) => r.publicationResultIds?.includes(job.resultId ?? "")).map((r) => r.id));
           return /* @__PURE__ */ jsxs("div", { children: [
             /* @__PURE__ */ jsxs("p", { children: [
               "\u7F16\u8BD1 ",
@@ -155,6 +155,7 @@ class PublicationDialogue extends React.Component {
               /* @__PURE__ */ jsx(Badge, { value: job.state }),
               /* @__PURE__ */ jsx(Badge, { value: job.integrity })
             ] }),
+            approval?.automaticApproval ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: automaticApprovalLabel(approval) }) : null,
             /* @__PURE__ */ jsxs("details", { children: [
               /* @__PURE__ */ jsx("summary", { children: "\u56FA\u5B9A\u7F16\u8BD1\u8303\u56F4" }),
               /* @__PURE__ */ jsxs("p", { children: [
@@ -176,7 +177,7 @@ class PublicationDialogue extends React.Component {
                 short(job.sourceDigest)
               ] })
             ] }),
-            job.state === "prepared" ? /* @__PURE__ */ jsx("div", { className: "actions wrap", children: /* @__PURE__ */ jsx("button", { className: "primary compact", disabled, onClick: () => perform(() => this.submit(job), "\u56FA\u5B9A\u6587\u7A3F\u7F16\u8BD1\u5DF2\u63D0\u4EA4"), children: "\u6279\u51C6\u5E76\u7F16\u8BD1" }) }) : null,
+            job.state === "prepared" && !approval?.automaticApproval ? /* @__PURE__ */ jsx("div", { className: "actions wrap", children: /* @__PURE__ */ jsx("button", { className: "primary compact", disabled, onClick: () => perform(() => this.submit(job), "\u56FA\u5B9A\u6587\u7A3F\u7F16\u8BD1\u5DF2\u63D0\u4EA4"), children: "\u6279\u51C6\u5E76\u7F16\u8BD1" }) }) : null,
             ["queued", "starting", "running", "unknown"].includes(job.state) ? /* @__PURE__ */ jsx("div", { className: "actions wrap", children: /* @__PURE__ */ jsx("button", { className: "text-button danger", disabled: disabled || busy || data.project.archived || session.state === "archived" || job.cancelRequested || this.state.cancellingJobIds.includes(job.id), onClick: () => perform(() => this.cancel(job)), children: this.state.cancellingJobIds.includes(job.id) ? "\u6B63\u5728\u8BF7\u6C42\u53D6\u6D88\u2026" : "\u8BF7\u6C42\u53D6\u6D88\u6587\u7A3F\u7F16\u8BD1" }) }) : null,
             job.cancelRequested && ["queued", "starting", "running", "unknown"].includes(job.state) ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u5DF2\u8BF7\u6C42\u53D6\u6D88\uFF0C\u7B49\u5F85\u6267\u884C\u5668\u786E\u8BA4\uFF1B\u7F16\u8BD1\u5C1A\u672A\u786E\u8BA4\u505C\u6B62\u3002" }) : null,
             /* @__PURE__ */ jsx("button", { className: "text-button", disabled: busy, onClick: () => perform(() => this.refreshJob(job)), children: "\u5237\u65B0\u6B64\u7F16\u8BD1\u72B6\u6001" }),
@@ -205,11 +206,12 @@ class PublicationDialogue extends React.Component {
             reviews.map((review) => /* @__PURE__ */ jsxs("details", { open: review.status === "awaiting_approval", children: [
               /* @__PURE__ */ jsxs("summary", { children: [
                 "\u8BBA\u6587\u72EC\u7ACB\u5BA1\u67E5 ",
-                /* @__PURE__ */ jsx(Badge, { value: review.status })
+                /* @__PURE__ */ jsx(Badge, { value: review.status, caption: review.status === "awaiting_approval" && data.approvals.find((a) => a.id === review.approvalId)?.automaticApproval ? "\u81EA\u52A8\u5BA1\u6279" : void 0 })
               ] }),
+              data.approvals.find((a) => a.id === review.approvalId)?.automaticApproval ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: automaticApprovalLabel(data.approvals.find((a) => a.id === review.approvalId)) }) : null,
               /* @__PURE__ */ jsx("p", { children: review.summary ?? "\u4EC5\u5BA1\u67E5\u8FD9\u4E00\u56FA\u5B9A\u6587\u7A3F\u53CA\u83B7\u51C6\u8BC1\u636E\u3002" }),
               review.reason ? /* @__PURE__ */ jsx("p", { children: review.reason }) : null,
-              review.status === "awaiting_approval" && review.validity === "current" ? /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: disabled || !data.project.settings.enabled || !data.teams.find((t) => t.id === review.teamId)?.delegationEnabled, onClick: () => perform(() => this.startReview(review.id), "\u8BBA\u6587\u72EC\u7ACB\u5BA1\u67E5\u5DF2\u542F\u52A8"), children: "\u6279\u51C6\u5E76\u542F\u52A8\u5BA1\u67E5" }) : null,
+              review.status === "awaiting_approval" && review.validity === "current" && !data.approvals.find((a) => a.id === review.approvalId)?.automaticApproval ? /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: disabled || !data.project.settings.enabled || !data.teams.find((t) => t.id === review.teamId)?.delegationEnabled, onClick: () => perform(() => this.startReview(review.id), "\u8BBA\u6587\u72EC\u7ACB\u5BA1\u67E5\u5DF2\u542F\u52A8"), children: "\u6279\u51C6\u5E76\u542F\u52A8\u5BA1\u67E5" }) : null,
               !data.project.settings.enabled && review.status === "awaiting_approval" ? /* @__PURE__ */ jsx("p", { children: "\u542F\u7528\u591A\u667A\u80FD\u4F53\u5F00\u5173\u540E\u53EF\u6267\u884C\u72EC\u7ACB\u5BA1\u67E5\u3002" }) : null
             ] }, review.id)),
             (data.publicationExports ?? []).filter((e) => reportIds.has(e.reportId)).map((e) => /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => perform(() => downloadArtifact(e.artifactId, `report-${e.reportId}.tar.gz`)), children: "\u4E0B\u8F7D\u5DF2\u5F52\u6863\u6210\u679C\u5305" }, e.artifactId))

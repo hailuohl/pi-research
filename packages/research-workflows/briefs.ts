@@ -13,6 +13,8 @@ import {verifyEvidence} from '../evidence/service.js';
 import {assertFrozenMethod,validateProtocolRoles,type FrozenMethodContract,type MethodRequirement,type DraftRole,type ProtocolDocument} from './method-contracts.js';
 
 export interface ResearchBrief {
+    automaticApproval?:import('../policy/automatic-approvals.js').AutomaticApprovalReference;
+    automaticExecution?:import('../policy/automatic-approvals.js').AutomaticExecution;
     rootSessionId: string;
     revision: number;
     previousRevisionId?: string;
@@ -118,7 +120,7 @@ export function fixedResearchBrief(store:Store,projectId:string,ref:ResearchBrie
 
 function briefRow(row: Row<ResearchBrief>): Row<ResearchBrief> {
     return { id: row.id, kind: row.kind, projectId: row.projectId, version: row.version, createdAt: row.createdAt, updatedAt: row.updatedAt,
-        ...payload(row), status: row.status, digest: row.digest };
+        ...payload(row), status: row.status, digest: row.digest,...(row.automaticApproval?{automaticApproval:row.automaticApproval}:{}),...(row.automaticExecution?{automaticExecution:row.automaticExecution}:{}) };
 }
 
 export class ResearchBriefService {
@@ -258,6 +260,7 @@ export class ResearchBriefService {
         });
     }
 
+    confirmAutomatic(actor:Actor,ref:import('../policy/automatic-approvals.js').AutomaticApprovalReference,pid:string,sessionId:string,input:{briefId:string;expectedVersion:number}){return this.confirm(this.app.automaticApprovals.delegate(actor,ref,'research-brief',input.briefId),pid,sessionId,input);}
     confirm(actor: Actor, projectId: string, sessionId: string, input: unknown): Row<ResearchBrief> {
         userOnly(actor);
         const x = exactObject(input, ['briefId','expectedVersion'], '研究简报确认');

@@ -15,6 +15,8 @@ import {digest} from '../storage/store.js';
 
 export type {ResearchActionInput,ResearchActionDecision} from '../contracts/operations/research-action-schemas.js';
 export interface ResearchAction {
+    automaticApproval?:import('../policy/automatic-approvals.js').AutomaticApprovalReference;
+    automaticExecution?:import('../policy/automatic-approvals.js').AutomaticExecution;
     sessionId:string;originMessageId:string;originDigest:string;generation:number;modelDigest:string;
     permissionReference:PermissionReference;lifecycleEpoch:number;actionKind:ResearchActionInput['kind'];input:ResearchActionInput;
     textCorpus?:{corpusId:string;configurationVersion:number};sourceDigest:string;requestDigest:string;expiresAt:string;
@@ -22,10 +24,10 @@ export interface ResearchAction {
     decision?:ResearchActionDecision;decisionVersion?:number;completionSourceDigest?:string;completionPermissionReference?:PermissionReference;
 }
 export type ResearchActionDTO=Row<ResearchAction>&{effectiveState:ResearchAction['state']|'stale'|'expired';reasons:string[]};
-export type ResearchActionSummary=Pick<ResearchActionDTO,'id'|'sessionId'|'state'|'effectiveState'|'expiresAt'|'resultRef'>&{kind:ResearchActionInput['kind']};
+export type ResearchActionSummary=Pick<ResearchActionDTO,'id'|'sessionId'|'state'|'effectiveState'|'expiresAt'|'resultRef'>&{kind:ResearchActionInput['kind'];automaticApproval?:ResearchAction['automaticApproval'];automaticExecution?:ResearchAction['automaticExecution']};
 const TWO_HOURS=2*60*60*1000;
 const SOURCE_KINDS=new Set(['text-evidence-settings','text-corpus','document-version','document-parse-result','document-parse-job','artifact','evidence','claim','approval','discovery-grant','connector-call','paper-read','run','run-intent','experiment','source-revision','acceptance-record','change-proposal','development-task','development-review','sandbox-job','working-grant','run-grant','task','task-attempt','task-result','team','team-plan','manuscript-revision','publication-build-result','publication-build-job','publication-review','campaign','research-round','campaign-member','run-observation','campaign-decision','experiment-plan-revision','research-candidate']);
-const summary=(r:ResearchActionDTO):ResearchActionSummary=>({id:r.id,sessionId:r.sessionId,kind:r.actionKind,state:r.state,effectiveState:r.effectiveState,expiresAt:r.expiresAt,...(r.resultRef?{resultRef:r.resultRef}:{})});
+const summary=(r:ResearchActionDTO):ResearchActionSummary=>({id:r.id,sessionId:r.sessionId,kind:r.actionKind,state:r.state,effectiveState:r.effectiveState,expiresAt:r.expiresAt,...(r.automaticApproval?{automaticApproval:r.automaticApproval}:{}),...(r.automaticExecution?{automaticExecution:r.automaticExecution}:{}),...(r.resultRef?{resultRef:r.resultRef}:{})});
 
 export class ResearchActionService {
     constructor(private app:ResearchApp){}
@@ -34,15 +36,15 @@ export class ResearchActionService {
         const s=this.app.store.get<Session>('session',text(sessionId,'sessionId',100),pid);
         ensure(s.role==='coordinator'&&!s.taskId&&!s.teamId,'INVALID_ROOT_SESSION','人工请求只属于项目主协调会话',403);
         if(actor.type==='agent'){
-            interactiveCoordinator(actor,pid,s);
-            ensure(!actor.continuationId&&!actor.approvalResumeId,'TASK_SCOPE_DENIED','自动续接不能准备或回查人工请求',403);
+            this.app.automaticApprovals.coordinator(actor,pid,s);
+            ensure((!actor.continuationId||this.app.automaticApprovals.isContinuation(actor))&&!actor.approvalResumeId,'TASK_SCOPE_DENIED','自动续接不能准备或回查人工请求',403);
         }else userOnly(actor);
         return s;
     }
     private origin(actor:Actor,pid:string,s:Row<Session>,initial=true){
         ensure(actor.messageId,'RESEARCH_ACTION_ORIGIN_REQUIRED','人工请求必须绑定当前人工用户消息',403);
-        const m=this.app.store.get<Message>('message',actor.messageId,pid);
-        ensure(m.sessionId===s.id&&m.role==='user'&&m.origin!=='automation'&&!m.wakeupId&&!m.approvalNoticeId&&!m.queueRemoved&&(!initial||m.status==='running'&&m.generation===actor.generation),'RESEARCH_ACTION_ORIGIN_REQUIRED','通知、已移除消息或其他会话消息不能创建人工请求',403);
+        const m=this.app.store.get<Message>('message',actor.continuationId?this.app.researchAutomation.assertActor(actor).originMessageId:actor.messageId,pid);
+        ensure(m.sessionId===s.id&&m.role==='user'&&m.origin!=='automation'&&!m.wakeupId&&!m.approvalNoticeId&&!m.queueRemoved&&(!initial||this.app.automaticApprovals.isContinuation(actor)||m.status==='running'&&m.generation===actor.generation),'RESEARCH_ACTION_ORIGIN_REQUIRED','通知、已移除消息或其他会话消息不能创建人工请求',403);
         ensure(actor.researchModelDigest===this.app.researchAutomation.modelIdentity(s),'RESEARCH_ACTION_MODEL_CHANGED','主会话执行模型连接已改变',403);
         return m;
     }
@@ -65,7 +67,7 @@ export class ResearchActionService {
         const rows=new Map<string,Row>(),add=(kind:string,id:string)=>{const r=this.app.store.get(kind,id,pid);rows.set(`${kind}:${id}`,r);};
         if(input.kind==='text_grant'){
             const fixed=this.corpus(pid,input,textCorpus);add('text-evidence-settings',pid);add('text-corpus',fixed.corpusId);
-        }else if(input.kind==='claim_decision')add('claim',input.claim.claimId);
+        }else if(input.kind==='claim_decision'){add('claim',input.claim.claimId);for(const id of input.claim.evidenceIds??[])add('evidence',id);}
         else{
             const x=input.report;
             ensure(x.runIds.length+x.claimIds.length+x.publicationResultIds.length+(x.campaignIds?.length??0)>0,'REPORT_EMPTY','请选择已有运行、已采纳结论或固定文稿结果',400);
@@ -112,7 +114,7 @@ export class ResearchActionService {
         validateSchema(RESEARCH_ACTION_INPUT_SCHEMA,value);const input=value as ResearchActionInput;
         return this.app.store.transaction(()=>{
             const s=this.root(actor,pid,sessionId);ensure(actor.type==='agent','PERMISSION_DENIED','只有交互主 Agent 可准备人工请求',403);
-            const requestDigest=digest(input),existing=this.app.store.list<ResearchAction>('research-action',pid).find(r=>r.sessionId===s.id&&r.originMessageId===actor.messageId&&r.requestDigest===requestDigest);
+            const requestDigest=digest(input),existing=this.app.store.list<ResearchAction>('research-action',pid).find(r=>r.sessionId===s.id&&r.originMessageId===(actor.continuationId?this.app.researchAutomation.assertActor(actor).originMessageId:actor.messageId)&&r.requestDigest===requestDigest);
             const m=this.origin(actor,pid,s,!receiptId&&!existing),permissionReference=actor.permission??this.app.sessionPermissions.capture(s.id);
             this.app.sessionPermissions.assert(permissionReference);const p=assertProjectWritable(this.app.store,pid);
             if(receiptId){const prior=this.app.store.get<ResearchAction>('research-action',receiptId,pid);ensure(prior.sessionId===s.id&&prior.originMessageId===m.id&&prior.requestDigest===requestDigest,'IDEMPOTENCY_CONFLICT','同一调用标识不能用于其他人工消息或请求');return summary(this.view(prior));}
@@ -120,13 +122,18 @@ export class ResearchActionService {
             const textCorpus=input.kind==='text_grant'?this.corpus(pid,input):undefined;
             if(input.kind==='text_grant'){ensure(!s.textCorpusGrantId,'TEXT_GRANT_SESSION_REQUIRED','此主会话已有固定原文授权，不能替换');const at=Date.parse(input.textGrant.expiresAt);ensure(Number.isFinite(at)&&at>Date.now()&&at<=Date.now()+86400000,'INVALID_INPUT','原文授权期限必须在未来24小时内',400);}
             if(input.kind==='claim_decision')ensure(this.app.store.get<Claim>('claim',input.claim.claimId,pid).version===input.claim.expectedVersion,'VERSION_CONFLICT','结论版本已改变');
+            if(input.kind==='claim_decision'&&input.claim.proposedDecision){ensure(!!input.claim.reason?.trim()&&!!input.claim.evidenceIds?.length,'CLAIM_PROPOSAL_REQUIRED','自动结论提案必须固定理由与证据');for(const id of input.claim.evidenceIds)this.app.evidence.verify(pid,id,input.claim.proposedDecision==='accepted');}
             const sourceDigest=this.source(pid,input,textCorpus),expiresAt=new Date(Math.min(Date.now()+TWO_HOURS,input.kind==='text_grant'?Date.parse(input.textGrant.expiresAt):Infinity)).toISOString();
             const r=this.app.store.create<ResearchAction>('research-action',pid,{sessionId:s.id,originMessageId:m.id,originDigest:digest(m.content),generation:actor.generation!,modelDigest:this.app.researchAutomation.modelIdentity(s),permissionReference,lifecycleEpoch:p.lifecycleEpoch,actionKind:input.kind,input:JSON.parse(JSON.stringify(input)),...(textCorpus?{textCorpus}:{}),sourceDigest,requestDigest,expiresAt,state:'pending'});
             this.app.store.event(pid,'research-action.prepared',{sessionId:s.id,requestId:r.id,kind:input.kind,originMessageId:m.id});return summary(this.view(r));
         });
     }
+    decideAutomatic(actor:Actor,ref:import('../policy/automatic-approvals.js').AutomaticApprovalReference,pid:string,sessionId:string,input:{requestId:string;expectedVersion:number;decision:ResearchActionDecision}){const delegated=this.app.automaticApprovals.delegate(actor,ref,'research-action',input.requestId),r=this.app.store.get<ResearchAction>('research-action',input.requestId,pid);ensure(ref.subjectDigest===r.requestDigest&&input.decision===(r.input.kind==='claim_decision'?r.input.claim.proposedDecision:'confirm'),'AUTOMATIC_APPROVAL_DENIED','自动决定必须与冻结提案完全一致');return this.decideCore(delegated,pid,sessionId,input,{actor,ref});}
     decide(actor:Actor,pid:string,sessionId:string,value:unknown):ResearchActionSummary{
-        userOnly(actor);validateSchema(RESEARCH_ACTION_INPUT_SCHEMAS.research_action_decide,value);
+        userOnly(actor);return this.decideCore(actor,pid,sessionId,value);
+    }
+    private decideCore(actor:Actor,pid:string,sessionId:string,value:unknown,automatic?:{actor:Actor;ref:import('../policy/automatic-approvals.js').AutomaticApprovalReference}):ResearchActionSummary {
+        validateSchema(RESEARCH_ACTION_INPUT_SCHEMAS.research_action_decide,value);
         const x=value as {requestId:string;expectedVersion:number;decision:ResearchActionDecision};
         return this.app.store.transaction(()=>{
             this.root(actor,pid,sessionId);const r=this.app.store.get<ResearchAction>('research-action',x.requestId,pid);ensure(r.sessionId===sessionId,'SCOPE_DENIED','人工请求属于其他主会话',403);
@@ -149,7 +156,7 @@ export class ResearchActionService {
             let resultRef:ResearchAction['resultRef'];
             if(r.input.kind==='text_grant'&&x.decision==='confirm'){
                 const g=this.app.textCorpusGrants.prepare(actor,pid,{sessionId,...r.input.textGrant,...r.textCorpus}),a=this.app.store.get('approval',g.approvalId,pid);
-                this.app.approvals.decide(actor,a.id,a.version,true);const active=this.app.textCorpusGrants.activate(actor,pid,{grantId:g.id,expectedVersion:g.version});resultRef={grantId:active.id};
+                if(automatic){const grant=this.app.store.get('text-corpus-grant',g.id,pid);this.app.store.update('text-corpus-grant',g.id,grant.version,{automaticApproval:automatic.ref});this.app.automaticApprovals.approve(automatic.actor,this.app.store.get('approval',a.id,pid),r.input);}else this.app.approvals.decide(actor,a.id,a.version,true);const active=this.app.textCorpusGrants.activate(actor,pid,{grantId:g.id,expectedVersion:this.app.store.get('text-corpus-grant',g.id,pid).version});resultRef={grantId:active.id};
             }else if(r.input.kind==='claim_decision'&&x.decision!=='dismiss')this.app.evidence.decideClaim(actor,r.input.claim.claimId,r.input.claim.expectedVersion,x.decision as Claim['status']);
             else if(r.input.kind==='report_compose'&&x.decision==='confirm'){
                 const a=this.app.reports.create(actor,pid,r.input.report),reports=this.app.store.list<{artifactId:string}>('report',pid).filter(row=>row.artifactId===a.id);ensure(reports.length===1,'RESEARCH_ACTION_RESULT_INVALID','组合报告缺少唯一固定记录');resultRef={reportId:reports[0]!.id};

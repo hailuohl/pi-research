@@ -1,3 +1,4 @@
+import {automaticTextGrantCompatible} from './automatic-text-grant.js';
 import {join} from 'node:path';
 import {readStableFile} from '../workspace/stable-file.js';
 import {verifySnapshot} from '../workspace/files.js';
@@ -29,7 +30,7 @@ export interface ResearchContinuation {
 }
 export interface Authorization {continuationId:string;subjectKind:'development-task'|'run-intent';subjectId:string;manifestDigest:string;approvalId:string;dockerTarget?:{context:string;targetId:string;engineId:string;endpoint:string};jobId?:string;}
 
-function modelDigest(store:Store,s:Session){const snapshot=modelConnectionSnapshot(store.paths.dataDir,s.model.provider);return digest({model:s.model,connectionVersion:snapshot.version,connectionDigest:digest(snapshot.connection??null),catalogDigest:publicationImageCatalog(join(store.paths.dataDir,'models.json'),snapshot.catalog)});}
+export function modelDigest(store:Store,s:Session){const snapshot=modelConnectionSnapshot(store.paths.dataDir,s.model.provider);return digest({model:s.model,connectionVersion:snapshot.version,connectionDigest:digest(snapshot.connection??null),catalogDigest:publicationImageCatalog(join(store.paths.dataDir,'models.json'),snapshot.catalog)});}
 
 /** Frozen proof remains readable; only admission and live execution require the owner lease. */
 export function assertResearchReference(store:Store,pid:string,ref:FullAccessReference,current=false,execution=false) {
@@ -43,7 +44,7 @@ export function assertResearchReference(store:Store,pid:string,ref:FullAccessRef
     ensure(!store.get('project',pid).archived&&s.state!=='archived'&&!s.parentSessionId&&!s.taskId&&!s.teamId&&s.role==='coordinator','AUTOMATION_STALE','持续任务的项目或根会话已失效',403);
     if(c.policy)ensure(c.lifecycleEpoch===store.get('project',pid).lifecycleEpoch,'AUTOMATION_STALE','项目已归档或重开，原任务授权不能复活',403);
     const repairSource=c.policy?store.maybe<{sourceRevisionId:string}>('research-repair-source',c.id):undefined;
-    ensure(!s.workingGrantId&&!s.runGrantId&&!s.discoveryGrantId&&!s.textCorpusGrantId&&modelDigest(store,s)===c.modelDigest&&s.sourceRevisionId===(c.sourceRevisionId??repairSource?.sourceRevisionId),'AUTOMATION_STALE','持续任务的模型、来源或授权绑定已变化',403);
+    ensure(!s.workingGrantId&&!s.runGrantId&&!s.discoveryGrantId&&automaticTextGrantCompatible(store,s,grant)&&modelDigest(store,s)===c.modelDigest&&s.sourceRevisionId===(c.sourceRevisionId??repairSource?.sourceRevisionId),'AUTOMATION_STALE','持续任务的模型、来源或授权绑定已变化',403);
     ensure((permission?.epoch??0)===c.permission.epoch&&grant.epoch===c.permission.hostEpoch&&grant.runtimeId===c.runtimeId&&grant.state==='enabled'&&(c.policy?grant.researchAutomationScope===2&&digest(grant.researchAutomationPolicy)===digest(c.policy):grant.researchAutomationScope===1),'AUTOMATION_REVOKED','当前自主计算授权已撤销或替换',403);
     if(!execution||!c.policy)ensure((c.policy||runtime?.runtimeId===c.runtimeId)&&runtime?.state==='active'&&runtime.leaseUntil>Date.now(),'AUTOMATION_RUNTIME_EXPIRED','授权执行端已停止或租约失效',403);
     const origin=store.get<Message>('message',c.originMessageId,pid);
@@ -127,7 +128,7 @@ export class ResearchAutomationService {
         ensure(actor.researchModelDigest===this.modelIdentity(s),'AUTOMATION_MODEL_CHANGED','模型连接已变化或执行身份未固定模型来源',403);
         ensure(m.sessionId===s.id&&m.role==='user'&&!m.origin&&!m.wakeupId&&!m.approvalNoticeId&&m.status==='running'&&m.generation===actor.generation&&digest(m.permission)===digest(policy)&&Date.parse(m.createdAt)>=Date.parse(grant.researchAutomationAcknowledgedAt!),'AUTOMATION_ORIGIN_REQUIRED','只允许本次新授权之后的当前用户任务',403);
         const active=this.app.store.list<ResearchContinuation>('research-continuation',s.projectId!).find(c=>c.rootSessionId===s.id&&c.state==='active');
-        if(active)return assertResearchReference(this.app.store,s.projectId!,{continuationId:active.id,digest:active.digest},true);
+        if(active&&(grant.automaticApprovalScope!==1||active.originMessageId===m.id))return assertResearchReference(this.app.store,s.projectId!,{continuationId:active.id,digest:active.digest},true);
         const id=digest({rootSessionId:s.id,messageId:m.id}),old=this.app.store.maybe<ResearchContinuation>('research-continuation',id);
         if(old)return assertResearchReference(this.app.store,s.projectId!,{continuationId:id,digest:old.digest},true);
         const limits=grant.researchAutomationPolicy?.limits??AUTOMATION_LIMITS;
@@ -147,14 +148,20 @@ export class ResearchAutomationService {
         this.app.store.create<Authorization>('research-authorization',approval.projectId,{continuationId:c.id,subjectKind:approval.subjectKind,subjectId:approval.subjectId,manifestDigest:approval.digest,approvalId:approval.id,...(dockerTarget?{dockerTarget}:{})},approval.subjectId);
         this.app.store.update<Approval>('approval',approval.id,approval.version,{status:'approved',fullAccess:ref,decidedAt:now(),reason:'当前用户明确授权的有界自主计算；仅批准此准确冻结清单，不是人工逐项批准'});return ref;
     }
-    assertApproval(a:Row<Approval>,current=false,execution=false){if(!a.fullAccess)return;const c=assertResearchReference(this.app.store,a.projectId!,a.fullAccess,current,execution),auth=this.app.store.get<Authorization>('research-authorization',a.subjectId,a.projectId!);ensure(!a.workingGrant&&!a.runGrant&&auth.continuationId===c.id&&auth.subjectId===a.subjectId&&auth.approvalId===a.id&&auth.manifestDigest===a.digest&&auth.subjectKind===a.subjectKind&&(a.subjectKind==='development-task'&&a.scope==='development.test'||a.subjectKind==='run-intent'&&a.scope==='run.submit'),'APPROVAL_STALE','自主计算的准确派生依据不符',403);if(current&&auth.dockerTarget)ensure(digest(this.target(auth.dockerTarget.context,false))===digest(auth.dockerTarget),'AUTOMATION_TARGET_CHANGED','本机 Docker 目标已变化',403);return c;}
+    authorizeDecisionRun(actor:Actor,ref:import('./automatic-approvals.js').AutomaticApprovalReference,d:Row<import('../research-workflows/types.js').CampaignDecision>,intent:Row<RunIntent>){
+        const c=this.chain(actor);ensure(c&&c.policy,'AUTOMATION_SCOPE_DENIED','决定候选需要原任务的持久计算授权',403);
+        const parent=this.app.store.get<{parentExperimentId:string}>('research-round',d.effects!.roundId,d.projectId!).parentExperimentId;ensure(this.experimentInScope(c,parent),'AUTOMATION_EXPERIMENT_UNBOUND','决定父实验不属于原任务',403);this.app.automaticApprovals.bindDecisionRun(c,ref,d,intent);
+        const approval=this.app.store.get<Approval>('approval',intent.approvalId,intent.projectId!);if(approval.fullAccess){ensure(approval.fullAccess.continuationId===c.id&&approval.fullAccess.digest===c.digest,'AUTOMATION_APPROVAL_REQUIRED','决定意向已有其他任务授权',403);this.assertApproval(approval,true);return approval.fullAccess;}
+        const derived=this.authorize(actor,approval,undefined,intent.manifest.contract.runner,intent.experimentId);ensure(derived,'AUTOMATION_TARGET_DENIED','决定候选超出原本机计算范围',403);return derived;
+    }
+    assertApproval(a:Row<Approval>,current=false,execution=false){if(!a.fullAccess)return;const c=assertResearchReference(this.app.store,a.projectId!,a.fullAccess,current,execution),auth=this.app.store.get<Authorization>('research-authorization',a.subjectId,a.projectId!);ensure(!a.workingGrant&&!a.runGrant&&auth.continuationId===c.id&&auth.subjectId===a.subjectId&&auth.approvalId===a.id&&auth.manifestDigest===a.digest&&auth.subjectKind===a.subjectKind&&(a.subjectKind==='development-task'&&a.scope==='development.test'||a.subjectKind==='run-intent'&&a.scope==='run.submit'),'APPROVAL_STALE','自主计算的准确派生依据不符',403);this.app.automaticApprovals.assertDecisionRun(c,a,current);if(current&&auth.dockerTarget)ensure(digest(this.target(auth.dockerTarget.context,false))===digest(auth.dockerTarget),'AUTOMATION_TARGET_CHANGED','本机 Docker 目标已变化',403);return c;}
     private submissionChain(actor:Actor):Row<ResearchContinuation>|undefined {
         if(actor.continuationId)return this.assertActor(actor);
         if(actor.type!=='agent'||actor.wakeupId||actor.taskId||!actor.sessionId)return;
         const grant=this.app.store.maybe<HostAccessGrant>('host-access',actor.sessionId);
         if(!grant?.researchAutomationScope||!this.app.hostAccess.status({type:'user'},actor.sessionId).enabled)return;
         const chains=this.app.store.list<ResearchContinuation>('research-continuation',actor.projectId!).filter(c=>c.rootSessionId===actor.sessionId&&c.runtimeId===grant.runtimeId&&c.permission.hostEpoch===grant.epoch);
-        const c=chains.find(c=>c.originMessageId===actor.messageId)??chains.find(c=>c.state==='active')??chains.at(-1);
+        const c=chains.find(c=>c.originMessageId===actor.messageId)??(grant.automaticApprovalScope===1?undefined:chains.find(c=>c.state==='active')??chains.at(-1));
         if(!c)return;
         this.app.hostAccess.assertAgent(actor);
         return assertResearchReference(this.app.store,actor.projectId!,{continuationId:c.id,digest:c.digest},true);
@@ -183,10 +190,10 @@ export class ResearchAutomationService {
         }
         return auth;
     }
-    consume(actor:Actor,a:Row<Approval>,jobId:string){const auth=this.assertSubmission(actor,a);if(auth)this.app.store.update<Authorization>('research-authorization',auth.id,auth.version,{jobId});}
+    consume(actor:Actor,a:Row<Approval>,jobId:string){const auth=this.assertSubmission(actor,a);if(auth){this.app.store.update<Authorization>('research-authorization',auth.id,auth.version,{jobId});this.app.automaticApprovals.decisionRunConsumed(a);}}
     resultReady(c:ResearchContinuation,j:Row<SandboxJob|Run>){if(j.integrity==='complete')return true;if(!c.policy||j.state!=='failed'||!('intentId'in j))return false;try{this.app.runs.assertDiagnostic({type:'user'},j.id);return true;}catch{return false;}}
     authorizeSource(actor:Actor,source:{id:string;experimentId:string;sourceDigest:string}){const c=this.assertActor(actor),bound=c.sourceRevisionId??this.app.store.maybe<{sourceRevisionId:string}>('research-repair-source',c.id)?.sourceRevisionId;if(bound){ensure(bound===source.id,'AUTOMATION_SOURCE_CHANGED','不能替换已冻结的私有源码来源');return;}ensure(c.policy,'AUTOMATION_SOURCE_CHANGED','旧续接不能替换冻结源码来源');const prior=this.app.store.list<Authorization>('research-authorization',c.projectId!).filter(a=>a.continuationId===c.id&&a.subjectKind==='run-intent'&&a.jobId).map(a=>this.app.store.get<Run>('run',a.jobId!,c.projectId!)).find(r=>r.experimentId===source.experimentId&&r.manifest.snapshotDigest===source.sourceDigest&&r.manifest.sourceRevisionId===source.id&&r.failureDiagnostic);ensure(prior,'AUTOMATION_SOURCE_CHANGED','私有修复只能从本任务准确失败Run初始化');this.app.runs.assertDiagnostic({type:'user'},prior.id);this.app.store.create('research-repair-source',c.projectId,{sourceRevisionId:source.id,sourceDigest:source.sourceDigest,runId:prior.id},c.id);}
-    private experimentInScope(c:Row<ResearchContinuation>,id:string){return !!this.app.store.db.prepare("SELECT 1 FROM records e JOIN records m ON m.id=? AND m.kind='message' AND m.project_id=e.project_id WHERE e.id=? AND e.kind='experiment' AND e.project_id=? AND e.rowid<m.rowid").get(c.originMessageId,id,c.projectId!)||this.app.store.maybe<{continuationId:string}>('research-variant',id)?.continuationId===c.id;}
+    private experimentInScope(c:Row<ResearchContinuation>,id:string){return !!this.app.store.db.prepare("SELECT 1 FROM records e JOIN records m ON m.id=? AND m.kind='message' AND m.project_id=e.project_id WHERE e.id=? AND e.kind='experiment' AND e.project_id=? AND e.rowid<m.rowid").get(c.originMessageId,id,c.projectId!)||this.app.store.maybe<{continuationId:string}>('research-variant',id)?.continuationId===c.id||this.app.automaticApprovals.integratedExperiment(c,id)||this.app.automaticApprovals.decisionExperiment(c,id);}
     variantSource(actor:Actor,pid:string,input:Record<string,unknown>){
         const c=this.assertActor(actor);ensure(c.projectId===pid&&typeof input.parentId==='string'&&Number.isSafeInteger(input.expectedParentRevision)&&(input.repair||input.config&&typeof input.config==='object'&&!Array.isArray(input.config))&&input.contract===undefined,'AUTOMATION_VARIANT_DENIED','续接只允许明确父修订的配置变体或已验证修复，不能创建新根或改变契约',403);
         const parent=this.app.store.get<Experiment>('experiment',input.parentId,pid);

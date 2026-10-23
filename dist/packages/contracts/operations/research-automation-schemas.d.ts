@@ -103,6 +103,8 @@ export declare const AUTOMATION_APPROVAL_SCHEMA: {
             readonly minLength: number;
             readonly maxLength: number;
         };
+        readonly automaticApproval: import("./schema.js").JsonSchema;
+        readonly automaticExecution: import("./schema.js").JsonSchema;
         readonly fullAccess: {
             readonly type: "object";
             readonly properties: {

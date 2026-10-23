@@ -11,6 +11,8 @@ export interface ResearchAutomationPolicy {
     recoverAfterRestart: boolean;
 }
 export interface HostAccessGrant {
+    automaticApprovalScope?: 1;
+    automaticApprovalAcknowledgedAt?: string;
     researchAutomationScope?: 1 | 2;
     researchAutomationPolicy?: ResearchAutomationPolicy;
     researchAutomationAcknowledgedAt?: string;
@@ -58,6 +60,7 @@ export declare class HostAccessService {
     private jobs;
     private hasUnreviewed;
     status(actor: Actor, sessionId: string): {
+        automaticApprovalScope: number;
         researchAutomation: boolean;
         researchAutomationScope: number;
         researchAutomationPolicy: ResearchAutomationPolicy | undefined;
@@ -75,7 +78,7 @@ export declare class HostAccessService {
         unknownCommands: number;
         jobs: {
             id: string;
-            state: "succeeded" | "failed" | "cancelled" | "unknown" | "running" | "starting";
+            state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
             pid: number | undefined;
             exitCode: number | null | undefined;
             error: string | undefined;
@@ -86,6 +89,7 @@ export declare class HostAccessService {
     private session;
     private executionActive;
     enable(actor: Actor, id: string, input: unknown): {
+        automaticApprovalScope: number;
         researchAutomation: boolean;
         researchAutomationScope: number;
         researchAutomationPolicy: ResearchAutomationPolicy | undefined;
@@ -103,7 +107,7 @@ export declare class HostAccessService {
         unknownCommands: number;
         jobs: {
             id: string;
-            state: "succeeded" | "failed" | "cancelled" | "unknown" | "running" | "starting";
+            state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
             pid: number | undefined;
             exitCode: number | null | undefined;
             error: string | undefined;
@@ -113,6 +117,7 @@ export declare class HostAccessService {
     };
     activatePending(id: string): boolean;
     revoke(actor: Actor, id: string, input: unknown): {
+        automaticApprovalScope: number;
         researchAutomation: boolean;
         researchAutomationScope: number;
         researchAutomationPolicy: ResearchAutomationPolicy | undefined;
@@ -130,7 +135,7 @@ export declare class HostAccessService {
         unknownCommands: number;
         jobs: {
             id: string;
-            state: "succeeded" | "failed" | "cancelled" | "unknown" | "running" | "starting";
+            state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
             pid: number | undefined;
             exitCode: number | null | undefined;
             error: string | undefined;

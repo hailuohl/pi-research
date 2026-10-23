@@ -6,6 +6,9 @@ import { assertWorkingGrantReference } from './working-grant-validation.js';
 import { assertRunGrantReference } from './run-grant-validation.js';
 export class ApprovalService {
     c;
+    automaticCurrent;
+    assertEffect(id, pid, subjectId, hash, requiredScope) { const approval = this.assert(id, pid, subjectId, hash, requiredScope); this.automaticCurrent?.(approval); return approval; }
+    automaticDelegate;
     proofGuard;
     onDecided;
     constructor(c) {

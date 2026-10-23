@@ -1,3 +1,4 @@
+import {assertTextCorpusGrantActor,type TextCorpusGrantUse} from '../policy/text-corpus-grants.js';
 import {assertModelRestoreCurrent} from '../pi-adapter/model-connections.js';
 import {assertResearchReference,type ResearchContinuation} from '../policy/research-automation.js';
 import type {SandboxJob,DevelopmentTask} from '../execution/contracts.js';
@@ -142,6 +143,7 @@ export class WakeupService {
         try{assertModelRestoreCurrent(this.app.context.dataDir,root.model);}catch(error){return {valid:true,deferred:true,reason:(error as Error).message};}
         let source: Source;
         let model: Session['model'];
+        let preparedWait:string|undefined;
         if(w.sourceKind==='approval-result') {
             try {this.app.sessionPermissions.assert(w.resumePermission!,false);const t=this.app.store.get<DevelopmentTask>('development-task',w.sourceId,w.projectId!);this.app.researchAutomation.assertResume(t);const a=this.app.approvals.assert(w.approvalId!,w.projectId!,t.id,t.manifestDigest,'development.test'),origin=this.app.store.get<Message>('message',t.originMessageId!,w.projectId!);ensure(a.id===t.grantId&&t.sessionId===root.id&&(!t.jobId?Date.parse(t.manifest.deadline)>Date.now():true),'DEVELOPMENT_EXPIRED','固定测试已过期，请重新prepare；原清单保留');source={...w,sourceDigest:digest({taskId:t.id,manifestDigest:t.manifestDigest,approvalId:a.id,resume:t.resume})};model=root.model;}catch(error){return {valid:false,reason:(error as Error).message};}
         } else if(w.sourceKind==='task-continuation') {
@@ -152,6 +154,7 @@ export class WakeupService {
                     const development=a.subjectKind==='development-task',subject=this.app.store.get<DevelopmentTask|RunIntent>(development?'development-task':'run-intent',w.sourceId,w.projectId!);
                     ensure(a.subjectId===subject.id&&subject.manifestDigest===a.manifestDigest&&digest(subject.manifest)===a.manifestDigest&&('sessionId'in subject?subject.sessionId:subject.rootSessionId)===c.rootSessionId&&(development?(subject as DevelopmentTask).grantId:(subject as RunIntent).approvalId)===a.approvalId,'AUTOMATION_STALE','准确准备单清单或主会话绑定已变化');
                     if(a.jobId){const job=this.app.store.get<SandboxJob|Run>(development?'sandbox-job':'run',a.jobId,w.projectId!);ensure(('jobId'in subject?subject.jobId:(subject as RunIntent).runId)===job.id&&('developmentTaskId'in job?job.developmentTaskId:job.intentId)===subject.id&&job.manifestDigest===a.manifestDigest&&digest(job.manifest)===a.manifestDigest&&('developmentTaskId'in job?job.sessionId===c.rootSessionId&&job.grantId===a.approvalId:job.experimentId===(subject as RunIntent).experimentId),'AUTOMATION_STALE','已提交作业与原准确准备单不符');}
+                    if(!a.jobId)preparedWait=this.app.automaticApprovals.preparedDecisionWait(a.subjectId);
                 }
                 else if(w.jobKind==='review'){ensure(c.policy,'AUTOMATION_SCOPE_DENIED','旧授权不包含阶段续接');const review=this.app.store.get<import('../development/reviews-types.js').DevelopmentReview>('development-review',w.sourceId,w.projectId!),job=this.app.store.get<SandboxJob>('sandbox-job',review.jobId,w.projectId!),task=this.app.store.get<Task>('task',review.taskId,w.projectId!);ensure(this.app.researchAutomation.authorization(job.developmentTaskId)?.continuationId===c.id&&task.result&&task.execution==='output_submitted'&&this.app.developmentReviews.inspect({type:'user'},w.projectId!,review.id).status!=='stale','AUTOMATION_STALE','独立审查终态或准确来源失效');}
                 else if(w.jobKind==='recovery'){ensure(c.policy,'AUTOMATION_SCOPE_DENIED','旧授权不包含中断恢复');const m=this.app.store.get<Message>('message',w.sourceId,w.projectId!);ensure(m.sessionId===c.rootSessionId&&['failed','cancelled'].includes(m.status)&&(m.id===c.originMessageId||!!m.wakeupId&&this.app.store.get<Wakeup>('wakeup',m.wakeupId).continuationId===c.id),'AUTOMATION_STALE','中断消息不属于原任务');}
@@ -181,7 +184,7 @@ export class WakeupService {
             return { valid: false, reason: 'Run 分析授权会话或意向已变化' };
         if (source.sourceDigest !== w.sourceDigest) return { valid: false, reason: '结果版本或研究目标已变化' };
         if (digest(model) !== digest(root.model)) return { valid: true, deferred: true, reason: '主会话模型与原批准配置不同，需要重新授权' };
-        return { valid: true };
+        return preparedWait?{valid:true,deferred:true,reason:preparedWait}:{ valid: true };
     }
     private block(w: Row<Wakeup>, reason: string) {
         if (w.blockReason !== reason) this.app.store.update<Wakeup>('wakeup', w.id, w.version, { blockReason: reason });
@@ -391,6 +394,9 @@ export class WakeupService {
             for(const j of this.app.store.list<SandboxJob>('sandbox-job',pid).filter(j=>j.sessionId===actor.sessionId))j.artifactIds.forEach(id=>artifactIds.add(id));
             for(const a of this.app.store.list<Artifact>('artifact',pid).filter(a=>a.origin==='user'||a.origin===`agent:${actor.sessionId}`&&!a.taskId))artifactIds.add(a.id);
             for(const e of this.app.store.list<Evidence>('evidence',pid))if(artifactIds.has(e.artifactId))evidenceIds.add(e.id);
+            if(this.app.automaticApprovals.isContinuation(actor)){
+                try{const grant=assertTextCorpusGrantActor(this.app.store,actor,pid);for(const use of this.app.store.list<TextCorpusGrantUse>('text-corpus-grant-use',pid).filter(u=>u.grantId===grant.id&&u.grantDigest===grant.digest&&u.sessionId===actor.sessionId)){const search=this.app.store.get<{hits:Array<{evidenceId:string|null}>}>('text-evidence-search',use.searchId,pid);for(const hit of search.hits)if(hit.evidenceId)evidenceIds.add(hit.evidenceId);}}catch{/* Revoked text contributes no additional resources. */}
+            }
             return {evidenceIds,artifactIds,runIds,taskIds};
         } else if (w.sourceKind === 'team') {
             for (const task of this.app.teams.tasks(SYSTEM, w.sourceId)) {

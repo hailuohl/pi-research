@@ -121,7 +121,7 @@ export class TextEvidenceService {
                 sources = sources.filter(s => grant.artifactIds.has(s.artifactId));
             documents = [];
             pmcDocuments = undefined;
-            if (!actor.taskId && !actor.wakeupId) {
+            if (!actor.taskId && (!actor.wakeupId || this.app.automaticApprovals.isContinuation(actor))) {
                 try {
                     const fixed = assertTextCorpusGrantActor(this.app.store, actor, projectId);
                     documents = (corpus?.documents ?? []).filter(ref => fixed.documents.some(p => pairKey(p) === pairKey(ref)));

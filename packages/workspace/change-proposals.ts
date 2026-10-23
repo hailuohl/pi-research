@@ -22,7 +22,7 @@ export class ChangeProposalService {
     get(actor:Actor,id:string){const p=this.app.store.get<ChangeProposal>('change-proposal',id);scope(actor,p.projectId!);assertProjectReadable(this.app.store,p.projectId!,actor);return p;}
     private ownerSession(actor:Actor,projectId:string,sessionId?:string) {
         if(actor.type==='agent') {
-            ensure(actor.role==='coordinator'&&!actor.taskId&&!actor.wakeupId&&actor.sessionId&&(!sessionId||sessionId===actor.sessionId),'TOOL_DENIED','变更提案只能绑定当前交互式主协调会话',403);
+            ensure(actor.role==='coordinator'&&!actor.taskId&&(!actor.wakeupId||this.app.automaticApprovals.isContinuation(actor))&&actor.sessionId&&(!sessionId||sessionId===actor.sessionId),'TOOL_DENIED','变更提案只能绑定当前交互式主协调会话',403);
             sessionId=actor.sessionId;
         }
         if(!sessionId)return undefined;
@@ -33,7 +33,7 @@ export class ChangeProposalService {
     private content(actor:Actor,projectId:string,id:string){
         const a=this.app.store.get<Artifact>('artifact',id,projectId);
         if(actor.type==='agent'){
-            ensure(actor.role==='coordinator' && !actor.taskId && !actor.wakeupId,'TOOL_DENIED','只有交互式主协调者可以准备整合提案',403);
+            ensure(actor.role==='coordinator' && !actor.taskId && (!actor.wakeupId||this.app.automaticApprovals.isContinuation(actor)),'TOOL_DENIED','只有交互式主协调者可以准备整合提案',403);
             ensure(a.taskId || a.origin===`agent:${actor.sessionId}` || a.origin==='user','CHANGE_SOURCE_DENIED','必须选用本会话、用户提供或已验收任务的产物',403);
         }
         let taskResultDigest:string|undefined,sourceAcceptanceId:string|undefined;
@@ -45,7 +45,7 @@ export class ChangeProposalService {
     }
     prepare(actor:Actor,projectId:string,value:unknown,sessionId?:string){
         scope(actor,projectId);
-        ensure(actor.type==='user'||actor.type==='agent'&&actor.role==='coordinator'&&!actor.taskId&&!actor.wakeupId,'TOOL_DENIED','此操作需要用户或交互式主协调者',403);
+        ensure(actor.type==='user'||actor.type==='agent'&&actor.role==='coordinator'&&!actor.taskId&&(!actor.wakeupId||this.app.automaticApprovals.isContinuation(actor)),'TOOL_DENIED','此操作需要用户或交互式主协调者',403);
         const project=this.app.projects.get(actor,projectId);ensure(!project.archived,'PROJECT_ARCHIVED','项目已归档');
         const rootSessionId=this.ownerSession(actor,projectId,sessionId);
         const x=object(value),base=this.app.store.get<Experiment>('experiment',text(x.baseExperimentId,'baseExperimentId',100),projectId);
@@ -87,7 +87,7 @@ export class ChangeProposalService {
     }
     /** The reviewed flow derives the entire candidate from tested CAS, never caller-supplied file mappings. */
     prepareReviewed(actor:Actor,projectId:string,value:unknown) {
-        scope(actor,projectId);ensure(actor.type==='user'||actor.type==='agent'&&actor.role==='coordinator'&&!actor.taskId&&!actor.wakeupId,'TOOL_DENIED','受审整合需要用户或交互式主协调者',403);const x=object(value);ensure(Object.keys(x).every(k=>['reviewId','title','hypothesis'].includes(k)),'INVALID_INPUT','受审整合只接受审查 ID、名称和假设',400);
+        scope(actor,projectId);ensure(actor.type==='user'||actor.type==='agent'&&actor.role==='coordinator'&&!actor.taskId&&(!actor.wakeupId||this.app.automaticApprovals.isContinuation(actor)),'TOOL_DENIED','受审整合需要用户或交互式主协调者',403);const x=object(value);ensure(Object.keys(x).every(k=>['reviewId','title','hypothesis'].includes(k)),'INVALID_INPUT','受审整合只接受审查 ID、名称和假设',400);
         const reviewId=text(x.reviewId,'reviewId',100),title=text(x.title,'title',200),hypothesis=text(x.hypothesis,'hypothesis',10000);
         return this.app.store.transaction(()=>{
             const review=this.app.developmentReviews.inspect(actor,projectId,reviewId),proof=this.app.developmentReviews.assertPassed(actor,projectId,reviewId,review.sourceDigest);
@@ -118,6 +118,7 @@ export class ChangeProposalService {
         });
     }
     inspect(actor:Actor,id:string){const p=this.get(actor,id);ensure(digest(changeProposalPayload(p))===p.digest,'CHANGE_PROPOSAL_CORRUPTED','变更提案摘要不一致');return {proposal:p,files:p.changes.map(c=>({path:c.path,expectedDigest:c.expectedDigest,artifactDigest:c.artifactDigest,beforeMode:c.beforeMode,afterMode:c.mode,before:c.expectedDigest?readStableFile(this.app.store.paths.physical(p.baseSnapshot.path),c.path,2*1024*1024).toString('utf8'):null,after:c.artifactId?this.app.evidence.read(actor,c.artifactId).bytes.toString('utf8'):null}))};}
+    applyAutomatic(actor:Actor,ref:import('../policy/automatic-approvals.js').AutomaticApprovalReference,id:string){return this.apply(this.app.automaticApprovals.delegate(actor,ref,'change-proposal',id),id);}
     apply(actor:Actor,id:string){
         userOnly(actor);
         return this.app.store.transaction(()=>{
@@ -125,7 +126,7 @@ export class ChangeProposalService {
             if(p.state==='applied')return this.app.experiments.get(actor,p.appliedExperimentId!);
             ensure(p.sourceValidity!=='stale','CHANGE_SOURCE_STALE','提案的来源审查已撤销，需重新准备并批准');
             ensure(!this.app.projects.get(actor,p.projectId!).archived,'PROJECT_ARCHIVED','项目已归档');
-            this.app.approvals.assert(p.approvalId,p.projectId!,p.id,p.digest,'change.integrate');
+            this.app.approvals.assertEffect(p.approvalId,p.projectId!,p.id,p.digest,'change.integrate');
             const base=this.app.experiments.get(actor,p.baseExperimentId);
             ensure(base.lifecycle!=='archived' && base.revision===p.baseRevision && base.contractDigest===p.contractDigest && snapshotDirectory(this.app.store.paths.physical(base.workspace),join(this.app.context.dataDir,'snapshots'),{legacy:p.baseSnapshot.files.every(f=>f.mode===undefined)}).digest===p.baseSnapshot.digest,'CHANGE_BASE_STALE','基准已经变化，请基于新版本重新准备和批准');
             for(const c of p.changes)if(c.artifactId){const v=this.content(actor,p.projectId!,c.artifactId);ensure(v.artifact.digest===c.artifactDigest && v.taskResultDigest===c.taskResultDigest && v.sourceAcceptanceId===c.sourceAcceptanceId,'CHANGE_SOURCE_STALE','产物或任务验收已发生变化');}

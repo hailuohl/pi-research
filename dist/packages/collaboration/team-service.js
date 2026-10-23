@@ -75,7 +75,8 @@ export class TeamService {
             return team;
         });
     }
-    activate(actor, id) { userOnly(actor); return this.c.store.transaction(() => { const t = this.get(actor, id), p = this.c.store.get('project', t.projectId); ensure(p.settings.enabled, 'MULTI_AGENT_DISABLED', '项目未开启协作'); ensure(t.state === 'awaiting_approval', 'TEAM_STATE_INVALID', '只有待批准团队可启动'); this.approvals.assert(t.approvalId, p.id, id, t.planDigest, 'collaboration'); this.assertDispatchPlan(t); const next = this.c.store.update('team', id, t.version, { state: 'active', blockReason: undefined }); this.c.store.event(p.id, 'team.activated', { teamId: id }); return next; }); }
+    activateAutomatic(actor, ref, id) { ensure(this.approvals.automaticDelegate, 'AUTOMATIC_APPROVAL_DENIED', '宿主派生入口未连接'); return this.activate(this.approvals.automaticDelegate(actor, ref, 'team', id), id); }
+    activate(actor, id) { userOnly(actor); return this.c.store.transaction(() => { const t = this.get(actor, id), p = this.c.store.get('project', t.projectId); ensure(p.settings.enabled, 'MULTI_AGENT_DISABLED', '项目未开启协作'); ensure(t.state === 'awaiting_approval', 'TEAM_STATE_INVALID', '只有待批准团队可启动'); this.approvals.assertEffect(t.approvalId, p.id, id, t.planDigest, 'collaboration'); this.assertDispatchPlan(t); const next = this.c.store.update('team', id, t.version, { state: 'active', blockReason: undefined }); this.c.store.event(p.id, 'team.activated', { teamId: id }); return next; }); }
     assertInputsCurrent(projectId, tasks) {
         for (const t of tasks)
             for (const id of t.inputEvidenceIds ?? []) {
@@ -113,7 +114,15 @@ export class TeamService {
             return;
         ensure(false, 'FORMAL_REPORT_REVIEW_REQUIRED', `固定正式Run与本主会话Markdown报告须使用 formal_report_review_prepare(${JSON.stringify({ runId: run.id, reportArtifactId: report.id })})；请按准确目标准备专用审查。`, 409);
     }
+    assertAutomaticPermission(t) {
+        const approval = this.c.store.get('approval', t.approvalId, t.projectId);
+        if (approval.automaticApproval) {
+            ensure(this.approvals.automaticCurrent, 'AUTOMATIC_APPROVAL_DENIED', '宿主自动批准校验器尚未接入');
+            this.approvals.automaticCurrent(approval);
+        }
+    }
     assertPermission(t) {
+        this.assertAutomaticPermission(t);
         const current = this.sessions.taskPermissionCapture?.(t.rootSessionId);
         if (t.permission) {
             ensure(current && digest(current) === digest(t.permission), 'SESSION_PERMISSION_STALE', '协作计划批准时的权限已变化');
@@ -271,7 +280,7 @@ export class TeamService {
             return null;
         });
     }
-    active(actor) { ensure(actor.type === 'agent' && !!actor.taskId && !!actor.attemptId, 'PERMISSION_DENIED', '需要有效任务身份', 403); const task = this.c.store.get('task', actor.taskId, actor.projectId); const attempt = this.c.store.get('task-attempt', actor.attemptId, actor.projectId); ensure(task.execution !== 'superseded', 'TASK_INPUT_STALE', '任务需求已经变更'); ensure(task.attemptId === attempt.id && task.generation === actor.generation && attempt.generation === actor.generation && attempt.sessionId === actor.sessionId && attempt.leaseUntil > Date.now() && attempt.state === 'running' && task.execution === 'running', 'LEASE_EXPIRED', '任务租约失效'); this.validateReview(task); const team = this.c.store.get('team', task.teamId, task.projectId); if (team.sourceRevisionId) {
+    active(actor) { ensure(actor.type === 'agent' && !!actor.taskId && !!actor.attemptId, 'PERMISSION_DENIED', '需要有效任务身份', 403); const task = this.c.store.get('task', actor.taskId, actor.projectId); const attempt = this.c.store.get('task-attempt', actor.attemptId, actor.projectId); ensure(task.execution !== 'superseded', 'TASK_INPUT_STALE', '任务需求已经变更'); ensure(task.attemptId === attempt.id && task.generation === actor.generation && attempt.generation === actor.generation && attempt.sessionId === actor.sessionId && attempt.leaseUntil > Date.now() && attempt.state === 'running' && task.execution === 'running', 'LEASE_EXPIRED', '任务租约失效'); this.validateReview(task); const team = this.c.store.get('team', task.teamId, task.projectId); this.assertAutomaticPermission(team); if (team.sourceRevisionId) {
         const source = this.c.store.get('source-revision', team.sourceRevisionId, task.projectId);
         ensure(source.sourceDigest === source.snapshot.digest && digest(source.snapshot.files) === source.sourceDigest, 'SNAPSHOT_CORRUPTED', '任务源码清单校验失败');
         assertExperimentSourceCurrent(this.c.store, this.c.store.get('experiment', source.experimentId, task.projectId));

@@ -1,3 +1,4 @@
+import { type JsonSchema } from './schema.js';
 export declare const RESEARCH_SOURCE_INPUT_SCHEMA: {
     readonly type: "object";
     readonly properties: {
@@ -42,7 +43,7 @@ export declare const RESEARCH_SOURCE_INPUT_SCHEMA: {
             readonly maxLength: number;
         };
     };
-    readonly required: ("artifactId" | "path" | "size" | "digest" | "workspace" | "readId")[];
+    readonly required: ("digest" | "artifactId" | "path" | "size" | "workspace" | "readId")[];
     readonly additionalProperties: false;
 };
 export declare const RESEARCH_BRIEF_REFERENCE_SCHEMA: {
@@ -75,7 +76,7 @@ export declare const RESEARCH_BRIEF_REFERENCE_SCHEMA: {
             readonly maxLength: number;
         };
     };
-    readonly required: ("rootSessionId" | "id" | "digest" | "revision")[];
+    readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
     readonly additionalProperties: false;
 };
 export declare const RESEARCH_BRIEF_INPUT_SCHEMAS: {
@@ -280,13 +281,13 @@ export declare const RESEARCH_BRIEF_INPUT_SCHEMAS: {
                             readonly enum: readonly ["protocol", "implementation", "notes"];
                         };
                     };
-                    readonly required: ("role" | "path")[];
+                    readonly required: ("path" | "role")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
             };
         };
-        readonly required: ("status" | "scope" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary" | "expectedRevisionId")[];
+        readonly required: ("status" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "expectedRevisionId")[];
         readonly additionalProperties: false;
     };
     readonly research_brief_inspect: {
@@ -352,6 +353,8 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         } & {
+            readonly automaticApproval: JsonSchema;
+            readonly automaticExecution: JsonSchema;
             readonly rootSessionId: {
                 readonly pattern?: string | undefined;
                 readonly type: "string";
@@ -559,7 +562,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly maximum: number;
                         };
                     };
-                    readonly required: ("sessionId" | "path" | "size" | "digest" | "workspace" | "writeVersion" | "readId")[];
+                    readonly required: ("sessionId" | "digest" | "path" | "size" | "writeVersion" | "workspace" | "readId")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -611,7 +614,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("artifactId" | "path" | "size" | "digest" | "workspace" | "readId")[];
+                    readonly required: ("digest" | "artifactId" | "path" | "size" | "workspace" | "readId")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -642,7 +645,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["protocol", "implementation", "notes"];
                         };
                     };
-                    readonly required: ("role" | "path")[];
+                    readonly required: ("path" | "role")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -672,11 +675,11 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("path" | "digest" | "compilerVersion")[];
+                readonly required: ("digest" | "path" | "compilerVersion")[];
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("rootSessionId" | "kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "scope" | "digest" | "revision" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
+        readonly required: ("version" | "id" | "createdAt" | "digest" | "projectId" | "status" | "revision" | "rootSessionId" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
         readonly additionalProperties: false;
     };
     readonly research_brief_inspect: {
@@ -711,6 +714,8 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     } & {
+                        readonly automaticApproval: JsonSchema;
+                        readonly automaticExecution: JsonSchema;
                         readonly rootSessionId: {
                             readonly pattern?: string | undefined;
                             readonly type: "string";
@@ -918,7 +923,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                                         readonly maximum: number;
                                     };
                                 };
-                                readonly required: ("sessionId" | "path" | "size" | "digest" | "workspace" | "writeVersion" | "readId")[];
+                                readonly required: ("sessionId" | "digest" | "path" | "size" | "writeVersion" | "workspace" | "readId")[];
                                 readonly additionalProperties: false;
                             };
                             readonly minItems: number;
@@ -970,7 +975,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                                         readonly maxLength: number;
                                     };
                                 };
-                                readonly required: ("artifactId" | "path" | "size" | "digest" | "workspace" | "readId")[];
+                                readonly required: ("digest" | "artifactId" | "path" | "size" | "workspace" | "readId")[];
                                 readonly additionalProperties: false;
                             };
                             readonly minItems: number;
@@ -1001,7 +1006,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                                         readonly enum: readonly ["protocol", "implementation", "notes"];
                                     };
                                 };
-                                readonly required: ("role" | "path")[];
+                                readonly required: ("path" | "role")[];
                                 readonly additionalProperties: false;
                             };
                             readonly minItems: number;
@@ -1031,11 +1036,11 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                                     readonly maxLength: number;
                                 };
                             };
-                            readonly required: ("path" | "digest" | "compilerVersion")[];
+                            readonly required: ("digest" | "path" | "compilerVersion")[];
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("rootSessionId" | "kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "scope" | "digest" | "revision" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
+                    readonly required: ("version" | "id" | "createdAt" | "digest" | "projectId" | "status" | "revision" | "rootSessionId" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
                     readonly additionalProperties: false;
                 }, {
                     readonly type: "null";
@@ -1081,7 +1086,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("id" | "status" | "digest" | "revision")[];
+                    readonly required: ("id" | "digest" | "status" | "revision")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1110,7 +1115,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("evidenceId" | "current")[];
+                    readonly required: ("current" | "evidenceId")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1154,6 +1159,8 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         } & {
+            readonly automaticApproval: JsonSchema;
+            readonly automaticExecution: JsonSchema;
             readonly rootSessionId: {
                 readonly pattern?: string | undefined;
                 readonly type: "string";
@@ -1361,7 +1368,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly maximum: number;
                         };
                     };
-                    readonly required: ("sessionId" | "path" | "size" | "digest" | "workspace" | "writeVersion" | "readId")[];
+                    readonly required: ("sessionId" | "digest" | "path" | "size" | "writeVersion" | "workspace" | "readId")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1413,7 +1420,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("artifactId" | "path" | "size" | "digest" | "workspace" | "readId")[];
+                    readonly required: ("digest" | "artifactId" | "path" | "size" | "workspace" | "readId")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1444,7 +1451,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["protocol", "implementation", "notes"];
                         };
                     };
-                    readonly required: ("role" | "path")[];
+                    readonly required: ("path" | "role")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1474,11 +1481,11 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("path" | "digest" | "compilerVersion")[];
+                readonly required: ("digest" | "path" | "compilerVersion")[];
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("rootSessionId" | "kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "scope" | "digest" | "revision" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
+        readonly required: ("version" | "id" | "createdAt" | "digest" | "projectId" | "status" | "revision" | "rootSessionId" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
         readonly additionalProperties: false;
     };
 };

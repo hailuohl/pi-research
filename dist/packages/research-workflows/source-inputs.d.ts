@@ -23,18 +23,18 @@ export declare class SourceInputService {
     } | undefined;
     private collect;
     preview(session: Row<Session>, anchorBriefId: string | null, inherited: ResearchSourceInput[]): {
+        digest: string;
         path: string;
         size: number;
-        digest: string;
         workspace: string;
         readId: string;
         artifactId?: string;
     }[];
     previewBytes(session: Row<Session>, anchorBriefId: string | null, inherited: ResearchSourceInput[]): {
         bytes: Buffer<ArrayBufferLike>;
+        digest: string;
         path: string;
         size: number;
-        digest: string;
         workspace: string;
         readId: string;
         artifactId?: string;

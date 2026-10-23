@@ -40,15 +40,15 @@ export declare class SessionPermissionService {
         blockedReason: string;
         actionId: string;
         operation: string;
-        state: "failed" | "unknown" | "stale" | "completed" | "pending" | "approved" | "rejected" | "executing";
-        approvalStatus: "stale" | "pending" | "approved" | "rejected";
+        state: "failed" | "pending" | "unknown" | "stale" | "completed" | "approved" | "rejected" | "executing";
+        approvalStatus: "pending" | "stale" | "approved" | "rejected";
         input: Record<string, unknown> | null;
     } | {
         input: Record<string, unknown>;
         actionId: string;
         operation: string;
-        state: "failed" | "unknown" | "stale" | "completed" | "pending" | "approved" | "rejected" | "executing";
-        approvalStatus: "stale" | "pending" | "approved" | "rejected";
+        state: "failed" | "pending" | "unknown" | "stale" | "completed" | "approved" | "rejected" | "executing";
+        approvalStatus: "pending" | "stale" | "approved" | "rejected";
         blockedReason: string | null;
     };
     boundNoticeAction(actor: Actor, sessionId: string): string;
@@ -81,6 +81,7 @@ export declare class SessionPermissionService {
         available: boolean;
         reason: string;
         hostAccess: {
+            automaticApprovalScope: number;
             researchAutomation: boolean;
             researchAutomationScope: number;
             researchAutomationPolicy: import("./host-access.js").ResearchAutomationPolicy | undefined;
@@ -98,7 +99,7 @@ export declare class SessionPermissionService {
             unknownCommands: number;
             jobs: {
                 id: string;
-                state: "succeeded" | "failed" | "cancelled" | "unknown" | "running" | "starting";
+                state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
                 pid: number | undefined;
                 exitCode: number | null | undefined;
                 error: string | undefined;
@@ -142,6 +143,7 @@ export declare class SessionPermissionService {
         available: boolean;
         reason: string;
         hostAccess: {
+            automaticApprovalScope: number;
             researchAutomation: boolean;
             researchAutomationScope: number;
             researchAutomationPolicy: import("./host-access.js").ResearchAutomationPolicy | undefined;
@@ -159,7 +161,7 @@ export declare class SessionPermissionService {
             unknownCommands: number;
             jobs: {
                 id: string;
-                state: "succeeded" | "failed" | "cancelled" | "unknown" | "running" | "starting";
+                state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
                 pid: number | undefined;
                 exitCode: number | null | undefined;
                 error: string | undefined;
@@ -239,6 +241,7 @@ export declare class SessionPermissionService {
         available: boolean;
         reason: string;
         hostAccess: {
+            automaticApprovalScope: number;
             researchAutomation: boolean;
             researchAutomationScope: number;
             researchAutomationPolicy: import("./host-access.js").ResearchAutomationPolicy | undefined;
@@ -256,7 +259,7 @@ export declare class SessionPermissionService {
             unknownCommands: number;
             jobs: {
                 id: string;
-                state: "succeeded" | "failed" | "cancelled" | "unknown" | "running" | "starting";
+                state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
                 pid: number | undefined;
                 exitCode: number | null | undefined;
                 error: string | undefined;

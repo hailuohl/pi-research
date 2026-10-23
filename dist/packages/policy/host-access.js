@@ -1,3 +1,4 @@
+import { automaticTextGrantCompatible } from './automatic-text-grant.js';
 import { spawn } from 'node:child_process';
 import { StringDecoder } from 'node:string_decoder';
 import { existsSync, statSync } from 'node:fs';
@@ -34,12 +35,12 @@ export class HostAccessService {
     hasUnreviewed(session, grant) { return this.jobs(session).some(j => j.state === 'unknown' && !(grant?.acknowledgedUnknownJobIds ?? []).includes(j.id)); }
     status(actor, sessionId) {
         const session = this.session(actor, sessionId), grant = this.c.store.maybe('host-access', sessionId);
-        const bound = !!(session.workingGrantId || session.runGrantId || session.discoveryGrantId || session.textCorpusGrantId);
+        const bound = !!(session.workingGrantId || session.runGrantId || session.discoveryGrantId || !automaticTextGrantCompatible(this.c.store, session, grant));
         const eligible = session.role === 'coordinator' && !session.taskId && !session.teamId && !session.parentSessionId && !bound && session.state !== 'archived' && !this.c.store.get('project', session.projectId).archived;
         const enabled = eligible && !!grant && grant.state === 'enabled' && grant.runtimeId === this.runtimeId && !this.closing && !this.stopping && !this.hasUnreviewed(session, grant);
         const jobs = this.jobs(session);
         const researchAutomation = eligible && grant?.state === 'enabled' && !this.hasUnreviewed(session, grant) && (grant.researchAutomationScope === 2 || enabled && grant.researchAutomationScope === 1);
-        return { researchAutomation, researchAutomationScope: grant?.researchAutomationScope ?? 0, researchAutomationPolicy: grant?.researchAutomationPolicy, sessionId, version: grant?.version ?? 0, epoch: grant?.epoch ?? 0, available: eligible && !this.closing && !this.stopping, enabled, pending: grant?.state === 'pending' && grant.runtimeId === this.runtimeId && !this.closing && !this.stopping, boundary: 'trusted-host', osSandboxVerified: false,
+        return { automaticApprovalScope: grant?.automaticApprovalScope ?? 0, researchAutomation, researchAutomationScope: grant?.researchAutomationScope ?? 0, researchAutomationPolicy: grant?.researchAutomationPolicy, sessionId, version: grant?.version ?? 0, epoch: grant?.epoch ?? 0, available: eligible && !this.closing && !this.stopping, enabled, pending: grant?.state === 'pending' && grant.runtimeId === this.runtimeId && !this.closing && !this.stopping, boundary: 'trusted-host', osSandboxVerified: false,
             reason: eligible ? '本机可信模式：命令可接触当前系统用户的应用数据、凭据与第三方权限，不提供同用户隔离。' : bound ? '此会话已有固定范围授权，请使用新的普通主协调会话开启本机完全访问。' : '仅未归档的交互主协调会话可启用；子任务和自动唤醒不继承。',
             revokedOnRestart: !!grant && grant.state !== 'revoked' && grant.runtimeId !== this.runtimeId,
             activeCommands: jobs.filter(j => ['starting', 'running'].includes(j.state)).length, unknownCommands: jobs.filter(j => j.state === 'unknown').length,
@@ -50,19 +51,22 @@ export class HostAccessService {
     enable(actor, id, input) {
         userOnly(actor);
         const x = object(input);
-        ensure(Object.keys(x).every(k => ['expectedVersion', 'acknowledgedSameUserAccess', 'acknowledgedUnknownEffects', 'acknowledgedResearchAutomation', 'researchAutomationPolicy'].includes(k)) && x.acknowledgedSameUserAccess === true && (x.acknowledgedUnknownEffects === undefined || typeof x.acknowledgedUnknownEffects === 'boolean'), 'HOST_ACCESS_ACK_REQUIRED', '需要明确接受本机未隔离、同用户应用数据和凭据可达', 400);
+        ensure(Object.keys(x).every(k => ['expectedVersion', 'acknowledgedSameUserAccess', 'acknowledgedUnknownEffects', 'acknowledgedResearchAutomation', 'researchAutomationPolicy', 'acknowledgedAutomaticApprovals'].includes(k)) && x.acknowledgedSameUserAccess === true && (x.acknowledgedUnknownEffects === undefined || typeof x.acknowledgedUnknownEffects === 'boolean'), 'HOST_ACCESS_ACK_REQUIRED', '需要明确接受本机未隔离、同用户应用数据和凭据可达', 400);
         ensure(x.acknowledgedResearchAutomation === undefined || x.acknowledgedResearchAutomation === true, 'INVALID_INPUT', '自主计算范围需要显式确认');
         ensure(x.researchAutomationPolicy === undefined || x.acknowledgedResearchAutomation === true, 'HOST_ACCESS_ACK_REQUIRED', '持续授权范围需要明确确认', 400);
         const policy = x.researchAutomationPolicy === undefined ? undefined : automationPolicy(x.researchAutomationPolicy);
+        ensure(x.acknowledgedAutomaticApprovals === undefined || x.acknowledgedAutomaticApprovals === true && policy?.version === 2, 'HOST_ACCESS_ACK_REQUIRED', '自动审批需要明确确认新的持续研究范围', 400);
         const expected = integer(x.expectedVersion, 'expectedVersion', 0);
         this.c.store.transaction(() => {
             const session = this.session(actor, id), state = this.status(actor, id), prior = this.c.store.maybe('host-access', id);
+            ensure(!session.textCorpusGrantId || !automaticTextGrantCompatible(this.c.store, session, prior) || x.acknowledgedAutomaticApprovals === true, 'HOST_ACCESS_ACK_REQUIRED', '持有自动原文绑定的主会话重新启用时，需要明确确认自动审批范围', 400);
             ensure(state.available, 'HOST_ACCESS_UNAVAILABLE', state.reason, 403);
             ensure(!this.c.store.get('project', session.projectId).archived && session.state !== 'archived', 'SESSION_ARCHIVED', '归档会话不可启用');
             ensure(state.version === expected, 'VERSION_CONFLICT', '权限已变化，请刷新后重试');
             const unknown = this.jobs(session).filter(j => j.state === 'unknown');
             ensure(!unknown.length || x.acknowledgedUnknownEffects === true, 'HOST_EFFECTS_REVIEW_REQUIRED', '存在退出或记录状态未确认的命令，需用户核对旧进程和外部效果后重新启用', 409);
             if (state.enabled) {
+                ensure(x.acknowledgedAutomaticApprovals !== true || prior?.automaticApprovalScope === 1, 'HOST_ACCESS_REENABLE_REQUIRED', '新增自动审批范围需要撤销后明确重新启用');
                 ensure(x.acknowledgedResearchAutomation !== true || prior?.researchAutomationScope === (policy ? 2 : 1) && digest(prior.researchAutomationPolicy) === digest(policy), 'HOST_ACCESS_REENABLE_REQUIRED', '新增或改变自主计算范围需要先撤销，再明确重新启用');
                 return;
             }
@@ -72,9 +76,9 @@ export class HostAccessService {
                     this.c.store.update('host-command', raw.id, raw.version, { ...this.uncertain.get(job.id), state: 'unknown', error: job.error });
             }
             const pending = this.executionActive(session), previousHostEpoch = prior?.epoch ?? 0;
-            const grant = { ...(x.acknowledgedResearchAutomation === true ? { researchAutomationScope: policy ? 2 : 1, ...(policy ? { researchAutomationPolicy: policy } : {}), researchAutomationAcknowledgedAt: new Date().toISOString() } : {}), sessionId: id, epoch: previousHostEpoch + (pending ? 0 : 1), runtimeId: this.runtimeId, state: pending ? 'pending' : 'enabled', boundary: 'trusted-host', acknowledgedSameUserAccess: true, acknowledgedUnknownJobIds: unknown.map(j => j.id) };
+            const grant = { ...(x.acknowledgedAutomaticApprovals === true ? { automaticApprovalScope: 1, automaticApprovalAcknowledgedAt: new Date().toISOString() } : {}), ...(x.acknowledgedResearchAutomation === true ? { researchAutomationScope: policy ? 2 : 1, ...(policy ? { researchAutomationPolicy: policy } : {}), researchAutomationAcknowledgedAt: new Date().toISOString() } : {}), sessionId: id, epoch: previousHostEpoch + (pending ? 0 : 1), runtimeId: this.runtimeId, state: pending ? 'pending' : 'enabled', boundary: 'trusted-host', acknowledgedSameUserAccess: true, acknowledgedUnknownJobIds: unknown.map(j => j.id) };
             if (prior)
-                this.c.store.update('host-access', id, prior.version, { researchAutomationScope: undefined, researchAutomationPolicy: undefined, researchAutomationAcknowledgedAt: undefined, ...grant });
+                this.c.store.update('host-access', id, prior.version, { automaticApprovalScope: undefined, automaticApprovalAcknowledgedAt: undefined, researchAutomationScope: undefined, researchAutomationPolicy: undefined, researchAutomationAcknowledgedAt: undefined, ...grant });
             else
                 this.c.store.create('host-access', session.projectId, grant, id);
             this.c.store.event(session.projectId, pending ? 'host_access.requested' : 'host_access.enabled', { sessionId: id, epoch: grant.epoch, boundary: grant.boundary, osSandboxVerified: false });
@@ -117,7 +121,7 @@ export class HostAccessService {
         ensure(actor.type === 'agent' && actor.projectId && actor.sessionId && actor.role === 'coordinator' && !actor.taskId && !actor.attemptId && !actor.wakeupId && !actor.teamId, 'HOST_ACCESS_DENIED', '宿主执行只属于获准的交互主协调会话', 403);
         const session = this.session(actor, actor.sessionId), grant = this.c.store.maybe('host-access', session.id);
         ensure(session.role === actor.role && !session.taskId && !session.teamId && !session.parentSessionId && session.state === 'running' && session.generation === actor.generation && session.leaseUntil > Date.now(), 'LEASE_EXPIRED', '宿主执行身份或租约已失效', 403);
-        ensure(!session.workingGrantId && !session.runGrantId && !session.discoveryGrantId && !session.textCorpusGrantId, 'HOST_ACCESS_BOUND', '已有固定范围授权的会话不提供宿主执行', 403);
+        ensure(!session.workingGrantId && !session.runGrantId && !session.discoveryGrantId && automaticTextGrantCompatible(this.c.store, session, grant), 'HOST_ACCESS_BOUND', '已有固定范围授权的会话不提供宿主执行', 403);
         ensure(!this.c.store.get('project', session.projectId).archived, 'SCOPE_DENIED', '项目已归档', 403);
         ensure(!this.closing && !this.stopping && grant?.state === 'enabled' && grant.runtimeId === this.runtimeId && (epoch === undefined || grant.epoch === epoch), 'HOST_ACCESS_REVOKED', '宿主完全访问未开启、已撤销或执行端失效', 403);
         ensure(!this.hasUnreviewed(session, grant), 'HOST_ACCESS_BLOCKED', '宿主命令退出或记录状态未确认；需用户核对后重新启用', 409);

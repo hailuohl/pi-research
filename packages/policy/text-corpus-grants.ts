@@ -1,3 +1,4 @@
+import {assertAutomaticApprovalReference,assertAutomaticTextContinuation} from './automatic-approval-proof.js';
 import {randomUUID} from 'node:crypto';
 import type {ResearchApp} from '../research-app.js';
 import type {Actor,Approval,Artifact,Evidence,ModelConfig,Row,Session} from '../domain/types.js';
@@ -14,6 +15,7 @@ import {assertPmcArtifactRead,isPmcArtifact,pmcOwner,verifyPmcText} from '../doc
 
 export interface TextCorpusGrantReference {id:string;digest:string;approvalId:string;}
 export interface TextCorpusGrant {
+    automaticApproval?:import('./automatic-approvals.js').AutomaticApprovalReference;
     sessionId:string;model:ModelConfig;corpusId:string;configurationVersion:number;
     documents:Array<{documentVersionId:string;parseResultId:string;sourceDigest:string}>;
     pmcDocuments?:Array<{documentVersionId:string;sourceDigest:string}>;
@@ -53,10 +55,12 @@ function sources(store:Store,pid:string,g:TextCorpusGrant){
 }
 export function assertTextCorpusGrantActor(store:Store,actor:Actor,pid:string,reference?:TextCorpusGrantReference){
     scope(actor,pid);assertProjectWritable(store,pid);
-    ensure(actor.type==='agent'&&actor.sessionId&&actor.role==='coordinator'&&!actor.taskId&&!actor.wakeupId,'PERMISSION_DENIED','PDF 检索仅允许明确授权的主 Pi 会话',403);
+    ensure(actor.type==='agent'&&actor.sessionId&&actor.role==='coordinator'&&!actor.taskId&&(!actor.wakeupId||!!actor.continuationId),'PERMISSION_DENIED','PDF 检索仅允许明确授权的主 Pi 会话',403);
     const s=store.get<Session>('session',actor.sessionId,pid);
     ensure(s.textCorpusGrantId,'PERMISSION_DENIED','此主会话没有固定 PDF 检索授权',403);
     const {grant:g,approval}=record(store,pid,s.textCorpusGrantId);
+    if(g.automaticApproval)assertAutomaticApprovalReference(store,g.automaticApproval);
+    if(actor.wakeupId){ensure(g.automaticApproval,'PERMISSION_DENIED','原文续接需要新的准确派生授权');assertAutomaticTextContinuation(store,actor,g.automaticApproval);}
     ensure(!reference||digest(reference)===digest(textCorpusGrantReference(g)),'TEXT_GRANT_STALE','检索授权引用不符');
     ensure(g.state==='active'&&approval.status==='approved','TEXT_GRANT_REVOKED','原文授权未激活或已撤销');
     ensure(g.sessionId===s.id&&s.role==='coordinator'&&!s.taskId&&s.state!=='archived'&&digest(s.model)===digest(g.model),'TEXT_GRANT_SCOPE_CHANGED','指定主会话或模型已改变');
@@ -71,7 +75,7 @@ export function isPdfArtifact(store:Store,pid:string,id:string){
     return a.origin==='document-parser'||store.list<DocumentVersion>('document-version',pid).some(d=>d.contentKind==='original-pdf'&&(d.original.artifactId===id||d.derivedText?.artifactId===id))||store.list<DocumentParseResult>('document-parse-result',pid).some(r=>r.manifestArtifactId===id||r.pages.some(p=>p.textArtifactId===id||p.imageArtifactId===id));
 }
 export function assertPdfArtifactRead(store:Store,actor:Actor,pid:string,id:string){
-    if(actor.type==='agent'&&!actor.taskId&&!actor.wakeupId)ensure(!isPdfArtifact(store,pid,id),'TEXT_GRANT_TOOL_DENIED','PDF 原件和解析页仅通过固定授权词项检索读取',403);
+    if(actor.type==='agent'&&!actor.taskId&&(!actor.wakeupId||!!actor.continuationId))ensure(!isPdfArtifact(store,pid,id),'TEXT_GRANT_TOOL_DENIED','PDF 原件和解析页仅通过固定授权词项检索读取',403);
 }
 
 export class TextCorpusGrantService {
@@ -121,12 +125,12 @@ export class TextCorpusGrantService {
                 if(e.providerText||isPmcArtifact(this.app.store,pid,e.artifactId)){
                     const session=actor.sessionId?this.app.store.get<Session>('session',actor.sessionId,pid):undefined;
                     const grant=session?.textCorpusGrantId?this.app.store.get<TextCorpusGrant>('text-corpus-grant',session.textCorpusGrantId,pid):undefined;
-                    ensure(e.providerText&&!actor.taskId&&!actor.wakeupId&&grant?.pmcDocuments,'PMC_OWNER_ONLY','PMC 原文证据未授权给此 Agent',403);
+                    ensure(e.providerText&&!actor.taskId&&(!actor.wakeupId||this.app.automaticApprovals.isContinuation(actor))&&grant?.pmcDocuments,'PMC_OWNER_ONLY','PMC 原文证据未授权给此 Agent',403);
                     pmcEvidence=e;
                 }
             }
         }
-        if(actor.type!=='agent'||actor.taskId||actor.wakeupId)return;
+        if(actor.type!=='agent'||actor.taskId||actor.wakeupId&&!this.app.automaticApprovals.isContinuation(actor))return;
         if(name==='artifact_read'||name==='evidence_register'){assertPdfArtifactRead(this.app.store,actor,pid,x.artifactId as string);return;}
         if(name!=='evidence_read')return;
         const evidence=this.app.store.get<Evidence>('evidence',x.evidenceId as string,pid);

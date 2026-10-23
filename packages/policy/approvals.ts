@@ -7,6 +7,9 @@ import { now } from '../storage/store.js';
 import {assertWorkingGrantReference} from './working-grant-validation.js';
 import {assertRunGrantReference} from './run-grant-validation.js';
 export class ApprovalService {
+    automaticCurrent?: (approval:import('../domain/types.js').Row<Approval>)=>void;
+    assertEffect(id:string,pid:string,subjectId:string,hash:string,requiredScope:string){const approval=this.assert(id,pid,subjectId,hash,requiredScope);this.automaticCurrent?.(approval);return approval;}
+    automaticDelegate?: (actor:Actor,ref:import('./automatic-approvals.js').AutomaticApprovalReference,kind:string,id:string)=>Actor;
     proofGuard?: (approval: import('../domain/types.js').Row<Approval>)=>void;
     onDecided?: (approval: import('../domain/types.js').Row<Approval>)=>void;
     constructor(private c: AppContext) { }

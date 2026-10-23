@@ -1,3 +1,4 @@
+import {AUTOMATIC_APPROVAL_REFERENCE_SCHEMA,AUTOMATIC_EXECUTION_SCHEMA} from './automatic-approval-schemas.js';
 import {FORMAL_REPORT_OUTPUT_SCHEMAS,FORMAL_REPORT_CONTEXT_SCHEMA,FORMAL_REPORT_ASSESSMENT_SCHEMA} from './formal-report-review-schemas.js';
 import {DRAFT_ROLE_SCHEMA,PROTOCOL_DOCUMENT_SCHEMA} from './method-contract-schemas.js';
 import {RESEARCH_ACTION_OUTPUT_SCHEMAS} from './research-action-schemas.js';
@@ -226,7 +227,7 @@ export const OUTPUT_SCHEMAS = {
     run_logs: object({ content: string, cursor: integer, complete: boolean,start:integer,size:integer,identity:nullableString }),
     run_source_list:object({runId:string,experimentId:string,revision:integer,sourceDigest:string,gitCommit:string,files:array(sourceFile)},['gitCommit']),
     run_source_read:object({reviewReadId:string,runId:string,experimentId:string,revision:integer,sourceDigest:string,gitCommit:string,path:string,size:integer,digest:string,mode:enumeration('100644','100755'),cursor:integer,end:integer,complete:boolean,content:string},['gitCommit','mode','reviewReadId']),
-    approval_request: array(row('approval', { subjectKind: string, subjectId: string, digest: string, scope: string, status: enumeration('pending', 'approved', 'rejected', 'stale'), reason: string, decidedAt: string,fullAccess:FULL_ACCESS_REFERENCE_SCHEMA,workingGrant:WORKING_GRANT_REFERENCE_SCHEMA,runGrant:RUN_GRANT_REFERENCE_SCHEMA }, ['decidedAt','workingGrant','runGrant','fullAccess'])),
+    approval_request: array(row('approval', { subjectKind: string, subjectId: string, digest: string, scope: string, status: enumeration('pending', 'approved', 'rejected', 'stale'), reason: string, decidedAt: string,automaticApproval:AUTOMATIC_APPROVAL_REFERENCE_SCHEMA,automaticExecution:AUTOMATIC_EXECUTION_SCHEMA,fullAccess:FULL_ACCESS_REFERENCE_SCHEMA,workingGrant:WORKING_GRANT_REFERENCE_SCHEMA,runGrant:RUN_GRANT_REFERENCE_SCHEMA }, ['decidedAt','workingGrant','runGrant','fullAccess','automaticApproval','automaticExecution'])),
     experiment_plan_submit: row('experiment', {researchBrief:researchBriefRef, title: string, hypothesis: string, parentId: nullableString, lifecycle: enumeration('provisional', 'frozen', 'archived'), changeProposalId: string, contract, contractDigest: string, workspace: string, notes: strings, revision: integer }, ['changeProposalId','researchBrief']),
     collaboration_plan_submit: team,
     agent_delegate: team,

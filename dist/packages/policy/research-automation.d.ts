@@ -1,4 +1,4 @@
-import type { Actor, Approval, Row, Session, Run, Experiment } from '../domain/types.js';
+import type { Actor, Approval, Row, Session, RunIntent, Run, Experiment } from '../domain/types.js';
 import type { DevelopmentTask, SandboxJob } from '../execution/contracts.js';
 import type { ResearchApp } from '../research-app.js';
 import type { Store } from '../storage/store.js';
@@ -53,6 +53,7 @@ export interface Authorization {
     };
     jobId?: string;
 }
+export declare function modelDigest(store: Store, s: Session): string;
 /** Frozen proof remains readable; only admission and live execution require the owner lease. */
 export declare function assertResearchReference(store: Store, pid: string, ref: FullAccessReference, current?: boolean, execution?: boolean): Row<ResearchContinuation>;
 export declare class ResearchAutomationService {
@@ -152,6 +153,7 @@ export declare class ResearchAutomationService {
         continuationId: string;
         digest: string;
     } | undefined;
+    authorizeDecisionRun(actor: Actor, ref: import('./automatic-approvals.js').AutomaticApprovalReference, d: Row<import('../research-workflows/types.js').CampaignDecision>, intent: Row<RunIntent>): FullAccessReference;
     assertApproval(a: Row<Approval>, current?: boolean, execution?: boolean): Row<ResearchContinuation> | undefined;
     private submissionChain;
     /** Read-only admission check; consume repeats it inside the job-creation transaction. */

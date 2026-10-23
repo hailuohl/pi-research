@@ -2,7 +2,7 @@ import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api } from "./api.js";
 import { Badge } from "./ui.js";
-import { short, label, number } from "./models.js";
+import { automaticApprovalLabel, short, label, number } from "./models.js";
 import { DevelopmentJob } from "./implementation.js";
 import { ResearchPlanPanel } from "./research-plan.js";
 import { WorkingGrants } from "./working-grants.js";
@@ -255,7 +255,7 @@ class ChatWorkflows extends React.Component {
         "\u7814\u7A76\u95EE\u9898\u4E0E\u8BA1\u5212 \xB7 \u7B2C ",
         brief.revision,
         " \u7248",
-        /* @__PURE__ */ jsx(Badge, { value: confirmed ? "approved" : brief.status === "ready" ? "pending" : "draft", caption: confirmed ? "\u5DF2\u786E\u8BA4" : brief.status === "ready" ? "\u5F85\u786E\u8BA4" : "\u5F85\u6F84\u6E05" })
+        /* @__PURE__ */ jsx(Badge, { value: confirmed ? "approved" : brief.status === "ready" ? "pending" : "draft", caption: brief.automaticApproval ? "\u81EA\u52A8\u5904\u7406" : confirmed ? "\u5DF2\u786E\u8BA4" : brief.status === "ready" ? "\u5F85\u786E\u8BA4" : "\u5F85\u6F84\u6E05" })
       ] }),
       /* @__PURE__ */ jsx("p", { children: /* @__PURE__ */ jsx("strong", { children: brief.question }) }),
       /* @__PURE__ */ jsx("p", { children: brief.scope }),
@@ -294,7 +294,8 @@ class ChatWorkflows extends React.Component {
         brief.constraints.map((c, i) => /* @__PURE__ */ jsx("p", { children: c }, i))
       ] }),
       !valid ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u90E8\u5206\u6765\u6E90\u5DF2\u5931\u6548\uFF0C\u5386\u53F2\u5185\u5BB9\u4FDD\u7559\uFF1B\u8BF7\u5728\u5BF9\u8BDD\u4E2D\u91CD\u65B0\u6838\u5BF9\u8D44\u6599\u3002" }) : null,
-      current && brief.status !== "clarifying" ? /* @__PURE__ */ jsx("div", { className: "actions", children: /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: disabled || !valid, onClick: () => perform(() => this.continueResearchBrief(), "\u7814\u7A76\u8BA1\u5212\u5DF2\u786E\u8BA4\uFF0C\u7EE7\u7EED\u5F53\u524D\u5BF9\u8BDD"), children: confirmed ? "\u7EE7\u7EED\u5DF2\u786E\u8BA4\u8BA1\u5212" : "\u786E\u8BA4\u7814\u7A76\u95EE\u9898\u4E0E\u8BA1\u5212" }) }) : null,
+      brief.automaticApproval ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: automaticApprovalLabel(brief) }) : null,
+      current && !brief.automaticApproval && brief.status !== "clarifying" ? /* @__PURE__ */ jsx("div", { className: "actions", children: /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: disabled || !valid, onClick: () => perform(() => this.continueResearchBrief(), "\u7814\u7A76\u8BA1\u5212\u5DF2\u786E\u8BA4\uFF0C\u7EE7\u7EED\u5F53\u524D\u5BF9\u8BDD"), children: confirmed ? "\u7EE7\u7EED\u5DF2\u786E\u8BA4\u8BA1\u5212" : "\u786E\u8BA4\u7814\u7A76\u95EE\u9898\u4E0E\u8BA1\u5212" }) }) : null,
       view.history.length > 1 ? /* @__PURE__ */ jsxs("details", { children: [
         /* @__PURE__ */ jsxs("summary", { children: [
           "\u5386\u53F2\u4FEE\u8BA2\uFF08",
@@ -362,13 +363,14 @@ class ChatWorkflows extends React.Component {
     });
   }
   runIntentCard(intent, disabled, campaignId) {
-    const { data, session } = this.props, approval = data.approvals.find((a) => a.id === intent.approvalId), bound = intent.runGrant ?? approval?.runGrant, grant = (data.runGrants ?? []).find((g) => g.id === bound?.id), run = data.runs.find((r) => r.id === intent.runId && r.experimentId === intent.experimentId), keyId = `${intent.id}:${intent.manifestDigest}`, taskBound = !!grant?.taskBinding, grantUsable = !!grant && grant.sessionId === session.id && runGrantUsable(grant), campaignOwned = !!campaignId && data.campaigns.some((c) => c.id === campaignId && c.rootSessionId === session.id) && (data.members.some((m) => m.campaignId === campaignId && m.intentId === intent.id) || (data.researchCandidates ?? []).some((c) => c.campaignId === campaignId && c.intentId === intent.id)), owned = campaignId ? campaignOwned && (intent.rootSessionId === session.id || intent.rootSessionId == null || !!bound && !taskBound && grantUsable) : intent.rootSessionId === session.id, approved = approval?.status === "approved" || approval?.status === "pending" && this.approvedRunIntents.has(keyId), queued = this.queuedRunIntents.has(keyId), canContinue = owned && intent.status === "prepared" && !intent.runId && !run && !queued && !!approval && (!bound && ["pending", "approved"].includes(approval.status) || !!bound && !taskBound && grantUsable && approval.status === "approved");
+    const { data, session } = this.props, approval = data.approvals.find((a) => a.id === intent.approvalId), bound = intent.runGrant ?? approval?.runGrant, grant = (data.runGrants ?? []).find((g) => g.id === bound?.id), run = data.runs.find((r) => r.id === intent.runId && r.experimentId === intent.experimentId), keyId = `${intent.id}:${intent.manifestDigest}`, taskBound = !!grant?.taskBinding, grantUsable = !!grant && grant.sessionId === session.id && runGrantUsable(grant), campaignOwned = !!campaignId && data.campaigns.some((c) => c.id === campaignId && c.rootSessionId === session.id) && (data.members.some((m) => m.campaignId === campaignId && m.intentId === intent.id) || (data.researchCandidates ?? []).some((c) => c.campaignId === campaignId && c.intentId === intent.id)), owned = campaignId ? campaignOwned && (intent.rootSessionId === session.id || intent.rootSessionId == null || !!bound && !taskBound && grantUsable) : intent.rootSessionId === session.id, approved = approval?.status === "approved" || approval?.status === "pending" && this.approvedRunIntents.has(keyId), queued = this.queuedRunIntents.has(keyId), canContinue = !approval?.automaticApproval && owned && intent.status === "prepared" && !intent.runId && !run && !queued && !!approval && (!bound && ["pending", "approved"].includes(approval.status) || !!bound && !taskBound && grantUsable && approval.status === "approved");
     return /* @__PURE__ */ jsxs("details", { className: "workflow-card", open: canContinue || queued, children: [
       /* @__PURE__ */ jsxs("summary", { children: [
         "\u6B63\u5F0F\u5B9E\u9A8C \xB7 ",
         data.experiments.find((e) => e.id === intent.experimentId)?.title ?? short(intent.experimentId),
-        /* @__PURE__ */ jsx(Badge, { value: run?.state ?? (approved ? "approved" : approval?.status ?? intent.status) })
+        /* @__PURE__ */ jsx(Badge, { value: run?.state ?? (approved ? "approved" : approval?.status ?? intent.status), caption: !run && approval?.automaticApproval ? "\u81EA\u52A8\u5BA1\u6279" : void 0 })
       ] }),
+      approval?.automaticApproval ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: automaticApprovalLabel(approval) }) : null,
       intent.manifest.contract?.runner === "local" ? /* @__PURE__ */ jsxs("p", { className: "small", children: [
         "\u672C\u5730\u6267\u884C\uFF1A\u4F7F\u7528\u5F53\u524D\u7528\u6237\u6743\u9650\uFF0C\u6587\u4EF6\u548C\u7F51\u7EDC\u4E0D\u9694\u79BB\u3002\u8FD0\u884C\u73AF\u5883 ",
         intent.manifest.contract.localRuntimeId
@@ -450,7 +452,7 @@ class ChatWorkflows extends React.Component {
         /* @__PURE__ */ jsx("summary", { children: "\u56FA\u5B9A\u6765\u6E90\u3001\u989D\u5EA6\u4E0E\u622A\u6B62\u6761\u4EF6" }),
         /* @__PURE__ */ jsx("pre", { className: "file-preview", children: JSON.stringify({ id: c.id, rootSessionId: c.rootSessionId, contractDigest: c.contractDigest, planDigest: c.planDigest, limits: c.limits, rootModel: c.rootModel }, null, 2) })
       ] }),
-      c.state === "draft" && a && ["pending", "approved"].includes(a.status) ? /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
+      c.state === "draft" && a && !a.automaticApproval && ["pending", "approved"].includes(a.status) ? /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
         /* @__PURE__ */ jsx("button", { className: "primary compact", disabled, onClick: () => perform(async () => {
           await this.approved(a);
           await api(`/campaigns/${c.id}/activate`, { expectedVersion: c.version });
@@ -459,7 +461,7 @@ class ChatWorkflows extends React.Component {
       ] }) : null,
       a ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
         "\u6279\u51C6\u72B6\u6001\uFF1A",
-        label(a.status)
+        automaticApprovalLabel(a) ?? label(a.status)
       ] }) : null,
       /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
         c.state === "active" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled, onClick: () => perform(() => api(`/campaigns/${c.id}/pause`, { expectedVersion: c.version })), children: "\u6682\u505C\u7814\u7A76\u8BA1\u5212" }) : null,
@@ -501,15 +503,16 @@ class ChatWorkflows extends React.Component {
           /* @__PURE__ */ jsxs("summary", { children: [
             "\u7814\u7A76\u51B3\u5B9A \xB7 ",
             label(d.action),
-            /* @__PURE__ */ jsx(Badge, { value: d.status })
+            /* @__PURE__ */ jsx(Badge, { value: d.status, caption: d.status === "proposed" && approval?.automaticApproval ? "\u81EA\u52A8\u5BA1\u6279" : void 0 })
           ] }),
           /* @__PURE__ */ jsx("p", { children: d.reason }),
+          approval?.automaticApproval ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: automaticApprovalLabel(approval) }) : null,
           /* @__PURE__ */ jsxs("details", { children: [
             /* @__PURE__ */ jsx("summary", { children: "\u4F9D\u636E\u3001\u5019\u9009\u914D\u7F6E\u4E0E\u56FA\u5B9A\u65B9\u6848" }),
             /* @__PURE__ */ jsx("pre", { className: "file-preview", children: JSON.stringify(d, null, 2) }),
             (data.experimentPlans ?? []).filter((p) => p.id === d.planRevisionId).map((p) => /* @__PURE__ */ jsx("pre", { className: "file-preview", children: JSON.stringify(p, null, 2) }, p.id))
           ] }),
-          d.status === "proposed" && approval && ["pending", "approved"].includes(approval.status) ? /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
+          d.status === "proposed" && approval && !approval.automaticApproval && ["pending", "approved"].includes(approval.status) ? /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
             /* @__PURE__ */ jsx("button", { className: "primary compact", disabled, onClick: () => perform(async () => {
               await this.approved(approval);
               await api(`/campaign-decisions/${d.id}/apply`, { expectedVersion: d.version });
@@ -532,6 +535,7 @@ class ChatWorkflows extends React.Component {
         p.title,
         /* @__PURE__ */ jsx(Badge, { value: p.state })
       ] }),
+      a?.automaticApproval ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: automaticApprovalLabel(a) }) : null,
       /* @__PURE__ */ jsx("p", { children: p.hypothesis }),
       /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
         "\u7236\u5B9E\u9A8C ",
@@ -566,7 +570,7 @@ class ChatWorkflows extends React.Component {
           /* @__PURE__ */ jsx("pre", { className: "file-preview", children: f.after ?? "\uFF08\u5220\u9664\uFF09" })
         ] })
       ] }, f.path)) }) : null,
-      !readOnly && p.state === "prepared" && p.sourceValidity !== "stale" && a && ["pending", "approved"].includes(a.status) ? /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
+      !readOnly && p.state === "prepared" && p.sourceValidity !== "stale" && a && !a.automaticApproval && ["pending", "approved"].includes(a.status) ? /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
         /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: disabled || !current, onClick: () => perform(async () => {
           await this.approved(a);
           await api(`/change-proposals/${p.id}/apply`, {});
@@ -593,7 +597,7 @@ class ChatWorkflows extends React.Component {
       ...proposals.filter((p) => p.state === "applied" && p.sourceValidity !== "stale").map((p) => p.id)
     ]);
     const content = /* @__PURE__ */ jsxs("section", { className: "chat-workflows", "aria-label": "\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1", children: [
-      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5728\u5BF9\u8BDD\u4E2D\u63D0\u51FA\u4EFB\u52A1\uFF1B\u5F85\u786E\u8BA4\u4E8B\u9879\u663E\u793A\u5728\u8FD9\u91CC\u3002" }),
+      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5728\u5BF9\u8BDD\u4E2D\u63D0\u51FA\u4EFB\u52A1\uFF1B\u6267\u884C\u72B6\u6001\u4E0E\u8BB0\u5F55\u663E\u793A\u5728\u8FD9\u91CC\u3002" }),
       summary ? /* @__PURE__ */ jsx(SessionWorkSummaryCard, { summary, onRun: this.props.onRun, onCheck: this.validationBinding() ? () => void this.checkCurrentValidation() : void 0, validation: this.validationData === data && !busy ? this.state.validationResult : null, pending: this.state.validationPending, checked: this.state.validationChecked, unavailable: this.props.readCurrent === false, busy }) : null,
       this.researchBriefCard(disabled),
       /* @__PURE__ */ jsx(PublicationDialogue, { data, session, disabled, busy, perform }),
@@ -609,13 +613,14 @@ class ChatWorkflows extends React.Component {
         /* @__PURE__ */ jsx(WorkingGrants, { data, session, busy: disabled, perform, dirty: false })
       ] }) : null,
       tasks.slice().reverse().map((t) => {
-        const a = data.approvals.find((a2) => a2.id === t.grantId), derived = t.manifest.workingGrant, grant = (data.workingGrants ?? []).find((g) => g.id === session.workingGrantId), oldTemplate = !!session.workingGrantId && !derived, grantOpen = !session.workingGrantId || derived?.id === session.workingGrantId && grant?.effectiveState === "active" && grant.validity === "current" && Date.parse(grant.expiresAt) > Date.now(), expired = Date.parse(t.manifest.deadline) <= Date.now(), actionable = !expired && !t.jobId && !oldTemplate && !!a && ["pending", "approved"].includes(a.status);
+        const a = data.approvals.find((a2) => a2.id === t.grantId), derived = t.manifest.workingGrant, grant = (data.workingGrants ?? []).find((g) => g.id === session.workingGrantId), oldTemplate = !!session.workingGrantId && !derived, grantOpen = !session.workingGrantId || derived?.id === session.workingGrantId && grant?.effectiveState === "active" && grant.validity === "current" && Date.parse(grant.expiresAt) > Date.now(), expired = Date.parse(t.manifest.deadline) <= Date.now(), actionable = !expired && !t.jobId && !oldTemplate && !!a && !a.automaticApproval && ["pending", "approved"].includes(a.status);
         return /* @__PURE__ */ jsxs("details", { className: "workflow-card", open: actionable, children: [
           /* @__PURE__ */ jsxs("summary", { children: [
             "\u5F00\u53D1\u6D4B\u8BD5 \xB7 ",
             t.title,
-            /* @__PURE__ */ jsx(Badge, { value: a?.status ?? t.state })
+            /* @__PURE__ */ jsx(Badge, { value: a?.status ?? t.state, caption: a?.automaticApproval ? "\u81EA\u52A8\u5BA1\u6279" : void 0 })
           ] }),
+          a?.automaticApproval ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: automaticApprovalLabel(a) }) : null,
           /* @__PURE__ */ jsxs("p", { children: [
             "\u6E90\u7801 ",
             short(t.sourceDigest),
@@ -652,8 +657,9 @@ class ChatWorkflows extends React.Component {
           /* @__PURE__ */ jsxs("summary", { children: [
             "\u72EC\u7ACB\u5BA1\u67E5 \xB7 ",
             short(r.id),
-            /* @__PURE__ */ jsx(Badge, { value: r.status })
+            /* @__PURE__ */ jsx(Badge, { value: r.status, caption: r.status === "awaiting_approval" && a?.automaticApproval ? "\u81EA\u52A8\u5BA1\u6279" : void 0 })
           ] }),
+          a?.automaticApproval ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: automaticApprovalLabel(a) }) : null,
           /* @__PURE__ */ jsxs("p", { children: [
             "\u56FA\u5B9A\u6D4B\u8BD5 ",
             short(r.jobId),
@@ -676,7 +682,7 @@ class ChatWorkflows extends React.Component {
             /* @__PURE__ */ jsx("p", { children: task.result.summary })
           ] }) : null,
           r.status === "stale" ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u6D4B\u8BD5\u6216\u5BA1\u67E5\u6765\u6E90\u5DF2\u5931\u6548\uFF0C\u5386\u53F2\u610F\u89C1\u4E0D\u80FD\u7528\u4E8E\u65B0\u6574\u5408\u3002" }) : null,
-          canStart && a && ["pending", "approved"].includes(a.status) ? /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
+          canStart && a && !a.automaticApproval && ["pending", "approved"].includes(a.status) ? /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
             /* @__PURE__ */ jsx("button", { className: "primary compact", disabled, onClick: () => perform(async () => {
               await this.approved(a);
               await api(`/teams/${r.teamId}/activate`, {});

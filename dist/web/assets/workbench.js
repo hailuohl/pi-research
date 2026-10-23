@@ -14,7 +14,7 @@ import { ResearchActionCards } from "./research-action-cards.js";
 import { ComposerControls } from "./composer-controls.js";
 import { readComposerDraft, saveComposerDraft } from "./composer-draft.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
-import { short, number, date, label } from "./models.js";
+import { automaticApprovalLabel, short, number, date, label } from "./models.js";
 import { Icon, Badge, Modal, nativeSelectButton } from "./ui.js";
 class Chat extends React.Component {
   constructor() {
@@ -264,8 +264,8 @@ class Chat extends React.Component {
         ...(data.reviews ?? []).filter((row) => row.producerSessionId === session.id && data.project.settings.enabled && data.teams.some((team) => team.id === row.teamId && team.state === "awaiting_approval" && team.delegationEnabled)).map((row) => row.approvalId),
         ...(data.changeProposals ?? []).filter((row) => proposalSession(data, row) === session.id && row.state === "prepared" && row.sourceValidity !== "stale").map((row) => row.approvalId)
       ]);
-      for (const approval of data.approvals ?? []) if (approval.status === "pending" && approvalIds.has(approval.id)) pending.add(approval.id);
-      for (const request of data.researchActions ?? []) if (request.projectId === data.project.id && request.sessionId === session.id && request.state === "pending") pending.add("research:" + request.id);
+      for (const approval of data.approvals ?? []) if (approval.status === "pending" && !approval.automaticApproval && approvalIds.has(approval.id)) pending.add(approval.id);
+      for (const request of data.researchActions ?? []) if (request.projectId === data.project.id && request.sessionId === session.id && request.state === "pending" && !request.automaticApproval) pending.add("research:" + request.id);
     }
     return /* @__PURE__ */ jsxs("div", { className: "chat-page", onKeyDown: (event) => {
       if (event.key === "Escape" && this.state.drawerOpen && !event.defaultPrevented && !event.target.closest('[role="dialog"]')) {
@@ -341,7 +341,7 @@ class Chat extends React.Component {
             /* @__PURE__ */ jsx("button", { type: "button", ref: this.drawerClose, className: "icon-button", "aria-label": "\u5173\u95ED\u4EFB\u52A1\u4E0E\u5BA1\u6279", onClick: this.closeDrawer, children: /* @__PURE__ */ jsx(Icon, { name: "close" }) })
           ] }),
           /* @__PURE__ */ jsxs("div", { className: "chat-task-drawer-content", ref: this.drawerContent, children: [
-            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u672C\u4F1A\u8BDD\u7684\u4EFB\u52A1\u3001\u5BA1\u6279\u4E0E\u7ED3\u679C\u901A\u77E5\u3002\u64CD\u4F5C\u4ECD\u6309\u539F\u6709\u56FA\u5B9A\u8303\u56F4\u786E\u8BA4\u3002" }),
+            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u672C\u4F1A\u8BDD\u7684\u4EFB\u52A1\u3001\u5BA1\u6279\u4E0E\u7ED3\u679C\u8BB0\u5F55\uFF1B\u5404\u9879\u8BB0\u5F55\u663E\u793A\u5F53\u524D\u5904\u7406\u72B6\u6001\u3002" }),
             session && latest ? /* @__PURE__ */ jsx(PermissionActions, { sessionId: session.id, projectId: data.project.id, session, archived: data.project.archived || session.state === "archived", busy: this.props.busy, perform: this.props.perform, onPendingChange: this.permissionPending }, session.id) : null,
             session && latest ? /* @__PURE__ */ jsx(ChatWorkflows, { data, session, busy: this.props.busy, readCurrent: this.props.readCurrent, validationPerform: this.props.validationPerform, perform: this.props.perform, onSession: this.props.onSession, onExperiment: this.props.onExperiment, onRun: this.props.onRun }) : null,
             session ? /* @__PURE__ */ jsx(ResearchActionCards, { data, session, busy: this.props.busy, perform: this.props.perform, onSession: this.props.onSession, onRun: this.props.onRun, onCampaign: this.props.onCampaign, onRegister: this.props.onRegister, onClaim: this.props.onClaim, onUseDocument: this.props.onUseDocument, onSources: this.props.onSources }) : null,
@@ -742,6 +742,7 @@ class Inspector extends React.Component {
     const teamIds = new Set(teams.map((t) => t.id));
     const inlineReviewTeams = new Set(this.props.inlineWorkflows ? (data.reviews ?? []).filter((r) => r.producerSessionId === this.props.sessionId).map((r) => r.teamId) : []);
     const pendingTeams = data.approvals.filter((a) => a.subjectKind === "team" && (a.status === "pending" || a.status === "approved" && teams.some((t) => t.id === a.subjectId && t.state === "awaiting_approval")) && teamIds.has(a.subjectId) && !inlineReviewTeams.has(a.subjectId));
+    const manualPendingTeams = pendingTeams.filter((a) => !a.automaticApproval);
     return /* @__PURE__ */ jsxs("aside", { className: "inspector" + (this.props.embedded ? " embedded-inspector" : ""), "aria-label": this.props.tab === "experiments" ? "\u5B9E\u9A8C\u4E0E\u8FD0\u884C\u8BE6\u60C5" : this.props.embedded ? "\u5F53\u524D\u4F1A\u8BDD\u534F\u4F5C\u7A7A\u95F4" : void 0, children: [
       !this.props.embedded || this.props.tab === "experiments" ? /* @__PURE__ */ jsxs("div", { className: "inspector-title", children: [
         /* @__PURE__ */ jsx(Icon, { name: this.props.tab === "experiments" ? "experiment" : "branch" }),
@@ -819,29 +820,31 @@ class Inspector extends React.Component {
           /* @__PURE__ */ jsx(RunFiles, { run, data, perform }, run.id)
         ] }) : null
       ] }) : null,
-      this.props.tab !== "experiments" ? /* @__PURE__ */ jsxs("details", { className: "inspector-collaboration", open: pendingTeams.length > 0 || ["active", "paused", "draining", "failed", "partial"].includes(team?.state ?? ""), children: [
+      this.props.tab !== "experiments" ? /* @__PURE__ */ jsxs("details", { className: "inspector-collaboration", open: manualPendingTeams.length > 0 || ["active", "paused", "draining", "failed", "partial"].includes(team?.state ?? ""), children: [
         /* @__PURE__ */ jsxs("summary", { children: [
           "\u534F\u4F5C\u8BA1\u5212\u4E0E\u7ED3\u679C",
-          /* @__PURE__ */ jsx("span", { children: pendingTeams.length ? "\u5F85\u5BA1\u6279" : team ? label(team.state) : "\u6682\u65E0\u4EFB\u52A1" })
+          /* @__PURE__ */ jsx("span", { children: manualPendingTeams.length ? "\u5F85\u5BA1\u6279" : pendingTeams.length ? "\u81EA\u52A8\u5904\u7406\u8BB0\u5F55" : team ? label(team.state) : "\u6682\u65E0\u4EFB\u52A1" })
         ] }),
         pendingTeams.map((a) => {
           const pendingTeam = teams.find((t) => t.id === a.subjectId), canStart = data.project.settings.enabled && pendingTeam?.state === "awaiting_approval" && pendingTeam.delegationEnabled;
           return /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
-            /* @__PURE__ */ jsx("div", { className: "small-label", children: a.status === "approved" ? "\u5DF2\u6279\u51C6\u7684\u534F\u4F5C\u8BA1\u5212" : "\u5F85\u6279\u51C6\u7684\u534F\u4F5C\u8BA1\u5212" }),
+            /* @__PURE__ */ jsx("div", { className: "small-label", children: automaticApprovalLabel(a) ?? (a.status === "approved" ? "\u5DF2\u6279\u51C6\u7684\u534F\u4F5C\u8BA1\u5212" : "\u5F85\u6279\u51C6\u7684\u534F\u4F5C\u8BA1\u5212") }),
             /* @__PURE__ */ jsx("h3", { children: pendingTeam?.goal }),
             /* @__PURE__ */ jsx("p", { className: "small muted", children: a.reason }),
-            !canStart ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: "\u6B64\u8BA1\u5212\u5DF2\u505C\u6B62\uFF1B\u8BF7\u5728\u5BF9\u8BDD\u4E2D\u91CD\u65B0\u63D0\u51FA\u4EFB\u52A1\u3002" }) : null,
-            /* @__PURE__ */ jsx("button", { className: "primary full", disabled: data.project.archived || !canStart, onClick: () => {
-              if (this.props.data.project.archived || !canStart) return;
-              perform(async () => {
-                if (a.status === "pending") await api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: true });
-                await api(`/teams/${a.subjectId}/activate`, {});
-              }, "\u534F\u4F5C\u8BA1\u5212\u5DF2\u542F\u52A8");
-            }, children: a.status === "approved" ? "\u542F\u52A8\u5DF2\u6279\u51C6\u534F\u4F5C" : "\u6279\u51C6\u5E76\u542F\u52A8\u534F\u4F5C" }),
-            a.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "text-button", disabled: data.project.archived ? true : void 0, onClick: () => {
-              if (this.props.data.project.archived) return;
-              return perform(() => api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: false }));
-            }, children: "\u62D2\u7EDD\u6B64\u8BA1\u5212" }) : null
+            !a.automaticApproval && !canStart ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: "\u6B64\u8BA1\u5212\u5DF2\u505C\u6B62\uFF1B\u8BF7\u5728\u5BF9\u8BDD\u4E2D\u91CD\u65B0\u63D0\u51FA\u4EFB\u52A1\u3002" }) : null,
+            !a.automaticApproval ? /* @__PURE__ */ jsxs(Fragment, { children: [
+              /* @__PURE__ */ jsx("button", { className: "primary full", disabled: data.project.archived || !canStart, onClick: () => {
+                if (this.props.data.project.archived || !canStart) return;
+                perform(async () => {
+                  if (a.status === "pending") await api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: true });
+                  await api(`/teams/${a.subjectId}/activate`, {});
+                }, "\u534F\u4F5C\u8BA1\u5212\u5DF2\u542F\u52A8");
+              }, children: a.status === "approved" ? "\u542F\u52A8\u5DF2\u6279\u51C6\u534F\u4F5C" : "\u6279\u51C6\u5E76\u542F\u52A8\u534F\u4F5C" }),
+              a.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "text-button", disabled: data.project.archived ? true : void 0, onClick: () => {
+                if (this.props.data.project.archived) return;
+                return perform(() => api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: false }));
+              }, children: "\u62D2\u7EDD\u6B64\u8BA1\u5212" }) : null
+            ] }) : null
           ] }, a.id);
         }),
         team ? /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
@@ -924,7 +927,7 @@ class Inspector extends React.Component {
               ] }) : null,
               /* @__PURE__ */ jsx("p", { className: "small prose-text", children: t.result.summary })
             ] }) : null,
-            t.execution === "output_submitted" && ["pending", "rejected", "disputed"].includes(t.acceptance) ? /* @__PURE__ */ jsx("button", { type: "button", className: "text-button", disabled: data.project.archived, onClick: () => {
+            t.execution === "output_submitted" && !data.approvals.find((a) => a.id === team.approvalId)?.automaticApproval && ["pending", "rejected", "disputed"].includes(t.acceptance) ? /* @__PURE__ */ jsx("button", { type: "button", className: "text-button", disabled: data.project.archived, onClick: () => {
               this.openReview(t.id);
             }, children: "\u4EBA\u5DE5\u786E\u8BA4\u9A8C\u6536" }) : null
           ] }, t.id)),

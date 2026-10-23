@@ -8,6 +8,7 @@ export interface TextCorpusGrantReference {
     approvalId: string;
 }
 export interface TextCorpusGrant {
+    automaticApproval?: import('./automatic-approvals.js').AutomaticApprovalReference;
     sessionId: string;
     model: ModelConfig;
     corpusId: string;

@@ -35,7 +35,7 @@ export declare class ResearchPlanService {
     attachCandidate(actor: Actor, pid: string, value: unknown): Row<ResearchCandidate>;
     comparison(actor: Actor, pid: string, value: unknown): {
         campaignId: string;
-        state: "active" | "draft" | "paused" | "stopped";
+        state: "draft" | "active" | "paused" | "stopped";
         primaryMetric: string;
         direction: "max" | "min";
         unit: string;
@@ -98,7 +98,7 @@ export declare class ResearchPlanService {
             baselineExperimentId: string;
             contractDigest: string;
             limits: import("./types.js").CampaignLimits;
-            state: "active" | "draft" | "paused" | "stopped";
+            state: "draft" | "active" | "paused" | "stopped";
             approvalId: string;
             planDigest: string;
         };
@@ -108,11 +108,11 @@ export declare class ResearchPlanService {
             subjectId: string;
             digest: string;
             scope: string;
-            status: "stale" | "pending" | "approved" | "rejected";
+            status: "pending" | "stale" | "approved" | "rejected";
         }[];
         decisions: Row<CampaignDecision>[];
         campaignId: string;
-        state: "active" | "draft" | "paused" | "stopped";
+        state: "draft" | "active" | "paused" | "stopped";
         primaryMetric: string;
         direction: "max" | "min";
         unit: string;

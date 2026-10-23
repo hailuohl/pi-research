@@ -8,5 +8,6 @@ export declare class DecisionService {
     inputDigest(c: Row<Campaign>): string;
     private validate;
     propose(actor: Actor, id: string, value: unknown): Row<CampaignDecision>;
+    applyAutomatic(actor: Actor, ref: import('../policy/automatic-approvals.js').AutomaticApprovalReference, id: string, version: number): Row<CampaignDecision>;
     apply(actor: Actor, id: string, expectedVersion: number): Row<CampaignDecision>;
 }

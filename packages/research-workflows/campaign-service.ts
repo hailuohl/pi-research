@@ -45,7 +45,7 @@ export class CampaignService {
     }
     prepareSession(actor: Actor, projectId: string, sessionId: string) {
         scope(actor, projectId);
-        ensure(actor.type === 'user' || actor.type === 'agent' && actor.role === 'coordinator' && !actor.taskId && !actor.wakeupId && actor.sessionId === sessionId,
+        ensure(actor.type === 'user' || actor.type === 'agent' && actor.role === 'coordinator' && !actor.taskId && (!actor.wakeupId||this.app.automaticApprovals.isContinuation(actor)) && actor.sessionId === sessionId,
             'TOOL_DENIED', '研究活动只能由当前交互式主协调会话准备', 403);
         const project = this.app.projects.get(actor, projectId);
         ensure(!project.archived, 'PROJECT_ARCHIVED', '项目已归档');
@@ -55,6 +55,7 @@ export class CampaignService {
     }
     assertActive(c: Row<Campaign>) {
         ensure(c.state === 'active', 'CAMPAIGN_NOT_ACTIVE', '研究活动未启动、已暂停或已停止');
+        const approval=this.app.store.get<import('../domain/types.js').Approval>('approval',c.approvalId,c.projectId!);if(approval.automaticApproval)this.app.automaticApprovals.assert(approval.automaticApproval);
         ensure(!this.app.store.get<Project>('project', c.projectId!).archived, 'PROJECT_ARCHIVED', '项目已归档');
         ensure(!c.limits.deadline || Date.now() < Date.parse(c.limits.deadline), 'CAMPAIGN_DEADLINE', '研究活动已到截止时间');
     }
@@ -96,6 +97,7 @@ export class CampaignService {
             return c;
         });
     }
+    activateAutomatic(actor:Actor,ref:import('../policy/automatic-approvals.js').AutomaticApprovalReference,id:string,version:number){return this.activate(this.app.automaticApprovals.delegate(actor,ref,'campaign',id),id,version);}
     activate(actor: Actor, id: string, expectedVersion: number) {
         userOnly(actor);
         return this.app.store.transaction(() => {

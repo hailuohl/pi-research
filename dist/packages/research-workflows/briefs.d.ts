@@ -5,6 +5,8 @@ import { type ResearchSourceInput } from './source-inputs.js';
 import type { Store } from '../storage/store.js';
 import { type FrozenMethodContract, type MethodRequirement, type DraftRole, type ProtocolDocument } from './method-contracts.js';
 export interface ResearchBrief {
+    automaticApproval?: import('../policy/automatic-approvals.js').AutomaticApprovalReference;
+    automaticExecution?: import('../policy/automatic-approvals.js').AutomaticExecution;
     rootSessionId: string;
     revision: number;
     previousRevisionId?: string;
@@ -61,14 +63,18 @@ export declare class ResearchBriefService {
     assertAdmission(projectId: string, ref: ResearchBriefRef, phase?: 'formal'): void;
     validateReadyDrafts(actor: Actor, projectId: string, sessionId: string, input: unknown): void;
     sourceInputFingerprint(sessionId: string, expectedRevisionId: string | null): {
+        digest: string;
         path: string;
         size: number;
-        digest: string;
         workspace: string;
         readId: string;
         artifactId?: string;
     }[] | undefined;
     save(actor: Actor, projectId: string, sessionId: string, input: unknown): Row<ResearchBrief>;
     inspect(actor: Actor, projectId: string, sessionId: string, briefId?: string): ResearchBriefInspection;
+    confirmAutomatic(actor: Actor, ref: import('../policy/automatic-approvals.js').AutomaticApprovalReference, pid: string, sessionId: string, input: {
+        briefId: string;
+        expectedVersion: number;
+    }): Row<ResearchBrief>;
     confirm(actor: Actor, projectId: string, sessionId: string, input: unknown): Row<ResearchBrief>;
 }

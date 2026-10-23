@@ -1,6 +1,6 @@
 import { ensure, asError } from '../domain/errors.js';
 import { object, text, integer } from '../contracts/validation.js';
-import { scope, interactiveCoordinator } from '../policy/permissions.js';
+import { scope } from '../policy/permissions.js';
 import { assertProjectWritable } from '../policy/lifecycle.js';
 import { verifyRunRecord } from '../evidence/run-verifier.js';
 import { fixedResearchBrief } from '../research-workflows/briefs.js';
@@ -19,7 +19,7 @@ export class FormalReportReviewService {
         if (actor.taskId)
             this.app.teams.active(actor);
         else
-            interactiveCoordinator(actor, pid, this.app.store.get('session', r.rootSessionId, pid));
+            this.app.automaticApprovals.coordinator(actor, pid, this.app.store.get('session', r.rootSessionId, pid));
     } }
     authorize(actor, pid, id) { const r = this.app.store.get('formal-report-review', id, pid); this.access(actor, pid, r); return r; }
     prepare(actor, pid, value) {
@@ -35,7 +35,7 @@ export class FormalReportReviewService {
             ensure(root.role === 'coordinator' && !root.taskId && !root.teamId && root.state !== 'archived', 'FORMAL_REPORT_ROOT_REQUIRED', '需要未归档的原主协调会话');
             ensure(actor.type === 'user' || actor.type === 'agent' && actor.sessionId === root.id, 'TASK_SCOPE_DENIED', '正式报告Run不属于当前主会话', 403);
             if (actor.type === 'agent')
-                interactiveCoordinator(actor, pid, root);
+                this.app.automaticApprovals.coordinator(actor, pid, root);
             ensure(run.state === 'succeeded' && run.integrity === 'complete' && run.exitCode === 0, 'FORMAL_REPORT_RUN_INCOMPLETE', '仅审查成功完整的正式Run');
             verifyRunRecord(run, this.app.evidence);
             const { artifact: report } = formalArtifactText(this.app.store, pid, reportId);

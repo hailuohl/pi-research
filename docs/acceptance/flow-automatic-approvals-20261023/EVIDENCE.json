@@ -1,0 +1,452 @@
+{
+  "date": "2026-10-23",
+  "batch": "full-access-automatic-approvals",
+  "baseline": "d03e0d5aeaaf1ae53a2aa9ef68ef7a28e73186dc",
+  "branch": "implementation/pr01-reproducible-baseline",
+  "remote": {
+    "repository": "https://github.com/hailuohl/pi-research",
+    "visibility": "private",
+    "verified": true
+  },
+  "acceptance": {
+    "newExplicitScope": true,
+    "recordsWithoutPerItemActions": true,
+    "currentAuthorityChecks": true,
+    "noOldPendingAdoption": true,
+    "historyAndIdempotency": true
+  },
+  "review": {
+    "independent": true,
+    "requestedModel": "gpt-6-astra",
+    "requestedReasoningEffort": "xhigh",
+    "runtimeModelAndEffort": "not echoed",
+    "blockers": 0,
+    "newNonBlockingFindings": 0,
+    "manifestSha256": "bb0d286541025280a9bbb268c5a5e65c0cd95543f2632d811a5764aa5cc152c8",
+    "closed": [
+      "team model/source changes fence dispatch and child effects",
+      "exact decision effects inherit original task authorization and budgets",
+      "queued candidates accept complete cancelled/timed_out; unknown and incomplete remain blocked"
+    ],
+    "reproductions": [
+      {
+        "path": "D:/项目/pi research/tmp/full-access-automatic-approvals-20261023/review-repro-campaign-fixed.log",
+        "sha256": "bc7f5a56c244bc018a0ed58112924139f595129fa8a477f8423f1d74cb8b1c56"
+      },
+      {
+        "path": "D:/项目/pi research/tmp/full-access-automatic-approvals-20261023/review-repro-campaign-timeout-fixed.log",
+        "sha256": "49adbb0bb909ac53416517a0d17f9813ed5c42c26170b6419868ca6b889dcb82"
+      }
+    ]
+  },
+  "checks": [
+    {
+      "kind": "clean-build",
+      "command": "npm run build",
+      "exitCode": 0,
+      "outputRemovedBeforeBuild": "isolated dist moved to .validation/before-terminal-clean-dist",
+      "log": {
+        "path": "D:/项目/pi research/tmp/full-access-automatic-approvals-20261023/final-clean-build.log",
+        "sha256": "1b80e80e32db80abb6fe1875e7f5c1aa20a83ac34301da8cdb0561895504d41f"
+      }
+    },
+    {
+      "kind": "typecheck",
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "log": {
+        "path": "D:/项目/pi research/tmp/full-access-automatic-approvals-20261023/final-typecheck.log",
+        "sha256": "8651ee5a204d2a9c14e0db4122e99a983e0dc76a4de897aef627a5bea18f10e4"
+      }
+    },
+    {
+      "kind": "node-tests",
+      "passed": 2336,
+      "failed": 1,
+      "skipped": 25,
+      "exitCode": 1,
+      "log": {
+        "path": "D:/项目/pi research/tmp/full-access-automatic-approvals-20261023/full-regression.log",
+        "sha256": "c5ff78ac48ca86d08c34582ea77d52ad3f0cbdea16d8f2d1293474bf938acdfc"
+      },
+      "name": "single full regression on earlier implementation snapshot",
+      "baseline": "d9a1c0e6556ff0d08388f46156fa40ba539a6522",
+      "resolution": "static continuation tool catalog fixed in shared caller; original tests/unit/tools.test.mjs assertion retained and passed in affected checks; no claim that this full run was green"
+    },
+    {
+      "kind": "node-tests",
+      "passed": 695,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "log": {
+        "path": "D:/项目/pi research/tmp/full-access-automatic-approvals-20261023/delivery-targeted.log",
+        "sha256": "17fe6507257f78a0d3a1c90e368278b7749c5aa0de9a1e14516e67ce349ab4f3"
+      },
+      "name": "integrated source target group before review fixes"
+    },
+    {
+      "kind": "node-tests",
+      "passed": 100,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "log": {
+        "path": "D:/项目/pi research/tmp/full-access-automatic-approvals-20261023/review-fixes-targeted.log",
+        "sha256": "5a472bafd260369a73df8ea423b0c7120d8b62bd71e24fa13156832cc7657c1b"
+      },
+      "name": "team authority and static tool catalog affected checks"
+    },
+    {
+      "kind": "node-tests",
+      "passed": 119,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "log": {
+        "path": "D:/项目/pi research/.worktrees/full-access-automatic-delivery-20261023/.validation/automatic-campaign-effects-related.log",
+        "sha256": "628a4da46ee05da22afd8f393798ef3e180a3a50753013843bbcf269f2e1b5d3"
+      },
+      "name": "decision effects affected checks"
+    },
+    {
+      "kind": "node-tests",
+      "passed": 110,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "log": {
+        "path": "D:/项目/pi research/.worktrees/full-access-automatic-delivery-20261023/.validation/automatic-campaign-terminal-related.log",
+        "sha256": "4589a387f2bc628318cd19b57a45827643f8b0610410f6b510a55b89d748c183"
+      },
+      "name": "four terminal state fix affected checks"
+    },
+    {
+      "kind": "node-tests",
+      "passed": 108,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "log": {
+        "path": "D:/项目/pi research/tmp/full-access-automatic-approvals-20261023/final-targeted.log",
+        "sha256": "cb4d1328bd5bf79e460fe54dfd3d6de8fe2ce5524ffbe1f31a9878270524f14d"
+      },
+      "name": "final clean distribution affected checks",
+      "fileList": {
+        "path": "D:/项目/pi research/tmp/full-access-automatic-approvals-20261023/final-targeted-files.txt",
+        "sha256": "14c53576335ffcc1933d77cf23861843164571180bfc181fc1333e7caae65960"
+      }
+    },
+    {
+      "kind": "compatibility-build",
+      "exitCode": 0,
+      "scope": "isolated copy retains pre-existing main workspace in-flight code",
+      "log": {
+        "path": "D:/项目/pi research/tmp/full-access-automatic-approvals-20261023/current-compat-final-build.log",
+        "sha256": "1b80e80e32db80abb6fe1875e7f5c1aa20a83ac34301da8cdb0561895504d41f"
+      }
+    },
+    {
+      "kind": "node-tests",
+      "passed": 133,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "log": {
+        "path": "D:/项目/pi research/tmp/full-access-automatic-approvals-20261023/current-compat-tests.log",
+        "sha256": "f69adf14563809cdd8ea271dcf298278e0d2047c463d6f67c125a90e25b77e9c"
+      },
+      "name": "original compatibility group including existing manual research handoff"
+    },
+    {
+      "kind": "node-tests",
+      "passed": 87,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "log": {
+        "path": "D:/项目/pi research/tmp/full-access-automatic-approvals-20261023/current-compat-final-tests.log",
+        "sha256": "5f375dd19dc1f5469a148a2988e6bad4a33dd62795619d1b44c02324bdbc1522"
+      },
+      "name": "final incremental compatibility group",
+      "fileList": {
+        "path": "D:/项目/pi research/tmp/full-access-automatic-approvals-20261023/current-compat-final-test-files.txt",
+        "sha256": "03dc74764664f2467a14b3bf0873ec07c8e3b60d266fc69e5950b1a141686dd5"
+      }
+    },
+    {
+      "kind": "browser",
+      "browser": "Google Chrome via bundled Playwright",
+      "checks": 6,
+      "consoleErrors": [],
+      "status": "passed",
+      "fixture": "Real local HTTP/UI and backend operations with a host actor fixture; Pi input consumption is verified separately.",
+      "evidence": {
+        "path": "D:/项目/pi research/tmp/full-access-automatic-approvals-20261023/delivery-browser-evidence.json",
+        "sha256": "826bac4d18f0c61646f2e8b8145b92d9a78907747e2867b2b7dce6eac42419c6"
+      }
+    },
+    {
+      "kind": "real-docker",
+      "status": "passed",
+      "context": "desktop-linux",
+      "image": "python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f",
+      "state": "succeeded",
+      "integrity": "complete",
+      "exitCode": 0,
+      "replayedJobCount": 1,
+      "fixture": "Host actor fixture plus actual Docker daemon, independent execution worker and archived container output; native Pi input consumption is checked separately.",
+      "evidence": {
+        "path": "D:/项目/pi research/tmp/full-access-automatic-approvals-20261023/docker-evidence.json",
+        "sha256": "1f23c2999d51da3f2ffaf1673c3ab50c09386a57d7e4725bebfdd8c60224a089"
+      }
+    },
+    {
+      "kind": "diff-check",
+      "command": "git diff --check -- owned source/tests/docs",
+      "exitCode": 0
+    }
+  ],
+  "countsMayOverlap": true,
+  "redGreenEvidence": [
+    {
+      "path": "D:/项目/pi research/.worktrees/full-access-automatic-delivery-20261023/.validation/automatic-team-boundaries-red.log",
+      "sha256": "01c9bcbc579375829c77c887fb073c593a39e48b56baf87b5e0d76c50b264df1"
+    },
+    {
+      "path": "D:/项目/pi research/.worktrees/full-access-automatic-delivery-20261023/.validation/automatic-team-boundaries-green.log",
+      "sha256": "7403aa35bf9f72e6779dc1ddeb67df6728bed0b76433e4e73feab3a04b01e5cc"
+    },
+    {
+      "path": "D:/项目/pi research/.worktrees/full-access-automatic-delivery-20261023/.validation/automatic-campaign-effects-red.log",
+      "sha256": "894e4c09730500151d57a6a40e9ffb50cee829c4d245d5b741fdfa30b053df86"
+    },
+    {
+      "path": "D:/项目/pi research/.worktrees/full-access-automatic-delivery-20261023/.validation/automatic-campaign-effects-green.log",
+      "sha256": "b274c62d43d38750c1f87966a55359164c3f76b21f1ad1e50dbdf8bebdf583d5"
+    },
+    {
+      "path": "D:/项目/pi research/.worktrees/full-access-automatic-delivery-20261023/.validation/automatic-campaign-prepared-red.log",
+      "sha256": "eedf02ff390123a2792be52ab7c4ef23b1fe5c702249b02c3e57049a64f36404"
+    },
+    {
+      "path": "D:/项目/pi research/.worktrees/full-access-automatic-delivery-20261023/.validation/automatic-campaign-terminal-red.log",
+      "sha256": "19b84e7c7940af8b7a711a46dd5ab04973f416dc73a73b104b5c2783997875b1"
+    },
+    {
+      "path": "D:/项目/pi research/.worktrees/full-access-automatic-delivery-20261023/.validation/automatic-campaign-terminal-green.log",
+      "sha256": "0cbb11764e699879e6f96023ef826e16e7e23c11afc48f41e976b600f55f4cad"
+    }
+  ],
+  "notVerified": [
+    "external production model call",
+    "dedicated new-scope formal-report-review end-to-end",
+    "dedicated new-scope publication-review end-to-end",
+    "25 skipped full-suite cases: platform-specific or optional Docker/compiler matrix; not counted as passed"
+  ],
+  "runtime": {
+    "dependenciesChanged": false,
+    "mainServiceRestarted": false,
+    "existingMainDistOverwritten": false,
+    "oldGrantRequiresExplicitReenable": true
+  },
+  "agents": [
+    {
+      "role": "design",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "configuration": "requested; runtime not echoed"
+    },
+    {
+      "role": "backend",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "configuration": "requested; runtime not echoed"
+    },
+    {
+      "role": "frontend",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "configuration": "requested; runtime not echoed"
+    },
+    {
+      "role": "independent-permission-review",
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "configuration": "requested; runtime not echoed"
+    }
+  ],
+  "sources": {
+    "hashMeaning": "SHA256 of frozen raw worktree bytes; Git may normalize line endings",
+    "files": [
+      {
+        "path": "apps/web/src/chat-workflows.tsx",
+        "sha256": "b155fe710718cf10d92431d3b1a63c3d8c21883e142f680b8286501d9fa4f1cb"
+      },
+      {
+        "path": "apps/web/src/host-access-control.tsx",
+        "sha256": "8fbc589783c1be4323ece0cf9439ea969962b8a45b55b5482ea985d6782aeaa8"
+      },
+      {
+        "path": "apps/web/src/models.ts",
+        "sha256": "af0498f294b82b4d248cc776dbc4c2970031fec9040ae592b03194c05408e08f"
+      },
+      {
+        "path": "apps/web/src/permission-actions.tsx",
+        "sha256": "f8e7c4cca642ca394a5a00e142d0bd579df2a85808f664cf76167c21ef3ea28c"
+      },
+      {
+        "path": "apps/web/src/publication-dialogue.tsx",
+        "sha256": "2ee70f3615b65b0110873e98324fc2e17942e6990ae7cedcecf07f05433791e0"
+      },
+      {
+        "path": "apps/web/src/research-action-cards.tsx",
+        "sha256": "9bdc9fc92b850e8768fce83ae3f69e3836fe2f62da3a17124a48e9e568794c08"
+      },
+      {
+        "path": "apps/web/src/workbench.tsx",
+        "sha256": "469eec45aea719df78aff0a33ebb9c5faad21bf4eb44624dfb593b635c35c294"
+      },
+      {
+        "path": "packages/collaboration/team-service.ts",
+        "sha256": "ff386a706400920741b698554c482f29032c359152d08c77154107f192ec760a"
+      },
+      {
+        "path": "packages/contracts/operations/automatic-approval-schemas.ts",
+        "sha256": "e5cff876e3d7797db839a92acf550a286869f695d497c3664b631d8533e2e030"
+      },
+      {
+        "path": "packages/contracts/operations/outputs.ts",
+        "sha256": "569da7433c87668ca8762dfd5d11019731d71ac4dbd8f167c2e7661ff38eb4b4"
+      },
+      {
+        "path": "packages/contracts/operations/registry.ts",
+        "sha256": "e604f907d488fbff71a644166d1b2a0437adfdc03a07135a0cc1a32cb60cf0e6"
+      },
+      {
+        "path": "packages/contracts/operations/research-action-schemas.ts",
+        "sha256": "ab300a95bc9b5f957218e4306fbe9b9b48b32cc6b73353c441c396476bb53118"
+      },
+      {
+        "path": "packages/contracts/operations/research-automation-schemas.ts",
+        "sha256": "74919ef6e0782ca6b6f6269a556ec699175d75d276f28b547f36e5b35c3e9f4e"
+      },
+      {
+        "path": "packages/contracts/operations/research-brief-schemas.ts",
+        "sha256": "b2caa5cfbc6f4ebac8539b1f665d6720e40364369832b422357cba6519d4b8bf"
+      },
+      {
+        "path": "packages/development/reviews.ts",
+        "sha256": "56406ad0476bef7bd15dd8bd161ecd0eb7a74557b981ac3bcdd11ffa99e39a68"
+      },
+      {
+        "path": "packages/domain/types.ts",
+        "sha256": "bac33e881cff4b0c9c718b1ad4c5d511b61edca6dc659aca451ff128f76bf626"
+      },
+      {
+        "path": "packages/pi-adapter/options.ts",
+        "sha256": "182e252c27ccae8145ff2ab042e64a1a21b67cd05887e439896b9d15898dc8c8"
+      },
+      {
+        "path": "packages/policy/approvals.ts",
+        "sha256": "2ff1145a05ac0386dd365de143fd3eca6f12ace8de0600c94d4f557e97009bcc"
+      },
+      {
+        "path": "packages/policy/automatic-approval-proof.ts",
+        "sha256": "cfb209c57443dd81cf31ccea0f0c881ec0afafc333f089926b9ec36c2004094f"
+      },
+      {
+        "path": "packages/policy/automatic-approvals.ts",
+        "sha256": "9fe9d81d0d85b17ebbfe7f3e2c6deb7089c7fbb386f120888916fe9d9f57edcc"
+      },
+      {
+        "path": "packages/policy/automatic-text-grant.ts",
+        "sha256": "d68f71e23cd3a3d5ff7e71865e66863e01ac5d93f8802ffe946e41d640ca6384"
+      },
+      {
+        "path": "packages/policy/host-access.ts",
+        "sha256": "3e142fc243af64e67c64378e8ed47f1e90128464dc1e221b52b7d4be04550b2a"
+      },
+      {
+        "path": "packages/policy/research-automation.ts",
+        "sha256": "4c37d0c5f180ac53a5c77f5a165752182e5b2f31dc46f5919798fb901e1baf61"
+      },
+      {
+        "path": "packages/policy/session-permissions.ts",
+        "sha256": "f0eb67e95c15a979b701105f394a2f2dc462930cf80b001b4bb916ce260bcef3"
+      },
+      {
+        "path": "packages/policy/text-corpus-grants.ts",
+        "sha256": "d7dd8ddc2fc273256692893bb5331d1cccff7e87e625adfd5e98f3591ee3d3b9"
+      },
+      {
+        "path": "packages/publications/build-service.ts",
+        "sha256": "679ebbf93c023e84879f3dc24047e33fae6091af89136b318e2b31bb95126da5"
+      },
+      {
+        "path": "packages/publications/formal-report-reviews.ts",
+        "sha256": "221108e5c90bc398584d0592660e70d18681e4eb19ef58f6ae2eb3def4d6e1f4"
+      },
+      {
+        "path": "packages/publications/reviews.ts",
+        "sha256": "0df0b3222e382b3aa7bdc8d722437f6aed5eca574e7951433184f0a4a378b822"
+      },
+      {
+        "path": "packages/research-app.ts",
+        "sha256": "ad10d9d43fb204d9f077c9e88aedbfb104fb4bfd52a2ca2426c7a0f53d6fd563"
+      },
+      {
+        "path": "packages/research-tools/dispatcher.ts",
+        "sha256": "a31be58cb4c40ade887e50de721c63587fb0ec156647ee45715f4d5aebe1f5a9"
+      },
+      {
+        "path": "packages/research-workflows/actions.ts",
+        "sha256": "52996429a43ca8c848408842de53d6907cd2b8d734a7f1969d2712c9f0422a17"
+      },
+      {
+        "path": "packages/research-workflows/briefs.ts",
+        "sha256": "d2e3ad4f3150820069770539fde9840becc35a42af15b359e0baa45f5e18124d"
+      },
+      {
+        "path": "packages/research-workflows/campaign-service.ts",
+        "sha256": "de477166fbe6d5520576df0652d186b3df32d6ef5b9b2b7bae4b8d7b7ad2a885"
+      },
+      {
+        "path": "packages/research-workflows/decision-service.ts",
+        "sha256": "5da645a7ec6982e231c941e17611b465957b23f5ced344fffef085b487a0567c"
+      },
+      {
+        "path": "packages/scheduler/wakeups.ts",
+        "sha256": "a298c83ed0784a781396a8503d54dd36ccbd43025795f4c8e31d4a991e0c0f8c"
+      },
+      {
+        "path": "packages/text-evidence/service.ts",
+        "sha256": "eb628ea478e558ed4d48e18fd89a913d4589628b1ce6945666d12e3e4b85f70d"
+      },
+      {
+        "path": "packages/workspace/change-proposals.ts",
+        "sha256": "b826cb264adbdc149ba9a2e8854698627fffe1577220b387a37230d34ec80e67"
+      },
+      {
+        "path": "tests/integration/full-access-automatic-pi-http.test.mjs",
+        "sha256": "6cd2dc37e191aebd25043316c6ae0ecbc329115d0ad9b67afe1849d612e08a18"
+      },
+      {
+        "path": "tests/unit/automatic-approval-ui.test.mjs",
+        "sha256": "9bb9ede7be6289aba07051ad546e64aed5fa2d05680cace5060fab675a3de44e"
+      },
+      {
+        "path": "tests/unit/automatic-approvals.test.mjs",
+        "sha256": "4c7effff849c8d0a831ee1ef8b27841903634a4601631229e50c3c02ba2cc5e2"
+      },
+      {
+        "path": "tests/unit/host-access-menu-ui.test.mjs",
+        "sha256": "7eb21270460bd8a8b35a4e1f41ee20ed81d05b96ea70e0314bf86c9e9f49c13d"
+      }
+    ]
+  },
+  "delivery": {
+    "commitAndRemoteVerification": "recorded in final task delivery message after successful push",
+    "rawLogs": "retained in original local paths; no raw log/database/model credentials committed"
+  }
+}

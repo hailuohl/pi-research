@@ -111,6 +111,7 @@ export class DecisionService {
             return decision;
         });
     }
+    applyAutomatic(actor, ref, id, version) { return this.apply(this.app.automaticApprovals.delegate(actor, ref, 'campaign-decision', id), id, version); }
     apply(actor, id, expectedVersion) {
         userOnly(actor);
         return this.app.store.transaction(() => {
@@ -121,7 +122,7 @@ export class DecisionService {
             ensure(d.version === expectedVersion, 'VERSION_CONFLICT', '决定已更新');
             this.app.campaigns.assertActive(c);
             ensure(this.inputDigest(c) === d.inputDigest && c.currentRoundId === d.roundId, 'APPROVAL_STALE', '决定依据已变化，请基于最新结果重新提出并批准');
-            this.app.approvals.assert(d.approvalId, c.projectId, d.id, d.decisionDigest, 'campaign.decision');
+            this.app.approvals.assertEffect(d.approvalId, c.projectId, d.id, d.decisionDigest, 'campaign.decision');
             this.app.researchPlans.assertDecision(d);
             const body = { campaignId: d.campaignId, roundId: d.roundId, action: d.action, reason: d.reason,
                 observationIds: d.observationIds, ...(d.selectedRunId ? { selectedRunId: d.selectedRunId } : {}),

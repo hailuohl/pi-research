@@ -15,7 +15,7 @@ import {assertFormalReviewCurrent,formalArtifactText,formalFacts,formalPermissio
 const USER:Actor={type:'user'};
 export class FormalReportReviewService {
     constructor(private app:ResearchApp){}
-    private access(actor:Actor,pid:string,r:Row<FormalReportReview>){scope(actor,pid);ensure(actor.type==='user'||actor.type==='agent'&&(actor.role==='coordinator'&&!actor.taskId&&actor.sessionId===r.rootSessionId||actor.role==='reviewer'&&actor.taskId===r.taskId),'TASK_SCOPE_DENIED','只能读取本主会话或本独立任务的正式报告审查',403);if(actor.type==='agent'){if(actor.taskId)this.app.teams.active(actor);else interactiveCoordinator(actor,pid,this.app.store.get<Session>('session',r.rootSessionId,pid));}}
+    private access(actor:Actor,pid:string,r:Row<FormalReportReview>){scope(actor,pid);ensure(actor.type==='user'||actor.type==='agent'&&(actor.role==='coordinator'&&!actor.taskId&&actor.sessionId===r.rootSessionId||actor.role==='reviewer'&&actor.taskId===r.taskId),'TASK_SCOPE_DENIED','只能读取本主会话或本独立任务的正式报告审查',403);if(actor.type==='agent'){if(actor.taskId)this.app.teams.active(actor);else this.app.automaticApprovals.coordinator(actor,pid,this.app.store.get<Session>('session',r.rootSessionId,pid));}}
     authorize(actor:Actor,pid:string,id:string){const r=this.app.store.get<FormalReportReview>('formal-report-review',id,pid);this.access(actor,pid,r);return r;}
     prepare(actor:Actor,pid:string,value:unknown){
         const x=object(value);ensure(Object.keys(x).every(k=>['runId','reportArtifactId'].includes(k)),'INVALID_INPUT','正式报告准备只接受runId和reportArtifactId');scope(actor,pid);
@@ -23,7 +23,7 @@ export class FormalReportReviewService {
         return this.app.store.transaction(()=>{
             assertProjectWritable(this.app.store,pid);const run=this.app.store.get<Run>('run',runId,pid),intent=this.app.store.get<RunIntent>('run-intent',run.intentId,pid);ensure(intent.rootSessionId,'FORMAL_REPORT_ROOT_REQUIRED','正式报告Run需要原主会话');
             const root=this.app.store.get<Session>('session',intent.rootSessionId,pid);ensure(root.role==='coordinator'&&!root.taskId&&!root.teamId&&root.state!=='archived','FORMAL_REPORT_ROOT_REQUIRED','需要未归档的原主协调会话');
-            ensure(actor.type==='user'||actor.type==='agent'&&actor.sessionId===root.id,'TASK_SCOPE_DENIED','正式报告Run不属于当前主会话',403);if(actor.type==='agent')interactiveCoordinator(actor,pid,root);
+            ensure(actor.type==='user'||actor.type==='agent'&&actor.sessionId===root.id,'TASK_SCOPE_DENIED','正式报告Run不属于当前主会话',403);if(actor.type==='agent')this.app.automaticApprovals.coordinator(actor,pid,root);
             ensure(run.state==='succeeded'&&run.integrity==='complete'&&run.exitCode===0,'FORMAL_REPORT_RUN_INCOMPLETE','仅审查成功完整的正式Run');verifyRunRecord(run,this.app.evidence);
             const {artifact:report}=formalArtifactText(this.app.store,pid,reportId);this.app.textCorpusGrants.authorizeContent(actor,pid,'artifact_read',{artifactId:reportId});this.app.evidence.read(actor,reportId);
             ensure(!report.origin.startsWith('host:formal-report-review:')&&['text/plain','text/markdown'].includes(report.mediaType),'FORMAL_REPORT_TEXT_REQUIRED','报告须为获准的不可变UTF-8文本artifact');

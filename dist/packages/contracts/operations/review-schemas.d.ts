@@ -384,7 +384,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["protocol", "implementation", "notes"];
                         };
                     };
-                    readonly required: ("role" | "path")[];
+                    readonly required: ("path" | "role")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -414,7 +414,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("path" | "digest" | "compilerVersion")[];
+                readonly required: ("digest" | "path" | "compilerVersion")[];
                 readonly additionalProperties: false;
             };
             readonly protocolVersion: {
@@ -452,7 +452,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("rootSessionId" | "id" | "digest" | "revision")[];
+                readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
                 readonly additionalProperties: false;
             };
             readonly sourceInputs: {
@@ -502,7 +502,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("artifactId" | "path" | "size" | "digest" | "workspace" | "readId")[];
+                    readonly required: ("digest" | "artifactId" | "path" | "size" | "workspace" | "readId")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -925,7 +925,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["protocol", "implementation", "notes"];
                         };
                     };
-                    readonly required: ("role" | "path")[];
+                    readonly required: ("path" | "role")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -955,7 +955,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("path" | "digest" | "compilerVersion")[];
+                readonly required: ("digest" | "path" | "compilerVersion")[];
                 readonly additionalProperties: false;
             };
             readonly protocolVersion: {
@@ -993,7 +993,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("rootSessionId" | "id" | "digest" | "revision")[];
+                readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
                 readonly additionalProperties: false;
             };
             readonly sourceInputs: {
@@ -1043,7 +1043,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("artifactId" | "path" | "size" | "digest" | "workspace" | "readId")[];
+                    readonly required: ("digest" | "artifactId" | "path" | "size" | "workspace" | "readId")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
