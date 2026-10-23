@@ -193,3 +193,33 @@ test('foreign, assistant and anchored confirmations cannot pull a reader to live
         let follows=0;view.scrollToBottom=()=>{follows++;};view.componentDidUpdate(view.props,{...view.state},{visible:false,atBottom:false});assert.equal(follows,0);
     }
 });
+
+test('smoothed preview frames keep following from the bottom without pulling a reader back down',async t=>{
+ t.mock.timers.enable({apis:['setTimeout','Date'],now:1000});
+ const {StreamingText}=await import('../../dist/web/assets/streaming-text.js');
+ const history=synchronousState(new ScrollHistory(props({messages:[message('latest')],history:pageHistory(null,null,true),activeGeneration:4}))),host={scrollHeight:400,clientHeight:200,top:200,get scrollTop(){return this.top;},set scrollTop(value){this.top=Math.min(value,this.scrollHeight-this.clientHeight);},getBoundingClientRect:()=>({top:0})};
+ history.root.current={querySelectorAll:()=>[]};history.mounted=true;history.findScrollElement=()=>host;history.isHostVisible=()=>true;history.checkEdges=()=>{};
+ const view=new StreamingText({content:'',onBeforeReveal:()=>history.capturePreviewScroll()});view.componentDidMount();
+ view.setState=(update,callback)=>{const previous={...view.state},patch=typeof update==='function'?update(view.state,view.props):update;if(patch)Object.assign(view.state,patch);const snapshot=view.getSnapshotBeforeUpdate?.(view.props,previous);if(previous.displayed!==view.state.displayed)host.scrollHeight+=80;view.componentDidUpdate(view.props,previous,snapshot);callback?.();};
+ const previous=view.props;view.props={...view.props,content:'新内容'.repeat(100)};Object.assign(view.state,StreamingText.getDerivedStateFromProps(view.props,view.state));view.componentDidUpdate(previous,view.state,null);
+ t.mock.timers.tick(32);assert.equal(host.scrollTop,280,'first frame remains at the live bottom');
+ t.mock.timers.tick(32);assert.equal(host.scrollTop,360,'each following frame remains at the live bottom');
+ host.scrollTop=100;history.onScroll();t.mock.timers.tick(32);assert.equal(host.scrollTop,100,'reading upward is not interrupted');
+ view.componentWillUnmount();const height=host.scrollHeight;t.mock.timers.tick(1000);assert.equal(host.scrollHeight,height);history.componentWillUnmount();
+});
+
+test('preview scroll snapshots cannot act after scope changes, historical navigation, or unmount',()=>{
+ for(const change of ['project','session','generation','anchor','historical','historyPage','unmount']){
+  const view=synchronousState(new ScrollHistory(props({messages:[message('latest')],history:pageHistory(null,null,true),activeGeneration:4}))),host={scrollTop:200,scrollHeight:400,clientHeight:200,getBoundingClientRect:()=>({top:0})};
+  view.root.current={querySelectorAll:()=>[]};view.mounted=true;view.findScrollElement=()=>host;view.isHostVisible=()=>true;view.checkEdges=()=>{};
+  const restore=view.capturePreviewScroll();let follows=0;view.scrollToBottom=()=>{follows++;};
+  if(change==='project')view.props={...view.props,projectId:'other'};
+  if(change==='session')view.props={...view.props,sessionId:'other'};
+  if(change==='generation')view.props={...view.props,activeGeneration:5};
+  if(change==='anchor')view.props={...view.props,historyAnchor:{direction:'before',id:'older'}};
+  if(change==='historical')view.state.atLatest=false;
+  if(change==='historyPage')view.props={...view.props,history:pageHistory(null,'newer',false)};
+  if(change==='unmount')view.componentWillUnmount();
+  restore?.();assert.equal(follows,0,change);view.componentWillUnmount();
+ }
+});

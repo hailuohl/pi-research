@@ -1,0 +1,166 @@
+{
+  "task": "CHAT-SMOOTH",
+  "date": "2026-10-23",
+  "scope": "方案1+2；不改布局、存储、脱敏、IPC ACK；本批完整回归针对提交基线加本批改动的隔离交付副本，主工作区另做类型检查",
+  "baselineHead": "d9a1c0e6556ff0d08388f46156fa40ba539a6522",
+  "implementationCodeBaseline": "14e074c9f9827f215ab89d9d982e6ae368781537",
+  "baselineDifference": "14e074c9..d9a1c0e only changes an acceptance evidence document; runtime source is identical",
+  "sourceFilesSha256": {
+    "apps/web/src/composer-controls.tsx": "27E2E5C84D5B8EA9C09F52FC26614DA81E4862B24A35A08832DB6A542AF9F482",
+    "apps/web/src/session-history.tsx": "845033DE55B55A52EF7BD65DA781017EC15C64C0B017EA68484E1CEA998F9ABC",
+    "apps/web/src/scroll-history.tsx": "482EEE3DC074E6987896F0596B65CAA586230EE8389FE3E0C71F7873ADBD8A55",
+    "apps/web/src/workbench.tsx": "38AA3CDED502D40E191D341AA9CE801C6EB7ACAD6F1A5612D9942E3AE0D38339",
+    "apps/web/src/streaming-text.tsx": "2E312028E8142B94E7ABB99FE327D3ECCD8FAF9BEC275F5418C67E73CDA99815",
+    "apps/server/event-stream.ts": "DE066C3C0D02C22EFF9DE78B3F51475C6E846BAEC08B10AAF25FAC1F5CEEA9BD",
+    "tests/unit/scroll-history-ui.test.mjs": "62AAA1135AA02C7B8636424238E095FA2C2D504887093ECBF6C27F5BEC4C24DB",
+    "tests/unit/composer-controls.test.mjs": "273EA74FD059A357C112BD9B4BE52140CFA9655031243241BB738CCD47D349FD",
+    "apps/web/src/event-feed.ts": "1AF18EB41C1D0A273404E9AA88098E2713D777F28327526003BB5C06C8A3E378",
+    "tests/unit/chat-stream-smoothing.test.mjs": "E72B286DA1A8AFDAFFC5CD60496448C996CFBA99D9B8E20D71ED1946B2E18B78"
+  },
+  "checks": {
+    "fullRegression": {
+      "command": "npm run test:core",
+      "exitCode": 0,
+      "tests": 2345,
+      "pass": 2318,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": [
+        "﹣ POSIX backup preserves distinct case-sensitive sibling paths (0.1858ms) # SKIP",
+        "﹣ scope2 real local failure advances through a tested changed source into a new successful Run (264.0043ms) # Pinned Python Docker image unavailable",
+        "﹣ real IPC, Docker failure/repair and two trusted Run subprocesses continue one frozen goal exactly once (0.6682ms) # SKIP",
+        "﹣ optional formal Docker supervisor: success, integrity limits, cancellation, timeout and created recovery (0.0939ms) # SKIP",
+        "﹣ isolated compiler: pdflatex (1.5831ms) # SKIP",
+        "﹣ isolated compiler: xelatex (0.1084ms) # SKIP",
+        "﹣ isolated compiler: lualatex (0.0753ms) # SKIP",
+        "﹣ isolated compiler: chinese (0.068ms) # SKIP",
+        "﹣ isolated compiler: lua-chinese-budget (0.0819ms) # SKIP",
+        "﹣ isolated compiler: bibtex (0.0977ms) # SKIP",
+        "﹣ isolated compiler: biber (0.0976ms) # SKIP",
+        "﹣ isolated compiler: missing-image (0.068ms) # SKIP",
+        "﹣ isolated compiler: missing-package (0.0899ms) # SKIP",
+        "﹣ isolated compiler: undefined-reference (0.148ms) # SKIP",
+        "﹣ isolated compiler: shell-blocked (0.0818ms) # SKIP",
+        "﹣ isolated compiler: lua-blocked (0.06ms) # SKIP",
+        "﹣ isolated compiler: forged-result (0.0453ms) # SKIP",
+        "﹣ isolated compiler: lua-forged-host-result (0.0643ms) # SKIP",
+        "﹣ isolated compiler: pdf-before-error (0.0668ms) # SKIP",
+        "﹣ isolated compiler: absolute-write-blocked (0.2377ms) # SKIP",
+        "﹣ isolated compiler: biber-remote-blocked (0.0429ms) # SKIP",
+        "﹣ isolated compiler: biber-nonutf8-control (0.065ms) # SKIP",
+        "﹣ isolated compiler: timeout (0.0361ms) # SKIP",
+        "﹣ optional real Docker preserves ordinary and executable source modes (0.0922ms) # SKIP",
+        "﹣ POSIX source modes reflect actual exec bits and writes retain exact normal permission bits (0.098ms) # SKIP",
+        "﹣ privileged creation uses no-follow directory fds, never replaces files, and never repairs existing permissions (0.1231ms) # POSIX dir_fd and ownership require Linux bootstrap integration",
+        "﹣ SSH start keeps nested source directories traversable under umask 077 (0.104ms) # POSIX permission modes are unavailable on Windows"
+      ],
+      "duration_ms": 1957376.5786
+    },
+    "cleanBuild": {
+      "scope": "fresh output directory; reuses unchanged dependencies installed by successful npm ci",
+      "steps": [
+        {
+          "name": "build",
+          "exitCode": 0,
+          "log": "D:\\项目\\pi research\\tmp\\chat-stream-20261023-7e8a89c6\\final-build.log"
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0,
+          "log": "D:\\项目\\pi research\\tmp\\chat-stream-20261023-7e8a89c6\\final-typecheck.log"
+        }
+      ],
+      "identical": true,
+      "files": 722,
+      "manifestSha256": "2950fbe0d3c739b4fb1767cb105f9d5d6f99ac284f4c6ec061662da68af7a44c"
+    },
+    "workspaceTypecheck": {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    "browser": {
+      "browserPlugin": "not available; cached Playwright used",
+      "realPiWorker": true,
+      "provider": "local deterministic SSE fixture; no external model",
+      "checks": {
+        "pageIdentity": "研舟π · 科研工作台",
+        "manualScroll": {
+          "held": 0,
+          "heldLater": 0,
+          "preserved": true
+        },
+        "full": {
+          "savedExact": true,
+          "visibleUpdates": 50,
+          "smallUpdateCount": 41,
+          "emojiIntact": true,
+          "tables": 1,
+          "scroll": {
+            "top": 1031,
+            "height": 1657,
+            "client": 626,
+            "gap": 0,
+            "overflow": "auto"
+          }
+        },
+        "stop": {
+          "state": "interrupted",
+          "noLateAnimation": true
+        },
+        "switch": {
+          "isolated": true
+        },
+        "reopen": {
+          "savedExact": true,
+          "noReplay": true,
+          "noDuplicate": true
+        }
+      },
+      "requests": [
+        {
+          "kind": "full",
+          "chunks": 50,
+          "closed": true,
+          "completed": true
+        },
+        {
+          "kind": "stop",
+          "chunks": 11,
+          "closed": true,
+          "completed": false
+        },
+        {
+          "kind": "switch",
+          "chunks": 21,
+          "closed": true,
+          "completed": false
+        }
+      ],
+      "console": [],
+      "url": "http://127.0.0.1:49478/",
+      "browser": "155.0.8059.84",
+      "passed": true
+    }
+  },
+  "review": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedReasoningEffort": "high",
+    "runtime": "not echoed; not verified",
+    "independent": true,
+    "blockingFindings": 0,
+    "nonBlockingFindings": 0,
+    "sourceHashesUnchanged": true
+  },
+  "implementation": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedReasoningEffort": "high",
+    "runtime": "not echoed; not verified"
+  },
+  "rawEvidenceDirectory": "D:\\项目\\pi research\\tmp\\chat-stream-20261023-7e8a89c6",
+  "notRun": [
+    "external commercial model/provider timing",
+    "mobile viewport matrix",
+    "real Docker/GPU paths skipped by regression environment guards"
+  ],
+  "runningUserService": "Not restarted; working frontend bundle rebuilt from all current sources; existing Node service must restart to load the new server-side interval"
+}

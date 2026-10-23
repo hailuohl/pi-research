@@ -35,7 +35,7 @@ export class EventStreamHub {
                 return;
             try {
                 const now = Date.now(), latest = this.store.visibleEventCursor(projectId);
-                if (initial || latest !== cursor && now - lastWake >= 500) {
+                if (initial || latest !== cursor && now - lastWake >= 150) {
                     const reset = cursor > latest;
                     cursor = latest;
                     initial = false;
@@ -55,7 +55,7 @@ export class EventStreamHub {
             }
         };
         const drain = () => { blocked = false; tick(); };
-        const timer = setInterval(tick, 500);
+        const timer = setInterval(tick, 150);
         timer.unref();
         this.connections.add(close);
         req.on('aborted', onClose);

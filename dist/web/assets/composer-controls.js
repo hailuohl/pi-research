@@ -138,7 +138,12 @@ class ComposerControls extends React.Component {
   stopSession(sessionId) {
     const { session, busy, projectArchived } = this.props;
     if (!this.mounted || session?.id !== sessionId || busy || projectArchived || session.taskId || !["running", "queued"].includes(session.state)) return;
-    return this.props.perform(() => api(`/sessions/${sessionId}/interrupt`, {}), "\u5DF2\u505C\u6B62\u6A21\u578B\uFF1B\u6B63\u5F0F\u5B9E\u9A8C\u672A\u53D6\u6D88");
+    const projectId = this.props.projectId, generation = session.generation, onStopped = this.props.onStopped;
+    return this.props.perform(async () => {
+      const result = await api(`/sessions/${sessionId}/interrupt`, {});
+      if (this.mounted && this.props.projectId === projectId && this.props.session?.id === sessionId && this.props.session.generation === generation) onStopped?.();
+      return result;
+    }, "\u5DF2\u505C\u6B62\u6A21\u578B\uFF1B\u6B63\u5F0F\u5B9E\u9A8C\u672A\u53D6\u6D88");
   }
   render() {
     const { boot, session, projectArchived, modelLocked, busy, attachments, canSend, hasDraft } = this.props;

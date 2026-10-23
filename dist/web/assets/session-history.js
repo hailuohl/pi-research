@@ -4,6 +4,7 @@ import { api, ApiError, downloadArtifact } from "./api.js";
 import { date, short } from "./models.js";
 import { Badge, Icon } from "./ui.js";
 import { MessageMarkdown } from "./message-markdown.js";
+import { StreamingText } from "./streaming-text.js";
 const READ_LIMIT = 16e3;
 const conversationMessage = (message) => message;
 const exceptional = (message) => message.status === "failed" || message.status === "cancelled" || !!message.error;
@@ -38,7 +39,7 @@ const systemSummary = (message) => {
   const excerpt = chars.slice(0, Math.min(end, 80)).join("");
   return excerpt + (chars.length > excerpt.length ? "\u2026" : "");
 };
-function ConversationActivity({ content, active, activity, truncated }) {
+function ConversationActivity({ content, active, activity, truncated, onBeforeReveal }) {
   if (!active) return null;
   const message = activity ? `${activity.status === "running" ? "\u6B63\u5728\u8C03\u7528" : activity.status === "failed" ? "\u8C03\u7528\u5931\u8D25" : "\u5DE5\u5177\u5DF2\u8FD4\u56DE"} ${toolLabel(activity.tool)}` : "\u6B63\u5728\u601D\u8003\u2026";
   return /* @__PURE__ */ jsxs("article", { className: "message message-assistant conversation-activity", "aria-label": "Pi \xB7 \u6B63\u5728\u5904\u7406", "aria-live": "polite", children: [
@@ -46,7 +47,7 @@ function ConversationActivity({ content, active, activity, truncated }) {
     /* @__PURE__ */ jsxs("div", { className: "message-body", children: [
       /* @__PURE__ */ jsx("div", { className: "message-meta", children: /* @__PURE__ */ jsx("strong", { children: "Pi \xB7 \u6B63\u5728\u5904\u7406" }) }),
       /* @__PURE__ */ jsx("p", { className: "activity-line", children: message }),
-      content ? /* @__PURE__ */ jsx(MessageMarkdown, { content }) : null,
+      /* @__PURE__ */ jsx(StreamingText, { content, onBeforeReveal }),
       truncated ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5F53\u524D\u8F93\u51FA\u4EC5\u4FDD\u7559\u5C3E\u90E8\uFF0C\u8F83\u65E9\u90E8\u5206\u5DF2\u7701\u7565\u3002" }) : null
     ] })
   ] });

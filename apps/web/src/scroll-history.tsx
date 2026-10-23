@@ -120,6 +120,15 @@ export class ScrollHistory extends React.Component<Props,State>{
         return {visible,atBottom,scrollElement,scrollTop,scrollHeight,anchorId,anchorOffset,firstId:previousState.messages[0]?.id??null,lastId:previousState.messages[previousState.messages.length-1]?.id??null};
     }
 
+    capturePreviewScroll=()=>{
+        if(!this.mounted||!this.state.atLatest||this.props.historyAnchor||this.props.history?.atLatest===false)return;
+        const {projectId,sessionId,activeGeneration}=this.props,root=this.root.current,snapshot=this.getSnapshotBeforeUpdate(this.props,this.state);
+        return ()=>{
+            if(!this.mounted||root!==this.root.current||projectId!==this.props.projectId||sessionId!==this.props.sessionId||activeGeneration!==this.props.activeGeneration||!this.state.atLatest||this.props.historyAnchor||this.props.history?.atLatest===false||!snapshot.visible||!this.isHostVisible())return;
+            if(snapshot.atBottom)this.scrollToBottom();else this.restorePosition(snapshot);
+        };
+    };
+
     componentDidUpdate(previous:Props,previousState:State,snapshot:LayoutSnapshot){
         snapshot=this.pendingSnapshot??snapshot;this.pendingSnapshot=null;
         const scopeChanged=previous.projectId!==this.props.projectId||previous.sessionId!==this.props.sessionId||!sameAnchor(previous.historyAnchor,this.props.historyAnchor);

@@ -12,7 +12,7 @@ export class ProjectEventFeed {
     private key(){return `pi-research-events:${this.projectId}`;}
     start(){void this.connect();this.wake();}
     stop(){this.stopped=true;this.controller.abort();this.connection?.abort();clearTimeout(this.scheduled);clearTimeout(this.retry);}
-    wake(){if(this.stopped)return;this.pending=true;if(this.draining||this.scheduled!==undefined)return;this.scheduled=setTimeout(()=>{this.scheduled=undefined;void this.drain();},500);}
+    wake(){if(this.stopped)return;this.pending=true;if(this.draining||this.scheduled!==undefined)return;this.scheduled=setTimeout(()=>{this.scheduled=undefined;void this.drain();},150);}
     async drain(){
         if(this.stopped||this.draining)return;this.draining=true;this.pending=false;
         let next=this.cursor,more=false,read=false,failed=false;

@@ -357,3 +357,27 @@ test('catalog versions and catalogue read errors invalidate capabilities and rej
  const updated={model,types:[{mediaType:'text/plain',extensions:['.txt'],maxBytes:33554432,native:false}]};pending[1](response(updated));await new Promise(resolve=>setImmediate(resolve));pending[0](response({model,types:[{mediaType:'image/png',extensions:['.png'],maxBytes:20971520,native:true}]}));await first;assert.equal(view.state.attachmentTypes,updated);assert.doesNotMatch(find(view.render(),node=>node.type==='input'&&node.props.type==='file').props.accept,/image\/png/);
  const current=view.props;view.props={...current,boot:{...current.boot,modelManagementError:'catalog unavailable'}};view.componentDidUpdate(current);assert.equal(pending.length,3);assert.equal(view.state.attachmentTypes,null);pending[2](response(updated));await new Promise(resolve=>setImmediate(resolve));assert.equal(view.state.attachmentTypes,updated);
 });
+
+test('successful stop cancels the current preview before perform refresh, failures and stale generations do not',async t=>{
+ const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);let release;globalThis.fetch=()=>new Promise(resolve=>release=resolve);
+ const running={...session,state:'running',generation:4},chat=synchronousState(new Chat(chatProps({session:running,stream:'pending'})));
+ const activity=()=>find(chat.render(),node=>node.type?.name==='ConversationActivity');
+ const controls=()=>find(chat.render(),node=>node.type===ComposerControls);
+ let finishRefresh;const refresh=new Promise(resolve=>finishRefresh=resolve);
+ const view=synchronousState(new ComposerControls({...controls().props,perform:async fn=>{await fn();assert.equal(activity().props.active,false);await refresh;}}));
+ const stopping=view.stopSession('s');release(response({}));await new Promise(resolve=>setImmediate(resolve));assert.equal(activity().props.active,false);finishRefresh();await stopping;
+ chat.props={...chat.props,session:{...running,generation:5}};assert.equal(activity().props.active,true);
+ let notified=0;view.props=controlsProps({session:{...running,generation:5},hasDraft:false,onStopped(){notified++;}});
+ globalThis.fetch=async()=>({ok:false,status:409,json:async()=>({error:{message:'not stopped'}})});await assert.rejects(view.stopSession('s'),/not stopped/);assert.equal(notified,0);
+ globalThis.fetch=()=>new Promise(resolve=>release=resolve);const oldStop=view.stopSession('s');view.props={...view.props,session:{...running,generation:6}};release(response({}));await oldStop;assert.equal(notified,0);
+ view.componentWillUnmount();chat.componentWillUnmount();
+});
+
+test('preview identity changes for each project, session, and generation and historical views omit it',()=>{
+ const running={...session,state:'running',generation:4};const view=synchronousState(new Chat(chatProps({session:running,stream:'preview'})));
+ const activity=()=>find(view.render(),node=>node.type?.name==='ConversationActivity');const first=activity().key;
+ view.props={...view.props,session:{...running,generation:5}};assert.notEqual(activity().key,first);const second=activity().key;
+ view.props={...view.props,session:{...running,id:'another'}};assert.notEqual(activity().key,first);assert.notEqual(activity().key,second);
+ view.props={...view.props,data:{...view.props.data,project:{...view.props.data.project,id:'another-project'}},session:running};assert.notEqual(activity().key,first);
+ view.props={...view.props,historyAnchor:{direction:'before',id:'older'}};assert.equal(activity(),undefined);view.componentWillUnmount();
+});

@@ -6,6 +6,7 @@ import {Badge,Icon} from './ui.js';
 import type {QueueMessage} from './message-queue.js';
 import type {Perform} from './workbench.js';
 import {MessageMarkdown} from './message-markdown.js';
+import {StreamingText} from './streaming-text.js';
 
 type Anchor={direction:'before'|'after';id:string}|null;
 type MessagePhase='commentary'|'final_answer';
@@ -13,7 +14,7 @@ type ConversationMessage=QueueMessage&{generation?:number;phase?:MessagePhase;to
 interface Props {projectId:string;sessionId:string;messages:QueueMessage[];history:SessionHistoryPage|null;historyAnchor:Anchor;onNavigate:(anchor:Anchor)=>void;perform:Perform;activeGeneration?:number;readOnly?:boolean;sessionArchived?:boolean;busy?:boolean;onBranch?:(session:Row<Session>)=>void;}
 interface State {messageId:string;page:SessionMessageContent|null;busy:boolean;error:string;}
 interface ActivityTool {tool:string;status:'running'|'completed'|'failed';}
-export interface ConversationActivityProps {content:string;active:boolean;activity?:ActivityTool|null;truncated?:boolean;}
+export interface ConversationActivityProps {content:string;active:boolean;activity?:ActivityTool|null;truncated?:boolean;onBeforeReveal?:()=> (()=>void)|undefined;}
 const READ_LIMIT=16000;
 const conversationMessage=(message:QueueMessage)=>message as ConversationMessage;
 const exceptional=(message:QueueMessage)=>message.status==='failed'||message.status==='cancelled'||!!message.error;
@@ -49,10 +50,10 @@ const systemSummary=(message:QueueMessage)=>{
     return excerpt+(chars.length>excerpt.length?'…':'');
 };
 
-export function ConversationActivity({content,active,activity,truncated}:ConversationActivityProps){
+export function ConversationActivity({content,active,activity,truncated,onBeforeReveal}:ConversationActivityProps){
     if(!active)return null;
     const message=activity?`${activity.status==='running'?'正在调用':activity.status==='failed'?'调用失败':'工具已返回'} ${toolLabel(activity.tool)}`:'正在思考…';
-    return <article className="message message-assistant conversation-activity" aria-label="Pi · 正在处理" aria-live="polite"><div className="message-avatar" aria-hidden="true">π</div><div className="message-body"><div className="message-meta"><strong>Pi · 正在处理</strong></div><p className="activity-line">{message}</p>{content?<MessageMarkdown content={content}/>:null}{truncated?<p className="small muted">当前输出仅保留尾部，较早部分已省略。</p>:null}</div></article>;
+    return <article className="message message-assistant conversation-activity" aria-label="Pi · 正在处理" aria-live="polite"><div className="message-avatar" aria-hidden="true">π</div><div className="message-body"><div className="message-meta"><strong>Pi · 正在处理</strong></div><p className="activity-line">{message}</p><StreamingText content={content} onBeforeReveal={onBeforeReveal}/>{truncated?<p className="small muted">当前输出仅保留尾部，较早部分已省略。</p>:null}</div></article>;
 }
 
 export class SessionHistory extends React.Component<Props,State> {

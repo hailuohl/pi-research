@@ -114,6 +114,15 @@ class ScrollHistory extends React.Component {
       if (delta) this.userDirection(delta > 0 ? "after" : "before");
     };
     this.navigate = (anchor) => anchor === null ? this.jumpLatest() : this.props.onNavigate(anchor);
+    this.capturePreviewScroll = () => {
+      if (!this.mounted || !this.state.atLatest || this.props.historyAnchor || this.props.history?.atLatest === false) return;
+      const { projectId, sessionId, activeGeneration } = this.props, root = this.root.current, snapshot = this.getSnapshotBeforeUpdate(this.props, this.state);
+      return () => {
+        if (!this.mounted || root !== this.root.current || projectId !== this.props.projectId || sessionId !== this.props.sessionId || activeGeneration !== this.props.activeGeneration || !this.state.atLatest || this.props.historyAnchor || this.props.history?.atLatest === false || !snapshot.visible || !this.isHostVisible()) return;
+        if (snapshot.atBottom) this.scrollToBottom();
+        else this.restorePosition(snapshot);
+      };
+    };
   }
   componentDidMount() {
     this.mounted = true;

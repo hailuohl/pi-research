@@ -21,7 +21,7 @@ class Chat extends React.Component {
     super(...arguments);
     this.initialDraft = readComposerDraft(this.props.data.project.id, this.props.session?.id ?? "");
     this.pendingDraft = this.initialDraft.pending;
-    this.state = { draft: this.initialDraft.draft, draftVersion: this.initialDraft.draftVersion, attachments: this.initialDraft.attachments, draftSaveError: "", sending: false, drawerOpen: false, permissionPending: [], sentMessageId: "", renameTarget: null, renameTitle: "", renameError: "", renameSaving: false };
+    this.state = { draft: this.initialDraft.draft, draftVersion: this.initialDraft.draftVersion, attachments: this.initialDraft.attachments, draftSaveError: "", sending: false, drawerOpen: false, permissionPending: [], sentMessageId: "", renameTarget: null, renameTitle: "", renameError: "", renameSaving: false, stoppedPreview: "" };
     this.drawerClose = React.createRef();
     this.drawerContent = React.createRef();
     this.drawerTrigger = null;
@@ -50,6 +50,8 @@ class Chat extends React.Component {
     this.mounted = true;
     this.sending = false;
     this.composerControls = React.createRef();
+    this.scrollHistory = React.createRef();
+    this.capturePreviewScroll = () => this.scrollHistory.current?.capturePreviewScroll();
     this.renaming = false;
     this.renameEpoch = 0;
     this.renameInput = React.createRef();
@@ -248,6 +250,7 @@ class Chat extends React.Component {
     const runtimeAvailable = boot.runtime.ready || boot.runtime.code === "MODEL_NOT_CONFIGURED";
     const sessionModelAvailable = !!session?.model.provider && !!session.model.model && (!boot.models || boot.models.some((model) => model.provider === session.model.provider && model.model === session.model.model && model.thinking === session.model.thinking && (model.restoreEpoch ?? 0) === (session.model.restoreEpoch ?? 0)));
     const sessionFailure = session?.state === "failed" ? session.lastError : void 0;
+    const previewKey = JSON.stringify([data.project.id, session?.id, session?.generation]);
     const canSend = this.canSend();
     const hasDraft = !!this.state.draft.trim() || this.state.attachments.length > 0;
     const latest = !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest), pending = new Set(latest ? this.state.permissionPending : []);
@@ -328,9 +331,9 @@ class Chat extends React.Component {
                 /* @__PURE__ */ jsx(Icon, { name: "arrow" })
               ] })
             ] })
-          ] }) : /* @__PURE__ */ jsx(ScrollHistory, { projectId: data.project.id, sessionId: session?.id ?? "", messages, history: this.props.history, historyAnchor: this.props.historyAnchor, onNavigate: this.props.onHistory, perform: this.props.perform, activeGeneration: session?.state === "running" ? session.generation : void 0, liveKey: this.props.stream, confirmedMessageId: this.state.sentMessageId, readOnly: !!data.project.archived || !session, sessionArchived: session?.state === "archived", busy: this.props.busy, onBranch: this.props.onBranchConfirmed }),
+          ] }) : /* @__PURE__ */ jsx(ScrollHistory, { ref: this.scrollHistory, projectId: data.project.id, sessionId: session?.id ?? "", messages, history: this.props.history, historyAnchor: this.props.historyAnchor, onNavigate: this.props.onHistory, perform: this.props.perform, activeGeneration: session?.state === "running" ? session.generation : void 0, liveKey: this.props.stream, confirmedMessageId: this.state.sentMessageId, readOnly: !!data.project.archived || !session, sessionArchived: session?.state === "archived", busy: this.props.busy, onBranch: this.props.onBranchConfirmed }),
           " ",
-          latest ? /* @__PURE__ */ jsx(ConversationActivity, { content: this.props.stream, active: session?.state === "running", activity: this.props.activity, truncated: this.props.streamTruncated }) : null
+          latest ? /* @__PURE__ */ jsx(ConversationActivity, { onBeforeReveal: this.capturePreviewScroll, content: this.props.stream, active: session?.state === "running" && this.state.stoppedPreview !== previewKey, activity: this.props.activity, truncated: this.props.streamTruncated }, previewKey) : null
         ] }),
         /* @__PURE__ */ jsxs("aside", { id: "chat-task-drawer", className: "chat-task-drawer", hidden: !this.state.drawerOpen, "aria-labelledby": "chat-task-drawer-title", children: [
           /* @__PURE__ */ jsxs("header", { children: [
@@ -359,7 +362,9 @@ class Chat extends React.Component {
               e.preventDefault();
               e.currentTarget.form.requestSubmit();
             } }),
-            /* @__PURE__ */ jsx(ComposerControls, { ref: this.composerControls, permissionControl: boot.runtime.hostAccess?.available && session && !session.taskId ? /* @__PURE__ */ jsx(HostAccessControl, { sessionId: session.id, archived: data.project.archived || session.state === "archived", busy: this.props.busy, perform: this.props.perform }, session.id) : null, boot, projectId: data.project.id, projectArchived: !!data.project.archived, modelLocked: !!session?.workingGrantId || !!session?.textCorpusGrantId || !!session?.discoveryGrantId || !!session?.runGrantId || !!data.teams?.some((team) => team.rootSessionId === session?.id && !["completed", "partial", "failed", "cancelled"].includes(team.state)), session, busy: this.props.busy, perform: this.props.perform, attachments: this.state.attachments, onAddAttachment: (attachment) => this.setState((current) => ({ attachments: [...current.attachments, attachment] })), onRemoveAttachment: (documentVersionId) => this.setState((current) => ({ attachments: current.attachments.filter((attachment) => attachment.documentVersionId !== documentVersionId) })), canSend, hasDraft, onSendModel: (model) => session && this.props.session?.id === session.id && this.props.data.project.id === data.project.id ? this.changeModel(model) : Promise.resolve(void 0), children: /* @__PURE__ */ jsxs("div", { className: "chat-collaboration-control", children: [
+            /* @__PURE__ */ jsx(ComposerControls, { onStopped: () => {
+              if (this.mounted && JSON.stringify([this.props.data.project.id, this.props.session?.id, this.props.session?.generation]) === previewKey) this.setState({ stoppedPreview: previewKey });
+            }, ref: this.composerControls, permissionControl: boot.runtime.hostAccess?.available && session && !session.taskId ? /* @__PURE__ */ jsx(HostAccessControl, { sessionId: session.id, archived: data.project.archived || session.state === "archived", busy: this.props.busy, perform: this.props.perform }, session.id) : null, boot, projectId: data.project.id, projectArchived: !!data.project.archived, modelLocked: !!session?.workingGrantId || !!session?.textCorpusGrantId || !!session?.discoveryGrantId || !!session?.runGrantId || !!data.teams?.some((team) => team.rootSessionId === session?.id && !["completed", "partial", "failed", "cancelled"].includes(team.state)), session, busy: this.props.busy, perform: this.props.perform, attachments: this.state.attachments, onAddAttachment: (attachment) => this.setState((current) => ({ attachments: [...current.attachments, attachment] })), onRemoveAttachment: (documentVersionId) => this.setState((current) => ({ attachments: current.attachments.filter((attachment) => attachment.documentVersionId !== documentVersionId) })), canSend, hasDraft, onSendModel: (model) => session && this.props.session?.id === session.id && this.props.data.project.id === data.project.id ? this.changeModel(model) : Promise.resolve(void 0), children: /* @__PURE__ */ jsxs("div", { className: "chat-collaboration-control", children: [
               /* @__PURE__ */ jsx("button", { type: "button", role: "switch", "aria-label": "\u591A\u667A\u80FD\u4F53\u6A21\u5F0F", "aria-checked": data.project.settings.enabled ? "true" : "false", title: "\u9879\u76EE\u7EA7\u8BBE\u7F6E\uFF0C\u540C\u9879\u76EE\u6240\u6709\u7814\u7A76\u4F1A\u8BDD\u5171\u4EAB", className: "switch " + (data.project.settings.enabled ? "on" : ""), disabled: this.props.busy || data.project.archived || !session || !!session.taskId || session.state === "archived", onClick: this.props.onToggle, children: /* @__PURE__ */ jsx("span", {}) }),
               /* @__PURE__ */ jsx("span", { children: "\u591A\u667A\u80FD\u4F53" })
             ] }) }, `${data.project.id}:${session?.id ?? ""}`)

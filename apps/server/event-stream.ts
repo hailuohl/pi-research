@@ -30,12 +30,12 @@ export class EventStreamHub {
             if(ended||blocked)return;
             try {
                 const now=Date.now(),latest=this.store.visibleEventCursor(projectId);
-                if(initial||latest!==cursor&&now-lastWake>=500){const reset=cursor>latest;cursor=latest;initial=false;lastWake=now;write(`event: wake\nid: ${cursor}\ndata: ${JSON.stringify({cursor,reset})}\n\n`);}
+                if(initial||latest!==cursor&&now-lastWake>=150){const reset=cursor>latest;cursor=latest;initial=false;lastWake=now;write(`event: wake\nid: ${cursor}\ndata: ${JSON.stringify({cursor,reset})}\n\n`);}
                 else if(now-lastWrite>=15000)write(': heartbeat\n\n');
             }catch(error){if(projectId&&(error as {code?:string}).code==='PROJECT_DELETED'){close();res.end(`event: wake\nid: ${cursor}\ndata: ${JSON.stringify({cursor,reset:true})}\n\n`);}else close(true);}
         };
         const drain=()=>{blocked=false;tick();};
-        const timer=setInterval(tick,500);timer.unref();
+        const timer=setInterval(tick,150);timer.unref();
         this.connections.add(close);req.on('aborted',onClose);res.on('close',onClose);res.on('error',onClose);res.on('drain',drain);
         res.statusCode=200;res.setHeader('Content-Type','text/event-stream; charset=utf-8');res.setHeader('Cache-Control','no-store');res.setHeader('Connection','keep-alive');res.flushHeaders();tick();
     }

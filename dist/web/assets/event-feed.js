@@ -43,7 +43,7 @@ class ProjectEventFeed {
     this.scheduled = setTimeout(() => {
       this.scheduled = void 0;
       void this.drain();
-    }, 500);
+    }, 150);
   }
   async drain() {
     if (this.stopped || this.draining) return;

@@ -27,6 +27,7 @@ interface Props {
     canSend: boolean;
     hasDraft: boolean;
     onSendModel: (model: ModelConfig) => Promise<Row<Session>|undefined>;
+    onStopped?:()=>void;
 }
 interface State { config: ConnectorConfig | null; sourceDraft: Record<SourceId, boolean>; sourcesOpen: boolean; loading: boolean; loadingError: string; saving: boolean; uploadError: string; uploading: boolean;attachmentTypes:AttachmentTypes|null }
 
@@ -126,7 +127,12 @@ export class ComposerControls extends React.Component<Props, State> {
     stopSession(sessionId:string) {
         const {session,busy,projectArchived}=this.props;
         if(!this.mounted||session?.id!==sessionId||busy||projectArchived||session.taskId||!['running','queued'].includes(session.state))return;
-        return this.props.perform(()=>api(`/sessions/${sessionId}/interrupt`,{}),'已停止模型；正式实验未取消');
+        const projectId=this.props.projectId,generation=session.generation,onStopped=this.props.onStopped;
+        return this.props.perform(async()=>{
+            const result=await api(`/sessions/${sessionId}/interrupt`,{});
+            if(this.mounted&&this.props.projectId===projectId&&this.props.session?.id===sessionId&&this.props.session.generation===generation)onStopped?.();
+            return result;
+        },'已停止模型；正式实验未取消');
     }
 
     render() {
