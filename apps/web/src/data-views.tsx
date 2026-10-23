@@ -1,11 +1,12 @@
 import * as React from 'react';
 import {createPortal} from 'react-dom';
-import { api, artifactText, downloadArtifact } from './api.js';
+import { api, ApiError, artifactText, downloadArtifact } from './api.js';
 import type { ProjectState, DocumentLocation, DocumentEvidenceLink } from './models.js';
 import { short, date, label } from './models.js';
 import {Icon, Badge, Empty, SectionTitle, Modal} from './ui.js';
 import type { Perform } from './workbench.js';
 type WorkspaceDialog={kind:'discard'|'path';projectId:string;generation:number;intent:number;archived:boolean;path:string;content:string;digest:string|null};
+const binaryWorkspaceFile=(path:string)=>/\.(?:rda|rdata|rds|npy|npz|parquet|feather|pkl|pickle|h5|hdf5|mat|sqlite|db|png|jpe?g|gif|webp|ico|pdf|zip|gz|bz2|xz|7z|tar|exe|dll|so|woff2?|ttf|mp[34]|wav)$/i.test(path);
 export class WorkspaceView extends React.Component<{
     data: ProjectState;
     perform: Perform;
@@ -24,11 +25,12 @@ export class WorkspaceView extends React.Component<{
     dialog: WorkspaceDialog | null;
     newPath: string;
     dialogError: string;
+    previewMessage: string;
 }> {
     state = { files: [] as Array<{
             path: string;
             size: number;
-        }>, path: '', content: '', digest: null as string | null, dirty: false, loading: false, saving: false, dialog:null as WorkspaceDialog|null,newPath:'',dialogError:'' };
+        }>, path: '', content: '', digest: null as string | null, dirty: false, loading: false, saving: false, dialog:null as WorkspaceDialog|null,newPath:'',dialogError:'',previewMessage:'' };
     private loadId = 0;
     private listId = 0;
     private initialListLoaded = false;
@@ -73,12 +75,13 @@ export class WorkspaceView extends React.Component<{
         const seq = ++this.listId, projectId = this.props.data.project.id, selection = this.loadId,intent=this.intent,selectFirst=!this.initialListLoaded;
         const current=()=>this.mounted&&seq===this.listId&&projectId===this.props.data.project.id;
         try {
-            const files = await api(`/projects/${projectId}/files`);
+            const files = await api<Array<{path:string;size:number}>>(`/projects/${projectId}/files`);
             if (!current()) return;
             // 切项目可能丢弃子组件提交回调，目录完成不能等待它。
             this.setState(()=>current()?{files}:null);
             this.initialListLoaded=true;
-            if (selectFirst&&!this.state.path&&!this.state.dirty&&!this.edited&&!this.state.loading&&!this.saving&&files.length&&selection===this.loadId&&intent===this.intent) await this.open(files[0].path);
+            const first=files.find(file=>!binaryWorkspaceFile(file.path));
+            if (selectFirst&&!this.state.path&&!this.state.dirty&&!this.edited&&!this.state.loading&&!this.saving&&first&&selection===this.loadId&&intent===this.intent) await this.open(first.path);
         } catch (e) {
             if (current())
                 await this.props.perform(async () => { throw e; });
@@ -91,16 +94,19 @@ export class WorkspaceView extends React.Component<{
         this.changedDraft();
         const seq = ++this.loadId, projectId = this.props.data.project.id;
         const generation=this.draftGeneration,current = () => this.mounted && seq === this.loadId && generation===this.draftGeneration&&projectId === this.props.data.project.id;
+        const showBinary=()=>{this.changedDraft();this.edited=false;this.setState({path,content:'',digest:null,dirty:false,loading:false,previewMessage:'此文件为二进制文件，无法作为文本预览或编辑。请选择文本文件。'});};
+        if(binaryWorkspaceFile(path)){showBinary();return;}
         this.setState({ loading: true });
         try {
             const f = await api(`/projects/${projectId}/files?path=${encodeURIComponent(path)}`);
             if (current()){
                 this.changedDraft();this.edited=false;
-                this.setState({ path, content: f.content, digest: f.digest, dirty: false, loading: false });
+                this.setState({ path, content: f.content, digest: f.digest, dirty: false, loading: false, previewMessage:'' });
             }
         }
         catch (e) {
             if (!current()) return;
+            if(e instanceof ApiError&&e.code==='BINARY_FILE'){showBinary();return;}
             this.setState({ loading: false });
             await this.props.perform(async () => { throw e; });
         }
@@ -122,7 +128,7 @@ export class WorkspaceView extends React.Component<{
             return !part||part==='.'||part==='..'||/[. ]$/.test(part)||/^(?:con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])(?:\.|$)/i.test(part)||name==='conin$'||name==='conout$'||excluded.includes(name)||name.startsWith('.env.')||/^(?:model-connections|environment-variables)\.json(?:\.[\w-]+\.tmp)?$/i.test(part);
         })){this.setState({newPath:path,dialogError:'请输入合法的相对文件路径，不能使用尾点、尾空格、Windows 保留名称或敏感配置路径。'});return;}
         this.finishDialog(target,false);this.loadId++;this.changedDraft();this.edited=true;
-        this.setState({path,content:'',digest:null,dirty:true,loading:false});
+        this.setState({path,content:'',digest:null,dirty:true,loading:false,previewMessage:''});
     }
     save = async () => {
         if (this.saving || this.props.data.project.archived || !this.state.path || !this.state.dirty || this.state.loading) return;
@@ -149,7 +155,7 @@ export class WorkspaceView extends React.Component<{
     };
     render() {
         const target=this.state.dialog,dialog=target?<div onKeyDown={event=>event.stopPropagation()} onSubmit={event=>event.stopPropagation()}><Modal key={target.kind+':'+target.intent} title={target.kind==='discard'?'放弃当前工作区草稿？':'新建文件'} alert={target.kind==='discard'} busy={false} submitLabel={target.kind==='discard'?'放弃草稿并继续':'新建文件'} onClose={()=>this.finishDialog(target,false)} onSubmit={fd=>target.kind==='discard'?this.finishDialog(target,true):this.createFile(target,fd)}>{target.kind==='discard'?<p>文件 {target.path||'当前草稿'} 有未保存修改或正在保存。继续操作会放弃当前草稿；取消会保留全部编辑。</p>:<label>新文件相对路径<input name="path" required maxLength={1000} value={this.state.newPath} placeholder="notes/research.md" onChange={event=>this.setState({newPath:event.target.value,dialogError:''})}/></label>}{this.state.dialogError?<p role="alert">{this.state.dialogError}</p>:null}</Modal></div>:null;
-        return <div className="page-scroll workspace-page"><SectionTitle title="项目工作区" sub={this.props.data.project.archived?"已归档项目源码只读，实验快照与准备区文件保留。":"编辑的是准备区，不会改变已经提交的实验快照。"}><button className="secondary" disabled={this.props.data.project.archived} onClick={this.newFile}><Icon name="plus" size={15}/>新建文件</button></SectionTitle><div className="workspace-grid"><nav className="file-tree" aria-label="项目文件"><div className="small-label">SOURCE FILES</div>{this.state.files.map(f => <button key={f.path} className={this.state.path === f.path ? 'active' : ''} onClick={() => this.open(f.path)}><Icon name="evidence" size={15}/><span>{f.path}</span></button>)}<p className="small muted">.git、可执行 Pi 配置与敏感配置不作为普通工作区资源加载。</p></nav><div className="editor"><div className="editor-toolbar"><code>{this.state.path || '选择文件'}</code>{this.state.dirty ? <span className="dirty-dot" title="未保存"/> : null}<span className="grow"/><button className="text-button" onClick={() => this.state.path && this.open(this.state.path)}>重新读取</button><button className="primary compact" disabled={this.props.data.project.archived || !this.state.path || !this.state.dirty || this.state.loading || this.state.saving} onClick={this.save}>保存文件</button></div><textarea aria-label="文件内容" readOnly={this.props.data.project.archived || this.state.loading} spellCheck={false} value={this.state.content} onChange={(e: any) => { if (!this.props.data.project.archived && !this.state.loading) {this.edited=true;this.changedDraft();this.setState({ content: e.target.value, dirty: true });} }}/><div className="editor-status"><span>UTF-8</span><span>{this.state.content.split('\n').length} 行</span><span>版本校验 {short(this.state.digest)}</span><span className="grow"/><span>冲突时保留当前编辑，不覆盖新版本</span></div></div></div><div className="notice"><Icon name="folder"/><p>实验代码可使用本地、Docker 或 SSH；源码、执行环境和资源在运行前单独批准。本地代码拥有当前用户权限，文件与网络不隔离。</p></div>{dialog&&(typeof document!=='undefined'&&document.body?createPortal(dialog,document.body):dialog)}</div>;
+        return <div className="page-scroll workspace-page"><SectionTitle title="项目工作区" sub={this.props.data.project.archived?"已归档项目源码只读，实验快照与准备区文件保留。":"编辑的是准备区，不会改变已经提交的实验快照。"}><button className="secondary" disabled={this.props.data.project.archived} onClick={this.newFile}><Icon name="plus" size={15}/>新建文件</button></SectionTitle><div className="workspace-grid"><nav className="file-tree" aria-label="项目文件"><div className="small-label">SOURCE FILES</div>{this.state.files.map(f => <button key={f.path} className={this.state.path === f.path ? 'active' : ''} onClick={() => this.open(f.path)}><Icon name="evidence" size={15}/><span>{f.path}</span></button>)}<p className="small muted">.git、可执行 Pi 配置与敏感配置不作为普通工作区资源加载。</p></nav><div className="editor" aria-busy={this.state.loading}><div className="editor-toolbar"><code>{this.state.path || '选择文件'}</code>{this.state.dirty ? <span className="dirty-dot" title="未保存"/> : null}<span className="grow"/><button className="text-button" onClick={() => this.state.path && this.open(this.state.path)}>重新读取</button><button className="primary compact" disabled={this.props.data.project.archived || !this.state.path || !this.state.dirty || this.state.loading || this.state.saving} onClick={this.save}>保存文件</button></div>{this.state.loading?<p className="workspace-loading loading-indicator" role="status"><span className="loading-spinner" aria-hidden="true"/>正在读取文件…</p>:this.state.previewMessage?<p className="workspace-loading" role="status">{this.state.previewMessage}</p>:!this.state.path&&!this.state.content?<p className="workspace-loading" role="status">请选择一个文本文件进行预览或编辑。</p>:null}<textarea aria-label="文件内容" readOnly={this.props.data.project.archived || this.state.loading || !!this.state.previewMessage} spellCheck={false} value={this.state.content} onChange={(e: any) => { if (!this.props.data.project.archived && !this.state.loading && !this.state.previewMessage) {this.edited=true;this.changedDraft();this.setState({ content: e.target.value, dirty: true });} }}/><div className="editor-status"><span>UTF-8</span><span>{this.state.content.split('\n').length} 行</span><span>版本校验 {short(this.state.digest)}</span><span className="grow"/><span>冲突时保留当前编辑，不覆盖新版本</span></div></div></div><div className="notice"><Icon name="folder"/><p>实验代码可使用本地、Docker 或 SSH；源码、执行环境和资源在运行前单独批准。本地代码拥有当前用户权限，文件与网络不隔离。</p></div>{dialog&&(typeof document!=='undefined'&&document.body?createPortal(dialog,document.body):dialog)}</div>;
     }
 }
 export class EvidenceView extends React.Component<{

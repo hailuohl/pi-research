@@ -52,6 +52,21 @@ test('late management list responses cannot replace the latest project catalog',
     assert.equal(v.state.active[0].id,'new');assert.deepEqual(v.state.archived,[]);v.componentWillUnmount();
 });
 
+test('management shows a spinner and updates each group independently while a failed read retains its prior list',async t=>{
+    const pending=[];mockFetch(t,url=>new Promise(resolve=>pending.push({url,resolve})));const v=manager();v.state.trashed=[lifecycle()];const loading=v.load();
+    const indicator=nodes(v.render()).find(n=>n.props?.className==='loading-indicator');assert.equal(indicator.props.role,'status');assert.equal(text(indicator),'正在读取项目…');assert.ok(nodes(indicator).some(n=>n.props?.className==='loading-spinner'&&n.props['aria-hidden']==='true'));assert.equal(pending.length,4);
+    pending[0].resolve(reply([project('new')]));await tick();assert.equal(v.state.active[0].id,'new');assert.deepEqual(v.state.archived,[]);assert.equal(v.state.loading,true);
+    pending[1].resolve(reply([project('archived',true)]));await tick();assert.equal(v.state.archived[0].id,'archived');
+    pending[2].resolve(failure('READ_FAILED',503));await tick();assert.equal(v.state.trashed[0].id,'p');assert.match(text(nodes(v.render()).find(n=>n.props?.role==='alert')),/READ_FAILED/);
+    pending[3].resolve(reply([lifecycle('purging')]));await loading;assert.equal(v.state.purging[0].status,'purging');assert.equal(v.state.loading,false);
+});
+
+test('closing management prevents pending list reads from replacing its current catalog',async t=>{
+    const pending=[],closed=[];mockFetch(t,url=>new Promise(resolve=>pending.push({url,resolve})));const v=manager({onClose:()=>closed.push(true)});v.state.active=[project('current')];const loading=v.load();v.close();
+    pending[0].resolve(reply([project('late')]));pending[1].resolve(reply([]));pending[2].resolve(reply([]));pending[3].resolve(reply([]));await loading;
+    assert.deepEqual(closed,[true]);assert.equal(v.state.active[0].id,'current');
+});
+
 test('cold reopen and refresh retain an archived selected project and its explicit old session',async t=>{
     const v=app(t);v.state.sessionId='old';v.state.historyAnchor={direction:'before',id:'m'};
     mockFetch(t,async url=>url==='/api/bootstrap'?reply(boot([project('a')])):url==='/api/settings/model-management'?reply({schemaVersion:2,providers:[]}):url==='/api/projects/p'?reply(project('p',true)):url.startsWith('/api/projects/p/state')?reply(data(project('p',true))):url.startsWith('/api/sessions/old/view')?reply({session:{id:'old'},messages:[{id:'m',content:'retained'}],progress:{active:false},history:{atLatest:false}}):assert.fail(url));

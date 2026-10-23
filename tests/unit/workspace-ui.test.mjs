@@ -20,6 +20,38 @@ async function newDraft(v,path){const creating=v.newFile();if(modal(v)?.props.ti
 const edit=(v,content)=>nodes(v.render()).find(n=>n.type==='textarea').props.onChange({target:{value:content}});
 function updateWorkspace(v,extra){const previous=v.props;v.props={...v.props,...extra};v.componentDidUpdate(previous);}
 
+test('initial selection skips binary data and leaves binary-only workspaces ready for a text selection',async t=>{
+ for(const files of [[{path:'a.RData',size:3},{path:'b.pdf',size:3},{path:'notes.md',size:4}],[{path:'a.rda',size:3},{path:'b.npy',size:3}]]){
+  const reads=[],errors=[],v=synchronousState(new WorkspaceView({data:data(),perform:async fn=>{try{await fn();}catch(error){errors.push(error.message);}}}));
+  mockGlobal(t,'fetch',async url=>url.includes('?path=')?(reads.push(url),reply({content:'text',digest:'TEXT'})):reply(files));
+  await v.loadFiles();assert.deepEqual(errors,[]);assert.deepEqual(v.state.files,files);
+  assert.deepEqual(reads,files.length===3?['/api/projects/p/files?path=notes.md']:[]);
+  assert.equal(v.state.path,files.length===3?'notes.md':'');
+  if(files.length===2)assert.match(text(v.render()),/选择.*文本文件/);
+ }
+});
+
+test('binary files show an explanatory read-only preview without a global error or write',async t=>{
+ const errors=[],requests=[],v=workspace({perform:async fn=>{try{await fn();}catch(error){errors.push(error.message);}}});v.state.dirty=false;
+ mockGlobal(t,'fetch',async(url,options)=>{requests.push({url,options});return {ok:false,status:415,json:async()=>({error:{code:'BINARY_FILE',message:'不能作为文本读取二进制文件'}})};});
+ for(const path of ['data.rda','unknown.custom']){
+  await v.open(path);assert.equal(v.state.path,path);assert.equal(v.state.content,'');assert.equal(v.state.dirty,false);assert.equal(v.state.loading,false);
+  assert.match(text(v.render()),/二进制.*文本/);assert.equal(nodes(v.render()).find(n=>n.type==='textarea').props.readOnly,true);assert.equal(button(v,'保存文件').props.disabled,true);
+  edit(v,'must not overwrite binary');await v.save();assert.equal(v.state.content,'');assert.deepEqual(errors,[]);
+ }
+ assert.ok(requests.every(r=>r.options.method==='GET'));
+ await newDraft(v,'new.md');assert.equal(nodes(v.render()).find(n=>n.type==='textarea').props.readOnly,false);assert.doesNotMatch(text(v.render()),/二进制.*文本/);
+});
+
+test('file reads show loading feedback, block saves and keep genuine empty files editable',async t=>{
+ const v=workspace(),requests=[];v.state.dirty=false;let release;
+ mockGlobal(t,'fetch',async(url,options)=>{requests.push({url,options});return options.body?reply({digest:'EMPTY-SAVED'}):url.includes('?path=')?new Promise(resolve=>release=resolve):reply([{path:'empty.txt',size:0}]);});
+ const reading=v.open('empty.txt');await tick();assert.equal(v.state.content,'draft');assert.equal(nodes(v.render()).find(n=>n.type==='textarea').props.readOnly,true);
+ assert.ok(nodes(v.render()).some(n=>n.props?.role==='status'&&/正在读取文件/.test(text(n))));assert.equal(button(v,'保存文件').props.disabled,true);await v.save();assert.equal(requests.length,1);
+ release(reply({content:'',digest:'EMPTY'}));await reading;assert.equal(v.state.content,'');assert.equal(nodes(v.render()).find(n=>n.type==='textarea').props.readOnly,false);assert.doesNotMatch(text(v.render()),/正在读取文件/);
+ edit(v,'');await v.save();assert.deepEqual(JSON.parse(requests.find(r=>r.options.body).options.body),{path:'empty.txt',content:'',expectedDigest:'EMPTY'});
+});
+
 test('returning to workspace refreshes added and removed files without touching the draft',async t=>{
  const requests=[],v=workspace({active:true}),draft={path:v.state.path,content:v.state.content,digest:v.state.digest,dirty:v.state.dirty},generation=v.draftGeneration;
  v.state.files=[{path:'removed.md',size:1}];mockGlobal(t,'fetch',async url=>{requests.push(url);return reply([{path:'external.txt',size:2}]);});

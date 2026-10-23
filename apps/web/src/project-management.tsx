@@ -42,12 +42,16 @@ export class ProjectManagement extends React.Component<{
     componentWillUnmount(){this.mounted=false;this.readEpoch++;this.purgeReadEpoch++;}
     async load(){
         const epoch=++this.readEpoch;this.setState({loading:true,error:''});
-        try{
-            const [active,archived,trashed,purging]=await Promise.all([api<Row<Project>[]>('/projects?status=active'),api<Row<Project>[]>('/projects?status=archived'),api<ProjectLifecycleView[]>('/projects?status=trashed'),api<ProjectLifecycleView[]>('/projects?status=purging')]);
-            if(!Array.isArray(active)||!Array.isArray(archived)||!Array.isArray(trashed)||!Array.isArray(purging))throw Error('项目目录读取失败');
-            if(this.mounted&&epoch===this.readEpoch)this.setState({active,archived,trashed,purging});
-        }catch(error){if(this.mounted&&epoch===this.readEpoch)this.setState({error:error instanceof Error?error.message:String(error)});}
-        finally{if(this.mounted&&epoch===this.readEpoch)this.setState({loading:false});}
+        const read=<T,>(status:string,update:(rows:T[])=>void)=>api<T[]>(`/projects?status=${status}`).then(rows=>{
+            if(!Array.isArray(rows))throw Error('项目目录读取失败');
+            if(this.mounted&&epoch===this.readEpoch)update(rows);
+        }).catch(error=>{if(this.mounted&&epoch===this.readEpoch)this.setState({error:error instanceof Error?error.message:String(error)});});
+        try{await Promise.all([
+            read<Row<Project>>('active',rows=>this.setState({active:rows})),
+            read<Row<Project>>('archived',rows=>this.setState({archived:rows})),
+            read<ProjectLifecycleView>('trashed',rows=>this.setState({trashed:rows})),
+            read<ProjectLifecycleView>('purging',rows=>this.setState({purging:rows}))
+        ]);}finally{if(this.mounted&&epoch===this.readEpoch)this.setState({loading:false});}
     }
     choose(project:Row<Project>|ProjectLifecycleView,action:Action){if(this.changing)return;this.purgeReadEpoch++;this.setState({target:{project:summary(project),action,key:crypto.randomUUID()},confirmName:'',conflict:false,error:'',notice:'',purgeProjectId:'',purge:null,purgeProject:null,purgeError:'',purgeReading:false});}
     async reloadTarget(){
@@ -97,7 +101,7 @@ export class ProjectManagement extends React.Component<{
         }catch(error){if(this.mounted&&epoch===this.purgeReadEpoch)this.setState({purgeError:error instanceof ApiError&&error.status===404?'此项目尚无可读取的清理状态或回执；可返回项目列表。':error instanceof Error?error.message:String(error)});}
         finally{if(this.mounted&&epoch===this.purgeReadEpoch)this.setState({purgeReading:false});}
     }
-    close=()=>{if(this.state.busy)return;this.purgeReadEpoch++;if(this.state.target||this.state.purgeProjectId)this.setState({target:null,confirmName:'',error:'',conflict:false,notice:'',purgeProjectId:'',purgeProject:null,purge:null,purgeReading:false,purgeError:''});else this.props.onClose();};
+    close=()=>{if(this.state.busy)return;this.purgeReadEpoch++;if(this.state.target||this.state.purgeProjectId)this.setState({target:null,confirmName:'',error:'',conflict:false,notice:'',purgeProjectId:'',purgeProject:null,purge:null,purgeReading:false,purgeError:''});else{this.readEpoch++;this.props.onClose();}};
     description(target:Target){
         switch(target.action){
             case 'archive':return '归档后项目从活动列表隐藏，会话、源码与已有成果保留为只读。尚未完成的作业或请求会阻止归档。';
@@ -123,7 +127,7 @@ export class ProjectManagement extends React.Component<{
         return <Modal title={target?titles[target.action]:purgeProjectId?'永久删除状态':'项目管理'} description={target?this.description(target):purgeProjectId?'从管理状态核对离线清理进度；刷新不会启动或恢复清理。':'打开活动或已归档项目，管理回收站中的保留项目。'} alert={!!target} wide={!target} onClose={this.close} onSubmit={()=>void this.confirm()} submitLabel={target?({archive:'确认归档',unarchive:'确认取消归档',trash:'确认移入回收站',restore:'确认还原',purge:'确认永久删除'})[target.action]:''} submitDisabled={conflict||target?.action==='purge'&&confirmName!==target.project.name} hideSubmit={!target} cancelLabel={target||purgeProjectId?'返回项目列表':'关闭'} busy={busy}>
             {error?<div role="alert" className="error-text"><p>{error}</p>{target&&!conflict?<p className="small muted">网络失联时再次确认会复用同一请求，避免重复操作。</p>:null}</div>:null}{notice?<p role="status">{notice}</p>:null}
             {target?<div className="project-confirmation"><strong>{target.project.name}</strong><code>{target.action==='purge'?target.project.id:short(target.project.id)} · 版本 {target.project.version}</code>{target.action==='purge'?<label>输入完整项目名称以确认<input required aria-label="永久删除确认项目名称" aria-describedby="project-purge-name-help" aria-invalid={!!confirmName&&confirmName!==target.project.name} autoComplete="off" disabled={busy} value={confirmName} onChange={event=>this.setState({confirmName:event.target.value})}/><span id="project-purge-name-help" className="small muted">必须完全一致，包括空格与大小写。确认后不可还原。</span></label>:null}{target.action==='trash'?<p className="small muted">还原后状态：{target.project.status==='archived'?'已归档':'活动'}</p>:null}{conflict?<button type="button" className="secondary" disabled={busy} onClick={()=>void this.reloadTarget()}>刷新目标后重新确认</button>:null}</div>:purgeProjectId?this.purgeView():<>
-                <div className="project-management-toolbar"><button type="button" className="secondary compact" disabled={loading||busy} onClick={()=>void this.load()}>刷新项目列表</button>{this.state.lastPurgeId?<button type="button" className="text-button" disabled={busy} onClick={()=>void this.openPurge(this.state.lastPurgeId)}>查看上次清理状态</button>:null}{loading?<span role="status">正在读取项目…</span>:null}</div>
+                <div className="project-management-toolbar"><button type="button" className="secondary compact" disabled={loading||busy} onClick={()=>void this.load()}>刷新项目列表</button>{this.state.lastPurgeId?<button type="button" className="text-button" disabled={busy} onClick={()=>void this.openPurge(this.state.lastPurgeId)}>查看上次清理状态</button>:null}{loading?<span role="status" className="loading-indicator"><span className="loading-spinner" aria-hidden="true"/>正在读取项目…</span>:null}</div>
                 {(['active','archived','trashed','purging'] as const).map(status=><section className="project-management-group" key={status} aria-label={status==='active'?'活动项目':status==='archived'?'已归档项目':status==='purging'?'正在永久删除':'回收站'}><h3>{status==='active'?'活动项目':status==='archived'?'已归档项目':status==='purging'?'正在永久删除':'回收站'} <span className="muted">{this.state[status].length}</span></h3><ul>{this.state[status].map(project=><li key={project.id}><div><strong>{project.name}</strong><small>{short(project.id)}{status==='archived'?' · 只读历史':status==='trashed'?` · 删除前：${project.restoreStatus==='archived'?'已归档':'活动'}`:''}</small>{status==='trashed'&&'deletedAt' in project?<small>移入时间：{date(project.deletedAt as string)}</small>:null}</div><div className="actions">{status==='purging'?<button type="button" className="secondary compact" disabled={busy} onClick={()=>void this.openPurge(project.id,summary(project))}>查看清理状态</button>:status==='trashed'?<><button type="button" className="secondary compact" disabled={busy} onClick={()=>this.choose(project,'restore')}>还原</button><button type="button" className="text-button danger" disabled={busy} onClick={()=>this.choose(project,'purge')}>永久删除</button></>:<><button type="button" className="secondary compact" disabled={busy} onClick={()=>this.props.onOpen(project.id)}>打开{status==='archived'?'历史':''}</button><button type="button" className="text-button" disabled={busy} onClick={()=>this.choose(project,status==='active'?'archive':'unarchive')}><Icon name="archive" size={15}/>{status==='active'?'归档':'取消归档'}</button><button type="button" className="text-button danger" disabled={busy} onClick={()=>this.choose(project,'trash')}>移入回收站</button></>}</div></li>)}</ul>{!loading&&!this.state[status].length?<p className="inline-empty">{status==='active'?'暂无活动项目。':status==='archived'?'暂无已归档项目。':status==='purging'?'暂无待完成的永久删除。':'回收站为空。'}</p>:null}</section>)}
             </>}
         </Modal>;

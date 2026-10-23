@@ -1,0 +1,172 @@
+{
+  "batch": "project-feedback-O1-O4",
+  "date": "2026-10-23",
+  "baselineSha": "b2ce61d75f040934d821faa96ed841f91aabe722",
+  "branch": "implementation/pr01-reproducible-baseline",
+  "changes": {
+    "O1": "Skip known binary extensions on initial selection; explain binary previews locally as read-only, including server-detected binary content.",
+    "O2": "Visible file-read progress; loading prevents editing and saving, retains previous content, and preserves valid empty-file saves.",
+    "O3": "Animated project-list progress with reduced-motion support; each completed group appears independently and failed reads retain prior results.",
+    "O4": "Native invalid-name events produce an accessible Chinese inline error and retain the input; legal save and secret masking remain intact."
+  },
+  "checks": {
+    "focused": {
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "skips": []
+    },
+    "integratedFocused": {
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "skips": []
+    },
+    "regression": {
+      "command": "npm run test:core",
+      "snapshot": "baseline plus this batch only",
+      "tests": 2334,
+      "pass": 2307,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 27,
+      "skips": [
+        "﹣ POSIX backup preserves distinct case-sensitive sibling paths (0.177ms) # SKIP",
+        "﹣ real IPC, Docker failure/repair and two trusted Run subprocesses continue one frozen goal exactly once (0.6487ms) # SKIP",
+        "﹣ optional formal Docker supervisor: success, integrity limits, cancellation, timeout and created recovery (0.0944ms) # SKIP",
+        "﹣ isolated compiler: pdflatex (1.408ms) # SKIP",
+        "﹣ isolated compiler: xelatex (0.1103ms) # SKIP",
+        "﹣ isolated compiler: lualatex (0.0705ms) # SKIP",
+        "﹣ isolated compiler: chinese (0.0627ms) # SKIP",
+        "﹣ isolated compiler: lua-chinese-budget (0.0837ms) # SKIP",
+        "﹣ isolated compiler: bibtex (0.0802ms) # SKIP",
+        "﹣ isolated compiler: biber (0.0756ms) # SKIP",
+        "﹣ isolated compiler: missing-image (0.0646ms) # SKIP",
+        "﹣ isolated compiler: missing-package (0.0869ms) # SKIP",
+        "﹣ isolated compiler: undefined-reference (0.152ms) # SKIP",
+        "﹣ isolated compiler: shell-blocked (0.0747ms) # SKIP",
+        "﹣ isolated compiler: lua-blocked (0.0557ms) # SKIP",
+        "﹣ isolated compiler: forged-result (0.0577ms) # SKIP",
+        "﹣ isolated compiler: lua-forged-host-result (0.054ms) # SKIP",
+        "﹣ isolated compiler: pdf-before-error (0.1459ms) # SKIP",
+        "﹣ isolated compiler: absolute-write-blocked (0.0764ms) # SKIP",
+        "﹣ isolated compiler: biber-remote-blocked (0.0335ms) # SKIP",
+        "﹣ isolated compiler: biber-nonutf8-control (0.0549ms) # SKIP",
+        "﹣ isolated compiler: timeout (0.0406ms) # SKIP",
+        "﹣ optional real Docker preserves ordinary and executable source modes (0.1144ms) # SKIP",
+        "﹣ POSIX source modes reflect actual exec bits and writes retain exact normal permission bits (0.1014ms) # SKIP"
+      ]
+    },
+    "cleanBuild": {
+      "command": "npm run verify:build",
+      "node": "24.19.0",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "identical": true,
+      "files": 721,
+      "distManifestSha256": "25783c875351f915fb1ce477d821a5078a95c5142033c127943e4a9a45771761"
+    },
+    "integratedTypecheck": {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    "browser": {
+      "fallback": "Browser plugin not available",
+      "desktop": [
+        1440,
+        1000
+      ],
+      "mobile": [
+        390,
+        844
+      ],
+      "checks": {
+        "O1AutomaticBinarySkipped": true,
+        "O1ManualBinaryExplained": true,
+        "O2LoadingAndEmptySave": true,
+        "O3ProgressiveGroupsAnimatedAndReducedMotion": true,
+        "O4NativeInvalidVisibleDraftRetainedAndValidSaveMasked": true,
+        "ReopenSavedVariable": true,
+        "MobileFeedbackVisible": true
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "bundleSha256": "7771f29213a8bf02132bab600c424eaafa7f2783df49793861767cb33c951625"
+    },
+    "integratedBrowser": {
+      "passed": true,
+      "checks": {
+        "O1AutomaticBinarySkipped": true,
+        "O1ManualBinaryExplained": true,
+        "O2LoadingAndEmptySave": true,
+        "O3ProgressiveGroupsAnimatedAndReducedMotion": true,
+        "O4NativeInvalidVisibleDraftRetainedAndValidSaveMasked": true,
+        "ReopenSavedVariable": true,
+        "MobileFeedbackVisible": true
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "bundleSha256": "8cd20f51c8e71373e35d21be55150e85d2d9133255cb229dfd2347cc4b1a9c82"
+    }
+  },
+  "independentReview": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedReasoningEffort": "high",
+    "runtimeModelAndEffort": "not echoed by the tool",
+    "sourceDiffSha256": "1a53a4c93a3eee5d93226f6a7ca8f3e978a922c9de0cc6f63fa4fcbd15a36510",
+    "sourceFileHashes": {
+      "apps/web/public/styles.css": "bb94628d3a59599f3fd94ae17cf034d280b2007c1aa45d1e347708c4f323cfcf",
+      "apps/web/src/data-views.tsx": "54a9183999e2c82191e872a1e8fe6d698399af5ffbfa813238e325fc58d893b5",
+      "apps/web/src/environment-view.tsx": "cf99b969b5066789ddf5f47f035a45d300ab4772e06b0ddf974d0a57d3f35776",
+      "apps/web/src/project-management.tsx": "0071ed7774b7a4547daa4c9448d016f4155f3632dba630e9e1c51e15b0648fc7",
+      "tests/unit/environment-ui.test.mjs": "b61e6c54a62069f0c732f801754dbcc10a7d9680026a17c534971578741645ef",
+      "tests/unit/project-management-ui.test.mjs": "3bd317cd7a58e2159ee83cddff949b90dbb0022ccd8309ad977c02bf2e9b2096",
+      "tests/unit/workspace-ui.test.mjs": "7486a8407c31addac7329966974f2fd5788504a701fef5e4bab870e797238043"
+    },
+    "blockingFindings": 0,
+    "nonBlockingFindings": 0
+  },
+  "delegatedImplementation": {
+    "scope": [
+      "O3",
+      "O4"
+    ],
+    "requestedModel": "gpt-6-luna",
+    "requestedReasoningEffort": "max",
+    "runtimeModelAndEffort": "not echoed by the tool"
+  },
+  "preservation": {
+    "preexistingDirtyFiles": 262,
+    "unexpectedChanges": [],
+    "existingWorkPreserved": true,
+    "preexistingFrontendReproducedExactly": true,
+    "runningServiceFrontendMatchesIntegratedBundle": true
+  },
+  "evidence": {
+    "logs": "../tmp/project-feedback-*.log",
+    "browserResults": "../tmp/project-feedback-20261023/.validation/feedback-browser/result.json",
+    "integratedBrowserResults": "../tmp/project-feedback-20261023/.validation/feedback-browser-integrated/result.json",
+    "reviewSnapshot": "../tmp/project-feedback-20261023/.validation/review/snapshot.json"
+  },
+  "limits": [
+    "No frontend layout redesign.",
+    "Regression skips are retained explicitly above.",
+    "Browser checks use synthetic data; the existing running service was not restarted."
+  ]
+}

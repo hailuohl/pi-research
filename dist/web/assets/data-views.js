@@ -1,13 +1,14 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { api, artifactText, downloadArtifact } from "./api.js";
+import { api, ApiError, artifactText, downloadArtifact } from "./api.js";
 import { short } from "./models.js";
 import { Icon, Badge, Empty, SectionTitle, Modal } from "./ui.js";
+const binaryWorkspaceFile = (path) => /\.(?:rda|rdata|rds|npy|npz|parquet|feather|pkl|pickle|h5|hdf5|mat|sqlite|db|png|jpe?g|gif|webp|ico|pdf|zip|gz|bz2|xz|7z|tar|exe|dll|so|woff2?|ttf|mp[34]|wav)$/i.test(path);
 class WorkspaceView extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { files: [], path: "", content: "", digest: null, dirty: false, loading: false, saving: false, dialog: null, newPath: "", dialogError: "" };
+    this.state = { files: [], path: "", content: "", digest: null, dirty: false, loading: false, saving: false, dialog: null, newPath: "", dialogError: "", previewMessage: "" };
     this.loadId = 0;
     this.listId = 0;
     this.initialListLoaded = false;
@@ -123,7 +124,8 @@ class WorkspaceView extends React.Component {
       if (!current()) return;
       this.setState(() => current() ? { files } : null);
       this.initialListLoaded = true;
-      if (selectFirst && !this.state.path && !this.state.dirty && !this.edited && !this.state.loading && !this.saving && files.length && selection === this.loadId && intent === this.intent) await this.open(files[0].path);
+      const first = files.find((file) => !binaryWorkspaceFile(file.path));
+      if (selectFirst && !this.state.path && !this.state.dirty && !this.edited && !this.state.loading && !this.saving && first && selection === this.loadId && intent === this.intent) await this.open(first.path);
     } catch (e) {
       if (current())
         await this.props.perform(async () => {
@@ -138,16 +140,29 @@ class WorkspaceView extends React.Component {
     this.changedDraft();
     const seq = ++this.loadId, projectId = this.props.data.project.id;
     const generation = this.draftGeneration, current = () => this.mounted && seq === this.loadId && generation === this.draftGeneration && projectId === this.props.data.project.id;
+    const showBinary = () => {
+      this.changedDraft();
+      this.edited = false;
+      this.setState({ path, content: "", digest: null, dirty: false, loading: false, previewMessage: "\u6B64\u6587\u4EF6\u4E3A\u4E8C\u8FDB\u5236\u6587\u4EF6\uFF0C\u65E0\u6CD5\u4F5C\u4E3A\u6587\u672C\u9884\u89C8\u6216\u7F16\u8F91\u3002\u8BF7\u9009\u62E9\u6587\u672C\u6587\u4EF6\u3002" });
+    };
+    if (binaryWorkspaceFile(path)) {
+      showBinary();
+      return;
+    }
     this.setState({ loading: true });
     try {
       const f = await api(`/projects/${projectId}/files?path=${encodeURIComponent(path)}`);
       if (current()) {
         this.changedDraft();
         this.edited = false;
-        this.setState({ path, content: f.content, digest: f.digest, dirty: false, loading: false });
+        this.setState({ path, content: f.content, digest: f.digest, dirty: false, loading: false, previewMessage: "" });
       }
     } catch (e) {
       if (!current()) return;
+      if (e instanceof ApiError && e.code === "BINARY_FILE") {
+        showBinary();
+        return;
+      }
       this.setState({ loading: false });
       await this.props.perform(async () => {
         throw e;
@@ -173,7 +188,7 @@ class WorkspaceView extends React.Component {
     this.loadId++;
     this.changedDraft();
     this.edited = true;
-    this.setState({ path, content: "", digest: null, dirty: true, loading: false });
+    this.setState({ path, content: "", digest: null, dirty: true, loading: false, previewMessage: "" });
   }
   render() {
     const target = this.state.dialog, dialog = target ? /* @__PURE__ */ jsx("div", { onKeyDown: (event) => event.stopPropagation(), onSubmit: (event) => event.stopPropagation(), children: /* @__PURE__ */ jsxs(Modal, { title: target.kind === "discard" ? "\u653E\u5F03\u5F53\u524D\u5DE5\u4F5C\u533A\u8349\u7A3F\uFF1F" : "\u65B0\u5EFA\u6587\u4EF6", alert: target.kind === "discard", busy: false, submitLabel: target.kind === "discard" ? "\u653E\u5F03\u8349\u7A3F\u5E76\u7EE7\u7EED" : "\u65B0\u5EFA\u6587\u4EF6", onClose: () => this.finishDialog(target, false), onSubmit: (fd) => target.kind === "discard" ? this.finishDialog(target, true) : this.createFile(target, fd), children: [
@@ -201,7 +216,7 @@ class WorkspaceView extends React.Component {
           ] }, f.path)),
           /* @__PURE__ */ jsx("p", { className: "small muted", children: ".git\u3001\u53EF\u6267\u884C Pi \u914D\u7F6E\u4E0E\u654F\u611F\u914D\u7F6E\u4E0D\u4F5C\u4E3A\u666E\u901A\u5DE5\u4F5C\u533A\u8D44\u6E90\u52A0\u8F7D\u3002" })
         ] }),
-        /* @__PURE__ */ jsxs("div", { className: "editor", children: [
+        /* @__PURE__ */ jsxs("div", { className: "editor", "aria-busy": this.state.loading, children: [
           /* @__PURE__ */ jsxs("div", { className: "editor-toolbar", children: [
             /* @__PURE__ */ jsx("code", { children: this.state.path || "\u9009\u62E9\u6587\u4EF6" }),
             this.state.dirty ? /* @__PURE__ */ jsx("span", { className: "dirty-dot", title: "\u672A\u4FDD\u5B58" }) : null,
@@ -209,8 +224,12 @@ class WorkspaceView extends React.Component {
             /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => this.state.path && this.open(this.state.path), children: "\u91CD\u65B0\u8BFB\u53D6" }),
             /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: this.props.data.project.archived || !this.state.path || !this.state.dirty || this.state.loading || this.state.saving, onClick: this.save, children: "\u4FDD\u5B58\u6587\u4EF6" })
           ] }),
-          /* @__PURE__ */ jsx("textarea", { "aria-label": "\u6587\u4EF6\u5185\u5BB9", readOnly: this.props.data.project.archived || this.state.loading, spellCheck: false, value: this.state.content, onChange: (e) => {
-            if (!this.props.data.project.archived && !this.state.loading) {
+          this.state.loading ? /* @__PURE__ */ jsxs("p", { className: "workspace-loading loading-indicator", role: "status", children: [
+            /* @__PURE__ */ jsx("span", { className: "loading-spinner", "aria-hidden": "true" }),
+            "\u6B63\u5728\u8BFB\u53D6\u6587\u4EF6\u2026"
+          ] }) : this.state.previewMessage ? /* @__PURE__ */ jsx("p", { className: "workspace-loading", role: "status", children: this.state.previewMessage }) : !this.state.path && !this.state.content ? /* @__PURE__ */ jsx("p", { className: "workspace-loading", role: "status", children: "\u8BF7\u9009\u62E9\u4E00\u4E2A\u6587\u672C\u6587\u4EF6\u8FDB\u884C\u9884\u89C8\u6216\u7F16\u8F91\u3002" }) : null,
+          /* @__PURE__ */ jsx("textarea", { "aria-label": "\u6587\u4EF6\u5185\u5BB9", readOnly: this.props.data.project.archived || this.state.loading || !!this.state.previewMessage, spellCheck: false, value: this.state.content, onChange: (e) => {
+            if (!this.props.data.project.archived && !this.state.loading && !this.state.previewMessage) {
               this.edited = true;
               this.changedDraft();
               this.setState({ content: e.target.value, dirty: true });

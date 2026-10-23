@@ -48,7 +48,10 @@ class ProjectManagement extends React.Component {
       if (this.state.busy) return;
       this.purgeReadEpoch++;
       if (this.state.target || this.state.purgeProjectId) this.setState({ target: null, confirmName: "", error: "", conflict: false, notice: "", purgeProjectId: "", purgeProject: null, purge: null, purgeReading: false, purgeError: "" });
-      else this.props.onClose();
+      else {
+        this.readEpoch++;
+        this.props.onClose();
+      }
     };
   }
   componentDidMount() {
@@ -62,12 +65,19 @@ class ProjectManagement extends React.Component {
   async load() {
     const epoch = ++this.readEpoch;
     this.setState({ loading: true, error: "" });
-    try {
-      const [active, archived, trashed, purging] = await Promise.all([api("/projects?status=active"), api("/projects?status=archived"), api("/projects?status=trashed"), api("/projects?status=purging")]);
-      if (!Array.isArray(active) || !Array.isArray(archived) || !Array.isArray(trashed) || !Array.isArray(purging)) throw Error("\u9879\u76EE\u76EE\u5F55\u8BFB\u53D6\u5931\u8D25");
-      if (this.mounted && epoch === this.readEpoch) this.setState({ active, archived, trashed, purging });
-    } catch (error) {
+    const read = (status, update) => api(`/projects?status=${status}`).then((rows) => {
+      if (!Array.isArray(rows)) throw Error("\u9879\u76EE\u76EE\u5F55\u8BFB\u53D6\u5931\u8D25");
+      if (this.mounted && epoch === this.readEpoch) update(rows);
+    }).catch((error) => {
       if (this.mounted && epoch === this.readEpoch) this.setState({ error: error instanceof Error ? error.message : String(error) });
+    });
+    try {
+      await Promise.all([
+        read("active", (rows) => this.setState({ active: rows })),
+        read("archived", (rows) => this.setState({ archived: rows })),
+        read("trashed", (rows) => this.setState({ trashed: rows })),
+        read("purging", (rows) => this.setState({ purging: rows }))
+      ]);
     } finally {
       if (this.mounted && epoch === this.readEpoch) this.setState({ loading: false });
     }
@@ -250,7 +260,10 @@ class ProjectManagement extends React.Component {
         /* @__PURE__ */ jsxs("div", { className: "project-management-toolbar", children: [
           /* @__PURE__ */ jsx("button", { type: "button", className: "secondary compact", disabled: loading || busy, onClick: () => void this.load(), children: "\u5237\u65B0\u9879\u76EE\u5217\u8868" }),
           this.state.lastPurgeId ? /* @__PURE__ */ jsx("button", { type: "button", className: "text-button", disabled: busy, onClick: () => void this.openPurge(this.state.lastPurgeId), children: "\u67E5\u770B\u4E0A\u6B21\u6E05\u7406\u72B6\u6001" }) : null,
-          loading ? /* @__PURE__ */ jsx("span", { role: "status", children: "\u6B63\u5728\u8BFB\u53D6\u9879\u76EE\u2026" }) : null
+          loading ? /* @__PURE__ */ jsxs("span", { role: "status", className: "loading-indicator", children: [
+            /* @__PURE__ */ jsx("span", { className: "loading-spinner", "aria-hidden": "true" }),
+            "\u6B63\u5728\u8BFB\u53D6\u9879\u76EE\u2026"
+          ] }) : null
         ] }),
         ["active", "archived", "trashed", "purging"].map((status) => /* @__PURE__ */ jsxs("section", { className: "project-management-group", "aria-label": status === "active" ? "\u6D3B\u52A8\u9879\u76EE" : status === "archived" ? "\u5DF2\u5F52\u6863\u9879\u76EE" : status === "purging" ? "\u6B63\u5728\u6C38\u4E45\u5220\u9664" : "\u56DE\u6536\u7AD9", children: [
           /* @__PURE__ */ jsxs("h3", { children: [

@@ -46,3 +46,12 @@ test('stale load and post-unmount responses cannot replace current list or resto
  const v=view(),first=v.load(),second=v.load();replies[1](response(data(3)));await second;replies[0](response(data(2)));await first;assert.equal(v.state.data.version,3);
  v.edit();v.state.name='MY_API_KEY';v.state.value='synthetic-secret';const saving=v.save('set');v.componentWillUnmount();replies[2](response(data(4)));await saving;assert.equal(v.state.value,'');assert.equal(v.state.data.version,3);
 });
+
+test('invalid variable names show an accessible Chinese error and keep the draft',()=>{
+ const v=view();v.edit();let input=nodes(v.render()).find(n=>n.type==='input'&&n.props['aria-label']==='变量名');
+ assert.equal(input.props.required,true);assert.equal(input.props.pattern,'[A-Z_][A-Z0-9_]*');input.props.onChange({target:{value:'bad-name'}});
+ input=nodes(v.render()).find(n=>n.type==='input'&&n.props['aria-label']==='变量名');let prevented=false;input.props.onInvalid({preventDefault(){prevented=true;}});
+ const tree=v.render();input=nodes(tree).find(n=>n.type==='input'&&n.props['aria-label']==='变量名');const alert=nodes(tree).find(n=>n.props?.id==='environment-name-error');
+ assert.equal(prevented,true);assert.equal(input.props.value,'bad-name');assert.equal(input.props['aria-invalid'],true);assert.equal(input.props['aria-describedby'],'environment-name-error');
+ assert.equal(alert.props.role,'alert');assert.match(alert.props.children,/变量名/);assert.doesNotMatch(alert.props.children,/bad-name/);
+});

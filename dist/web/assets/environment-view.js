@@ -5,7 +5,7 @@ import { Icon, SectionTitle, Modal } from "./ui.js";
 class EnvironmentView extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { data: null, loading: false, busy: false, error: "", message: "", editing: false, replacing: false, name: "", value: "", showValue: false, deleting: "" };
+    this.state = { data: null, loading: false, busy: false, error: "", message: "", editing: false, replacing: false, name: "", nameError: "", value: "", showValue: false, deleting: "" };
     this.disposed = false;
     this.epoch = 0;
   }
@@ -37,12 +37,12 @@ class EnvironmentView extends React.Component {
   edit(name = "") {
     if (this.state.busy) return;
     this.mutation = void 0;
-    this.setState({ editing: true, replacing: !!name, name, value: "", showValue: false, error: "", message: "" });
+    this.setState({ editing: true, replacing: !!name, name, nameError: "", value: "", showValue: false, error: "", message: "" });
   }
   close() {
     if (!this.state.busy) {
       this.mutation = void 0;
-      this.setState({ editing: false, value: "", showValue: false, deleting: "", error: "" });
+      this.setState({ editing: false, value: "", showValue: false, deleting: "", error: "", nameError: "" });
     }
   }
   async save(action) {
@@ -74,7 +74,7 @@ class EnvironmentView extends React.Component {
     }
   }
   render() {
-    const { data, loading, busy, error, message, editing, replacing, name, value, showValue, deleting } = this.state;
+    const { data, loading, busy, error, message, editing, replacing, name, nameError, value, showValue, deleting } = this.state;
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll environment-page", children: [
       /* @__PURE__ */ jsx(SectionTitle, { title: "\u73AF\u5883", children: /* @__PURE__ */ jsxs("button", { className: "primary", disabled: !data || loading || busy, onClick: () => this.edit(), children: [
         /* @__PURE__ */ jsx(Icon, { name: "plus", size: 16 }),
@@ -117,8 +117,12 @@ class EnvironmentView extends React.Component {
       editing ? /* @__PURE__ */ jsxs(Modal, { title: replacing ? "\u66FF\u6362\u53D8\u91CF\u503C" : "\u6DFB\u52A0\u73AF\u5883\u53D8\u91CF", submitLabel: "\u4FDD\u5B58\u53D8\u91CF", busy, onClose: () => this.close(), onSubmit: () => void this.save("set"), children: [
         /* @__PURE__ */ jsxs("label", { children: [
           "\u53D8\u91CF\u540D",
-          /* @__PURE__ */ jsx("input", { name: "name", "aria-label": "\u53D8\u91CF\u540D", autoComplete: "off", spellCheck: false, required: true, pattern: "[A-Z_][A-Z0-9_]*", maxLength: 128, placeholder: "MY_API_KEY", readOnly: replacing, disabled: busy, value: name, onChange: (event) => this.setState({ name: event.target.value }) })
+          /* @__PURE__ */ jsx("input", { name: "name", "aria-label": "\u53D8\u91CF\u540D", "aria-invalid": nameError ? true : void 0, "aria-describedby": nameError ? "environment-name-error" : void 0, autoComplete: "off", spellCheck: false, required: true, pattern: "[A-Z_][A-Z0-9_]*", maxLength: 128, placeholder: "MY_API_KEY", readOnly: replacing, disabled: busy, value: name, onInvalid: (event) => {
+            event.preventDefault();
+            this.setState({ nameError: "\u53D8\u91CF\u540D\u683C\u5F0F\u4E0D\u6B63\u786E\uFF0C\u8BF7\u4F7F\u7528\u5927\u5199\u5B57\u6BCD\u3001\u6570\u5B57\u548C\u4E0B\u5212\u7EBF\uFF0C\u5E76\u4EE5\u5B57\u6BCD\u6216\u4E0B\u5212\u7EBF\u5F00\u5934\u3002" });
+          }, onChange: (event) => this.setState({ name: event.target.value, nameError: "" }) })
         ] }),
+        nameError ? /* @__PURE__ */ jsx("p", { id: "environment-name-error", role: "alert", className: "error-text", children: nameError }) : null,
         /* @__PURE__ */ jsxs("label", { children: [
           "\u53D8\u91CF\u503C",
           /* @__PURE__ */ jsx("input", { name: "value", "aria-label": "\u53D8\u91CF\u503C", type: showValue ? "text" : "password", autoComplete: "new-password", spellCheck: false, required: true, maxLength: 8192, disabled: busy, value, onChange: (event) => this.setState({ value: event.target.value }) })
