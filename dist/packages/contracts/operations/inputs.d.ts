@@ -1470,6 +1470,44 @@ export declare const INPUT_SCHEMAS: {
         readonly required: readonly ["intentId"];
         readonly additionalProperties: false;
     };
+    readonly run_intent_withdraw: {
+        readonly type: "object";
+        readonly properties: {
+            readonly intentId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly expectedVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly approvalId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly expectedApprovalVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly manifestDigest: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["intentId", "expectedVersion", "approvalId", "expectedApprovalVersion", "manifestDigest"];
+        readonly additionalProperties: false;
+    };
     readonly run_inspect: {
         readonly type: "object";
         readonly properties: {

@@ -175,6 +175,26 @@ export class RunService {
         if (actor.type === 'agent' && !intent.runGrant && intent.rootSessionId)
             ensure(actor.role === 'coordinator' && !actor.taskId && (!actor.wakeupId || !!actor.continuationId) && actor.sessionId === intent.rootSessionId, 'RUN_SESSION_DENIED', '此运行意向属于另一个研究对话', 403);
     }
+    withdrawIntent(actor, projectId, sessionId, value) {
+        userOnly(actor);
+        scope(actor, projectId);
+        const input = object(value);
+        ensure(Object.keys(input).every(key => ['intentId', 'expectedVersion', 'approvalId', 'expectedApprovalVersion', 'manifestDigest'].includes(key)), 'INVALID_INPUT', '撤回请求包含未知字段', 400);
+        const intentId = text(input.intentId, 'intentId', 100), approvalId = text(input.approvalId, 'approvalId', 100), manifestDigest = text(input.manifestDigest, 'manifestDigest', 100), expectedVersion = integer(input.expectedVersion, 'expectedVersion', 1), expectedApprovalVersion = integer(input.expectedApprovalVersion, 'expectedApprovalVersion', 1);
+        return this.c.store.transaction(() => {
+            assertProjectWritable(this.c.store, projectId);
+            const session = this.c.store.get('session', text(sessionId, 'sessionId', 100), projectId), intent = this.c.store.get('run-intent', intentId, projectId), approval = this.c.store.get('approval', approvalId, projectId);
+            ensure(session.role === 'coordinator' && !session.taskId && !session.teamId && session.state !== 'archived' && intent.rootSessionId === session.id, 'RUN_SESSION_DENIED', '只能撤回当前主协调对话自己的运行批准', 403);
+            ensure(intent.version === expectedVersion && approval.version === expectedApprovalVersion, 'VERSION_CONFLICT', '运行意向或批准版本已变化', 409);
+            ensure(intent.status === 'prepared' && !intent.runId && !this.c.store.list('run', projectId).some(run => run.intentId === intent.id), 'RUN_INTENT_NOT_WITHDRAWABLE', '已提交的运行意向不能撤回批准', 409);
+            ensure(intent.approvalId === approval.id && intent.manifestDigest === manifestDigest && approval.subjectKind === 'run-intent' && approval.subjectId === intent.id && approval.scope === 'run.submit' && approval.digest === manifestDigest, 'APPROVAL_STALE', '运行意向与准确批准绑定不符', 409);
+            ensure(!intent.runGrant && !approval.runGrant && !approval.workingGrant && !approval.fullAccess && !approval.automaticApproval && !approval.automaticExecution, 'RUN_INTENT_NOT_WITHDRAWABLE', '派生授权请使用对应的授权撤销入口', 409);
+            ensure(approval.status === 'approved', 'APPROVAL_NOT_APPROVED', '只有未提交的普通已批准意向可撤回', 409);
+            const withdrawn = this.c.store.update('approval', approval.id, expectedApprovalVersion, { status: 'stale' });
+            this.c.store.event(projectId, 'run-intent.withdrawn', { intentId: intent.id, approvalId: approval.id, manifestDigest, sessionId: session.id, approvalVersion: withdrawn.version });
+            return { intentId: intent.id, approvalId: approval.id, manifestDigest, approvalStatus: 'stale', approvalVersion: withdrawn.version };
+        });
+    }
     submit(actor, id) {
         if (actor.type !== 'user')
             toolAllowed(actor, 'run_submit');

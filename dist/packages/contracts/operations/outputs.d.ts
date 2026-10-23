@@ -2247,7 +2247,7 @@ export declare const OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("state" | "input" | "blockedReason" | "actionId" | "operation" | "approvalStatus")[];
+        readonly required: ("state" | "input" | "blockedReason" | "actionId" | "approvalStatus" | "operation")[];
         readonly additionalProperties: false;
     };
     readonly session_notice_read: {
@@ -12471,6 +12471,28 @@ export declare const OUTPUT_SCHEMAS: {
             };
         };
         readonly required: ("version" | "id" | "createdAt" | "status" | "projectId" | "approvalId" | "experimentId" | "manifestDigest" | "manifest" | "kind" | "updatedAt")[];
+        readonly additionalProperties: false;
+    };
+    readonly run_intent_withdraw: {
+        readonly type: "object";
+        readonly properties: {
+            readonly intentId: {
+                readonly type: "string";
+            };
+            readonly approvalId: {
+                readonly type: "string";
+            };
+            readonly manifestDigest: {
+                readonly type: "string";
+            };
+            readonly approvalStatus: {
+                readonly const: "stale";
+            };
+            readonly approvalVersion: {
+                readonly type: "integer";
+            };
+        };
+        readonly required: ("approvalId" | "manifestDigest" | "intentId" | "approvalStatus" | "approvalVersion")[];
         readonly additionalProperties: false;
     };
     readonly run_submit: {

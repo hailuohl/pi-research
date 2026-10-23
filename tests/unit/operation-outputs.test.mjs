@@ -137,6 +137,8 @@ test('all existing public tools have closed, literal success contracts exercised
   await call('campaign_enroll',{campaignId:c.id,intentId:intent.id,expectedVersion:c.version});
   await call('approval_request');approve(s.app,intent.approvalId);
   const run=await call('run_submit',{intentId:intent.id});
+  const withdrawable=s.app.runs.prepare(USER,s.baseline.id,s.session.id),withdrawApproval=approve(s.app,withdrawable.approvalId);
+  check('run_intent_withdraw',s.app.operations.execute(USER,'run_intent_withdraw',{intentId:withdrawable.id,expectedVersion:withdrawable.version,approvalId:withdrawApproval.id,expectedApprovalVersion:withdrawApproval.version,manifestDigest:withdrawable.manifestDigest},{projectId:s.project.id,sessionId:s.session.id,idempotencyKey:'schema-withdraw'}));
   check('run_list',s.app.operations.execute(USER,'run_list',{cursor:0,limit:20},{projectId:s.project.id}));
   check('research_history_list',s.app.operations.execute(USER,'research_history_list',{kind:'evidence',cursor:0,limit:20},{projectId:s.project.id}));
   fixtureFinish(s,run);s.app.campaigns.observe();

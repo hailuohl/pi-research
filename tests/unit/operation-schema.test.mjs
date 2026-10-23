@@ -6,7 +6,7 @@ import { TOOL_DEFINITIONS } from '../../dist/packages/research-tools/definitions
 import { ROLE_TOOLS } from '../../dist/packages/policy/permissions.js';
 
 test('every advertised tool example satisfies its exact input contract', () => {
-    assert.equal(Object.keys(INPUT_SCHEMAS).length, 171);
+    assert.equal(Object.keys(INPUT_SCHEMAS).length, 172);
     assert.deepEqual(Object.keys(INPUT_SCHEMAS).sort(), Object.keys(TOOL_DEFINITIONS).sort());
     for (const [name, definition] of Object.entries(TOOL_DEFINITIONS)){
         assert.doesNotThrow(() => validateSchema(INPUT_SCHEMAS[name], definition.example), name);

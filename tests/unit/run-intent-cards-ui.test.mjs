@@ -116,3 +116,57 @@ test('confirmation accepts the precise approved version reflected during its suc
  const setup=fixture(),requests=captureRequests(context,request=>{if(request.url.endsWith('/decide')){setup.record.status='approved';setup.record.version++;}});
  await button(card(setup),'确认并让智能体执行').props.onClick();assert.deepEqual(requests.map(request=>request.url),['/api/approvals/'+setup.record.id+'/decide','/api/sessions/root/messages']);assert.equal(button(card(setup),'拒绝此固定运行'),undefined);
 });
+
+test('approved ordinary cards can withdraw their exact approval even after a local continuation was queued',async context=>{
+ const setup=fixture();setup.record.status='approved';setup.ui.queuedRunIntents.add(setup.fixed.id+':'+setup.fixed.manifestDigest);
+ const requests=captureRequests(context),withdraw=button(card(setup),'撤回此未提交批准');assert.ok(withdraw);await withdraw.props.onClick();
+ assert.equal(requests.length,1);assert.equal(requests[0].url,'/api/operations/run_intent_withdraw');
+ assert.deepEqual(requests[0].body,{projectId:'project',sessionId:'root',input:{intentId:setup.fixed.id,expectedVersion:setup.fixed.version,approvalId:setup.record.id,expectedApprovalVersion:setup.record.version,manifestDigest:setup.fixed.manifestDigest}});
+});
+
+test('withdrawal callbacks fence exact versions, direct ownership, authorization and current dialogue',async context=>{
+ const requests=captureRequests(context),changes={
+  pending:setup=>{setup.record.status='pending';},rejected:setup=>{setup.record.status='rejected';},stale:setup=>{setup.record.status='stale';},
+  automatic:setup=>{setup.record.automaticApproval={id:'auto'};},automaticExecution:setup=>{setup.record.automaticExecution={state:'completed'};},
+  fullAccess:setup=>{setup.record.fullAccess={continuationId:'task'};},workingGrant:setup=>{setup.record.workingGrant={id:'grant'};},
+  intentGrant:setup=>{setup.fixed.runGrant={id:'grant'};},approvalGrant:setup=>{setup.record.runGrant={id:'grant'};},
+  approvalVersion:setup=>{setup.record.version++;},intentVersion:setup=>{setup.fixed.version++;},subject:setup=>{setup.record.subjectId='other';},
+  kind:setup=>{setup.record.subjectKind='other';},scope:setup=>{setup.record.scope='other';},digest:setup=>{setup.record.digest='other';},
+  approvalProject:setup=>{setup.record.projectId='other';},approvalReference:setup=>{setup.fixed.approvalId='other';},manifest:setup=>{setup.fixed.manifestDigest='other';},
+  intentProject:setup=>{setup.fixed.projectId='other';},owner:setup=>{setup.fixed.rootSessionId='other';},ownerless:setup=>{delete setup.fixed.rootSessionId;},
+  submitted:setup=>{setup.fixed.status='submitted';},runId:setup=>{setup.fixed.runId='existing';},detachedRun:setup=>{setup.data.runs.push({id:'existing',intentId:setup.fixed.id});},
+  role:setup=>{setup.ui.props={...setup.ui.props,session:{...root,role:'reviewer'}};},task:setup=>{setup.ui.props={...setup.ui.props,session:{...root,taskId:'task'}};},team:setup=>{setup.ui.props={...setup.ui.props,session:{...root,teamId:'team'}};},
+  archivedSession:setup=>{setup.ui.props={...setup.ui.props,session:{...root,state:'archived'}};},archivedProject:setup=>{setup.data.project.archived=true;},
+  session:setup=>{setup.ui.props={...setup.ui.props,session:{...root,id:'other'}};},project:setup=>{setup.ui.props={...setup.ui.props,data:{...setup.data,project:{...setup.data.project,id:'other'}}};},
+  busy:setup=>{setup.ui.props={...setup.ui.props,busy:true};},unmounted:setup=>setup.ui.componentWillUnmount(),
+ };
+ for(const [name,change] of Object.entries(changes)){
+  const setup=fixture();setup.record.status='approved';const withdraw=button(card(setup),'撤回此未提交批准');assert.ok(withdraw,name);change(setup);await withdraw.props.onClick();assert.deepEqual(requests,[],name);
+  if(!['approvalVersion','intentVersion','busy'].includes(name))assert.equal(button(card(setup),'撤回此未提交批准'),undefined,name+' visibility');
+ }
+});
+
+test('deferred withdrawal rechecks its tuple and excludes duplicate withdrawal and continuation',async context=>{
+ const requests=captureRequests(context);
+ for(const change of [setup=>{setup.fixed.version++;},setup=>{setup.record.version++;},setup=>{setup.ui.props={...setup.ui.props,busy:true};},setup=>{setup.ui.props={...setup.ui.props,session:{...root,id:'other'}};},setup=>setup.ui.componentWillUnmount(),setup=>{setup.record.automaticApproval={id:'auto'};}]){
+  let release;const setup=fixture({perform:operation=>new Promise(resolve=>{release=()=>Promise.resolve(operation()).then(resolve);})});setup.record.status='approved';
+  const waiting=button(card(setup),'撤回此未提交批准').props.onClick();change(setup);await release();await waiting;assert.deepEqual(requests,[]);
+ }
+ let release;const setup=fixture({perform:operation=>new Promise(resolve=>{release=()=>Promise.resolve(operation()).then(resolve);})});setup.record.status='approved';const rendered=card(setup),withdraw=button(rendered,'撤回此未提交批准');
+ const waiting=withdraw.props.onClick();await withdraw.props.onClick();await button(rendered,'确认并让智能体执行').props.onClick();await release();await waiting;assert.equal(requests.length,1);assert.equal(requests[0].url,'/api/operations/run_intent_withdraw');
+});
+
+test('withdrawal retries use a bounded stable key without messages and refreshed stale history has no actions',async context=>{
+ const previous=globalThis.fetch;context.after(()=>{globalThis.fetch=previous;});const requests=[],setup=fixture();setup.record.status='approved';
+ globalThis.fetch=async(url,init)=>{requests.push({url,body:JSON.parse(init.body),key:init.headers['Idempotency-Key']});if(requests.length===1)throw Error('synthetic response loss');setup.record.status='stale';setup.record.version++;return {ok:true,json:async()=>({})};};
+ const withdraw=button(card(setup),'撤回此未提交批准');await assert.rejects(withdraw.props.onClick(),/synthetic response loss/);await withdraw.props.onClick();
+ assert.equal(requests.length,2);assert.equal(requests[0].key,requests[1].key);assert.ok(Buffer.byteLength(requests[0].key,'utf8')<=200);assert.ok(requests.every(request=>request.url==='/api/operations/run_intent_withdraw'));assert.deepEqual(requests[0].body,requests[1].body);
+ const reopened=fixture();reopened.ui.props={...reopened.ui.props,data:structuredClone(setup.data)};const history=reopened.ui.runIntentCard(reopened.ui.props.data.intents[0],false);
+ assert.equal(button(history,'撤回此未提交批准'),undefined);assert.equal(button(history,'确认并让智能体执行'),undefined);assert.match(text(history),/审批已失效/);assert.ok(text(history).includes(setup.fixed.manifest.snapshotDigest));
+});
+
+test('an ownerless campaign member never inherits withdrawal authority from campaign membership',async context=>{
+ const requests=captureRequests(context),setup=fixture();setup.record.status='approved';const campaign={id:'campaign',rootSessionId:root.id};setup.data.campaigns.push(campaign);setup.data.members.push({campaignId:campaign.id,intentId:setup.fixed.id});
+ const withdraw=button(card(setup,setup.fixed,campaign.id),'撤回此未提交批准');assert.ok(withdraw);setup.data.members=[];await withdraw.props.onClick();assert.deepEqual(requests,[]);
+ setup.data.members.push({campaignId:campaign.id,intentId:setup.fixed.id});delete setup.fixed.rootSessionId;assert.equal(button(card(setup,setup.fixed,campaign.id),'撤回此未提交批准'),undefined);await withdraw.props.onClick();assert.deepEqual(requests,[]);
+});

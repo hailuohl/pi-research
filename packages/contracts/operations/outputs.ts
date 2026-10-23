@@ -88,6 +88,7 @@ const CORE_OUTPUT_SCHEMAS = {
         experimentId: string, manifest, manifestDigest: string, approvalId: string,approval:AUTOMATION_APPROVAL_SCHEMA,
         status: enumeration('prepared', 'submitted'), runId: string,runGrant:RUN_GRANT_REFERENCE_SCHEMA,rootSessionId:string
     }, ['runId','runGrant','rootSessionId','approval']),
+    run_intent_withdraw:object({intentId:string,approvalId:string,manifestDigest:string,approvalStatus:{const:'stale'},approvalVersion:integer}),
     run_submit: row('run', {
         experimentId: string, intentId: string, manifest, manifestDigest: string,
         state: enumeration('queued', 'submitting', 'running', 'cancelling', 'succeeded', 'failed', 'cancelled', 'unknown'),

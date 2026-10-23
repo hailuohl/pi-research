@@ -430,6 +430,7 @@ const SPECS = [
     make('run_grant_revoke', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.runGrants.revoke(c.actor, c.projectId, x) }),
     make('run_prepare', { idempotencyPolicy: 'key-required', authorize: recordScope('experiment', 'experimentId'), preconditions: noPrecondition,
         execute: (c, x) => c.app.runs.prepare(c.actor, x.experimentId, c.session?.id, x.autoAnalyze) }),
+    make('run_intent_withdraw', { requiresSession: true, idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.runs.withdrawIntent(c.actor, c.projectId, c.session.id, x) }),
     make('run_submit', { idempotencyPolicy: 'key-required', authorize: (c, x) => {
             const intent = c.app.store.get('run-intent', x.intentId, c.projectId);
             c.app.runs.assertIntentActor(c.actor, intent);

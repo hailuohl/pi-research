@@ -178,6 +178,7 @@ class ChatWorkflows extends React.Component {
     this.approvedRunIntents = /* @__PURE__ */ new Set();
     this.queuedRunIntents = /* @__PURE__ */ new Set();
     this.runIntentPending = false;
+    this.withdrawalKeys = /* @__PURE__ */ new Map();
   }
   componentWillUnmount() {
     this.mounted = false;
@@ -348,6 +349,28 @@ class ChatWorkflows extends React.Component {
       this.runIntentPending = false;
     }
   }
+  canWithdrawRunIntent(intent, approval, campaignId) {
+    const { data, session } = this.props;
+    return this.runIntentInScope(data.project.id, session.id, intent.id, intent.manifestDigest, campaignId) && intent.rootSessionId === session.id && !session.teamId && this.runApprovalMatches(intent, approval) && approval?.status === "approved" && !intent.runGrant && !approval.runGrant && !approval.fullAccess && !approval.automaticApproval && !approval.automaticExecution && !data.runs.some((run) => run.intentId === intent.id || run.id === intent.runId);
+  }
+  async withdrawRunIntent(intent, expectedApproval, campaignId) {
+    const projectId = this.props.data.project.id, sessionId = this.props.session.id, input = { intentId: intent.id, expectedVersion: intent.version, approvalId: expectedApproval.id, expectedApprovalVersion: expectedApproval.version, manifestDigest: intent.manifestDigest };
+    const eligible = () => {
+      const current = this.props.data.intents.find((row) => row.id === input.intentId), approval = this.props.data.approvals.find((row) => row.id === input.approvalId);
+      return !this.props.busy && this.dialogueMatches(projectId, sessionId) && current?.version === input.expectedVersion && current.manifestDigest === input.manifestDigest && current.approvalId === input.approvalId && approval?.version === input.expectedApprovalVersion && this.canWithdrawRunIntent(current, approval, campaignId);
+    };
+    if (this.runIntentPending || !eligible()) return;
+    const tuple = JSON.stringify({ projectId, sessionId, ...input }), key = this.withdrawalKeys.get(tuple) ?? crypto.randomUUID();
+    this.withdrawalKeys.set(tuple, key);
+    this.runIntentPending = true;
+    try {
+      await this.props.perform(async () => {
+        if (eligible()) await api("/operations/run_intent_withdraw", { projectId, sessionId, input }, "POST", void 0, key);
+      });
+    } finally {
+      this.runIntentPending = false;
+    }
+  }
   async continueRunIntent(intent, expectedApproval, campaignId) {
     const { data, session } = this.props, projectId = data.project.id, sessionId = session.id, intentId = intent.id, digest = intent.manifestDigest, approvalId = intent.approvalId, keyId = `${intentId}:${digest}`;
     const expectedVersion = expectedApproval.version, initiallyPending = expectedApproval.status === "pending", selectedApproval = data.approvals.find((row) => row.id === approvalId);
@@ -399,7 +422,8 @@ class ChatWorkflows extends React.Component {
   }
   runIntentCard(intent, disabled, campaignId) {
     const { data, session } = this.props, approval = data.approvals.find((a) => a.id === intent.approvalId), bound = intent.runGrant ?? approval?.runGrant, grant = (data.runGrants ?? []).find((g) => g.id === bound?.id), run = data.runs.find((r) => r.id === intent.runId && r.experimentId === intent.experimentId), keyId = `${intent.id}:${intent.manifestDigest}`, taskBound = !!grant?.taskBinding, grantUsable = !!grant && grant.sessionId === session.id && runGrantUsable(grant), campaignOwned = !!campaignId && data.campaigns.some((c) => c.id === campaignId && c.rootSessionId === session.id) && (data.members.some((m) => m.campaignId === campaignId && m.intentId === intent.id) || (data.researchCandidates ?? []).some((c) => c.campaignId === campaignId && c.intentId === intent.id)), owned = campaignId ? campaignOwned && (intent.rootSessionId === session.id || intent.rootSessionId == null || !!bound && !taskBound && grantUsable) : intent.rootSessionId === session.id, approved = approval?.status === "approved" || approval?.status === "pending" && this.approvedRunIntents.has(keyId), queued = this.queuedRunIntents.has(keyId), canContinue = !approval?.automaticApproval && this.runApprovalMatches(intent, approval) && owned && intent.status === "prepared" && !intent.runId && !run && !queued && !!approval && (!bound && ["pending", "approved"].includes(approval.status) || !!bound && !taskBound && grantUsable && approval.status === "approved"), canReject = canContinue && !bound && !approval?.fullAccess && !approved && approval?.status === "pending", selectedIntent = { ...intent }, selectedApproval = approval ? { ...approval } : void 0;
-    return /* @__PURE__ */ jsxs("details", { className: "workflow-card", open: canContinue || queued, children: [
+    const canWithdraw = this.canWithdrawRunIntent(intent, approval, campaignId);
+    return /* @__PURE__ */ jsxs("details", { className: "workflow-card", open: canContinue || canWithdraw || queued, children: [
       /* @__PURE__ */ jsxs("summary", { children: [
         "\u6B63\u5F0F\u5B9E\u9A8C \xB7 ",
         data.experiments.find((e) => e.id === intent.experimentId)?.title ?? short(intent.experimentId),
@@ -407,6 +431,7 @@ class ChatWorkflows extends React.Component {
         short(intent.id),
         /* @__PURE__ */ jsx(Badge, { value: run?.state ?? (approved ? "approved" : approval?.status ?? intent.status), caption: !run && approval?.automaticApproval ? "\u81EA\u52A8\u5BA1\u6279" : void 0 })
       ] }),
+      canWithdraw ? /* @__PURE__ */ jsx("button", { className: "text-button danger", disabled, onClick: () => this.withdrawRunIntent(selectedIntent, selectedApproval, campaignId), children: "\u64A4\u56DE\u6B64\u672A\u63D0\u4EA4\u6279\u51C6" }) : null,
       /* @__PURE__ */ jsxs("p", { className: "small muted code-wrap", children: [
         "\u6E90\u7801 ",
         short(intent.manifest.snapshotDigest),

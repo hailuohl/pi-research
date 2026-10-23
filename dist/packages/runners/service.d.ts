@@ -60,6 +60,13 @@ export declare class RunService {
         runId?: string;
     };
     assertIntentActor(actor: Actor, intent: Row<RunIntent>): void;
+    withdrawIntent(actor: Actor, projectId: string, sessionId: string, value: unknown): {
+        intentId: string;
+        approvalId: string;
+        manifestDigest: string;
+        approvalStatus: "stale";
+        approvalVersion: number;
+    };
     submit(actor: Actor, id: string): Row<Run>;
     /** Keep the version read and heartbeat write in one inter-process SQLite transaction. */
     heartbeat(id: string): Row<Run>;

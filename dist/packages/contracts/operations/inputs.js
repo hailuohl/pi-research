@@ -98,6 +98,7 @@ export const INPUT_SCHEMAS = {
     experiment_plan_submit: s.object({ title: s.string(200), hypothesis: s.nullable(s.string()), parentId: s.nullable(s.string()), expectedParentRevision: s.integer(1), repair: s.object({ runId: id, jobId: id, reviewId: id }, ['runId', 'jobId']), config, contract: s.nullable(contract) }, ['title']),
     run_prepare: s.object({ experimentId: id, autoAnalyze: s.boolean() }, ['experimentId']),
     run_submit: s.object({ intentId: id }, ['intentId']),
+    run_intent_withdraw: s.object({ intentId: id, expectedVersion: s.integer(1), approvalId: id, expectedApprovalVersion: s.integer(1), manifestDigest: s.string(100) }, ['intentId', 'expectedVersion', 'approvalId', 'expectedApprovalVersion', 'manifestDigest']),
     run_inspect: s.object({ runId: id, includeScheduling: s.boolean() }, ['runId']),
     run_list: s.object({ cursor: s.integer(0, Number.MAX_SAFE_INTEGER), limit: s.integer(1, 100) }),
     research_history_list: s.object({ kind: s.enum(['documents', 'evidence', 'claims', 'reports']), cursor: s.integer(0, Number.MAX_SAFE_INTEGER), limit: s.integer(1, 100) }, ['kind']),

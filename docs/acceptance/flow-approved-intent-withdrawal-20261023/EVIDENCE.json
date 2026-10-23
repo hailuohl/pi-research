@@ -1,0 +1,101 @@
+{
+  "task": "approved unsubmitted RunIntent withdrawal",
+  "baseline": "93c68d774ed2508448c714f95f582ef88290266b",
+  "checks": {
+    "cleanBuild": {
+      "exitCode": 0,
+      "log": "withdraw-delivery-build.log"
+    },
+    "cleanFocused": {
+      "tests": 53,
+      "passed": 53,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "withdraw-delivery-focused.log"
+    },
+    "currentOverlay": {
+      "tests": 56,
+      "passed": 56,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "withdraw-current-focused.log",
+      "extraPreExistingTestsNotDelivered": 3
+    },
+    "independentProbes": {
+      "passed": 6,
+      "failed": 0,
+      "log": "withdraw-review-probes.log"
+    },
+    "browser": {
+      "status": "passed",
+      "synthetic": true,
+      "viewports": [
+        "1440x1000",
+        "390x844"
+      ],
+      "withdrawals": 2,
+      "noNewMessageOrRun": true,
+      "sourceAndDecisionTimesUnchanged": true,
+      "reopenedAppAndBrowser": true,
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "http500": 0,
+      "resourcesClosed": true,
+      "evidence": "withdraw-browser-clean/browser-evidence.json"
+    },
+    "full": {
+      "command": "npm run test:core",
+      "exitCode": 1,
+      "tests": 2455,
+      "passed": 2429,
+      "failed": 1,
+      "skipped": 25,
+      "cancelled": 0,
+      "durationMs": 2030691.2453,
+      "log": "withdraw-full-regression.log",
+      "onlyFailure": "Existing owner-only HTTP/CLI parity test did not classify the new USER-only operation",
+      "fixtureOnlyRepair": {
+        "assertionsPreserved": true,
+        "passed": 1,
+        "failed": 0,
+        "exitCode": 0,
+        "log": "withdraw-owner-classification-recheck.log"
+      },
+      "capturedInputsUnchangedDuringFull": 1128,
+      "finalCapturedInputChanges": [
+        "tests/integration/operations-http-cli.test.mjs"
+      ],
+      "productionCodeUnchangedAfterFull": true,
+      "rawFullNotAllGreen": true
+    }
+  },
+  "review": {
+    "requested": "gpt-6-astra/xhigh",
+    "openBlockers": 0,
+    "report": "withdraw-review.md",
+    "necessaryFixtureFollowupAccepted": true,
+    "nonBlocking": "Race worker outer transaction can mask future loss of the service-level transaction; current service transaction independently checked"
+  },
+  "implementation": {
+    "requested": "gpt-6.1-sol/high",
+    "runtimeModelAndEffort": "not echoed",
+    "newDependencies": false,
+    "migration": false,
+    "newRunIntentState": false,
+    "genericStaleChanged": false
+  },
+  "preservation": {
+    "protectedPreExistingInputs": 3358,
+    "unexpectedChanges": 0,
+    "existingQueuedMessagesKept": true,
+    "noUserServiceRestart": true,
+    "noLiveModelOrDockerWorkload": true
+  },
+  "scopeExcludes": [
+    "D3 continuation implementation",
+    "derived-grant revocation",
+    "submitted Run cancellation",
+    "history deletion"
+  ],
+  "rawEvidenceRoot": "D:/项目/pi research/tmp/approval-continuation-20261023"
+}
