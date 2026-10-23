@@ -43,7 +43,7 @@ test('large review log exceptions remain tied to the original archived wrapper i
 });
 
 test('review preparation needs explicit collaboration, creates one stable approval target and preserves input provenance',()=>{
- const s=setup();try{const reviews=service(s),{job}=tested(s);assert.throws(()=>reviews.prepare(USER,s.project.id,{jobId:job.id}),{code:'MULTI_AGENT_DISABLED'});assert.equal(s.app.store.list('development-review').length,0);
+ const s=setup();try{s.app.projects.settings(USER,s.project.id,{expectedVersion:s.project.version,enabled:false});const reviews=service(s),{job}=tested(s);assert.throws(()=>reviews.prepare(USER,s.project.id,{jobId:job.id}),{code:'MULTI_AGENT_DISABLED'});assert.equal(s.app.store.list('development-review').length,0);
   enable(s);const r=reviews.prepare(USER,s.project.id,{jobId:job.id});assert.equal(r.status,'awaiting_approval');assert.equal(r.requiredEvidenceIds.length,4);assert.equal(r.sourceDigest,job.sourceDigest);assert.equal(r.producerSessionId,s.session.id);
   assert.deepEqual(reviews.prepare(USER,s.project.id,{jobId:job.id}),r);assert.equal(s.app.store.list('team').length,1);assert.equal(s.app.teams.claim(r.teamId),null);
   const manifest=s.app.evidence.verify(s.project.id,r.manifestEvidenceId);const parsed=JSON.parse(manifest.quote);assert.equal(parsed.sourceDigest,job.sourceDigest);assert.equal(parsed.threadLimit,1);assert.ok(parsed.files.some(f=>f.path==='review-candidate.py'));assert.equal(JSON.stringify(r).includes(s.dir.replaceAll('\\','\\\\')),false);

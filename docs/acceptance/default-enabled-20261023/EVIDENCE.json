@@ -1,0 +1,195 @@
+{
+  "date": "2026-10-23",
+  "baseline": "4d7b2fac9c49926d620129ac43d6317b4550dd04",
+  "branch": "implementation/pr01-reproducible-baseline",
+  "repository": "https://github.com/hailuohl/pi-research",
+  "scope": {
+    "newProjectCollaboration": true,
+    "unconfiguredLiteratureSources": [
+      "alphaxiv",
+      "openalex",
+      "biorxiv",
+      "pubmed",
+      "crossref"
+    ],
+    "unconfiguredExistingProjectsUseNewDefaults": true,
+    "savedPreferencesPreserved": true,
+    "automaticNetworkOrWork": false,
+    "localTextWhitelistChanged": false
+  },
+  "checks": [
+    {
+      "path": "D:\\项目\\pi research\\.worktrees\\default-enabled-20261023\\.validation\\defaults-red.log",
+      "passed": 0,
+      "failed": 2,
+      "skipped": 0,
+      "exitCode": 1,
+      "sha256": "982d4bf37d12fc9a274033b5457c934450448bf184a64bfa4a8eddace9409273"
+    },
+    {
+      "path": "D:\\项目\\pi research\\.worktrees\\default-enabled-20261023\\.validation\\defaults-targeted.log",
+      "passed": 69,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "sha256": "a437ab7c582c25b81587e54343b9727313b5923e7eb47d70a65e191371f7f083"
+    },
+    {
+      "path": "D:\\项目\\pi research\\.worktrees\\default-enabled-20261023\\.validation\\defaults-full-regression.log",
+      "passed": 2365,
+      "failed": 3,
+      "skipped": 25,
+      "exitCode": 1,
+      "sha256": "2d50a6d3d3144891aefab61c4fb4feef4f363fbe7eaeabeb729da166371e8b44",
+      "baseline": "2f7b3eb1c64f6580108de0b7d49ca22b114c69f1",
+      "command": "node --test --test-concurrency=4 tests/unit/*.test.mjs tests/integration/*.test.mjs",
+      "resolution": "three outdated opt-out fixtures corrected; original denial assertions retained; no repeated full suite"
+    },
+    {
+      "path": "D:\\项目\\pi research\\.worktrees\\default-enabled-delivery-20261023\\.validation\\targeted.log",
+      "passed": 131,
+      "failed": 1,
+      "skipped": 0,
+      "exitCode": 1,
+      "sha256": "8dfa5cc2bb918d3529ff409a1c922da4125f604ed16c38bd881940cfe52b721a"
+    },
+    {
+      "path": "D:\\项目\\pi research\\.worktrees\\default-enabled-delivery-20261023\\.validation\\discovery-green.log",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "sha256": "a08eee5f96bd76553710ddd119bda5d6336c78476dbf5397818b43afa4282cf0"
+    },
+    {
+      "path": "D:\\项目\\pi research\\.worktrees\\default-enabled-delivery-20261023\\.validation\\final-affected-green.log",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "sha256": "61cd42955cc36cb7229fea69078aa878e1965f220088c7819f59809705d43a1c"
+    },
+    {
+      "path": "D:\\项目\\pi research\\.worktrees\\full-access-automatic-current-20261023\\.validation\\defaults-runtime-build\\compatibility.log",
+      "passed": 90,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "sha256": "59a6ca1e4bb770b6ab07579a2840a0ced144f561661506f3937bc0829f9b5f4f"
+    },
+    {
+      "kind": "clean-build",
+      "command": "npm run build",
+      "exitCode": 0,
+      "path": "D:\\项目\\pi research\\.worktrees\\default-enabled-delivery-20261023\\.validation\\clean-build.log",
+      "sha256": "1b80e80e32db80abb6fe1875e7f5c1aa20a83ac34301da8cdb0561895504d41f"
+    },
+    {
+      "kind": "typecheck",
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "path": "D:\\项目\\pi research\\.worktrees\\default-enabled-delivery-20261023\\.validation\\typecheck.log",
+      "sha256": "8651ee5a204d2a9c14e0db4122e99a983e0dc76a4de897aef627a5bea18f10e4"
+    },
+    {
+      "kind": "latest-main-runtime-build",
+      "exitCode": 0,
+      "path": "D:\\项目\\pi research\\.worktrees\\full-access-automatic-current-20261023\\.validation\\defaults-runtime-build\\latest-build.log"
+    }
+  ],
+  "countsOverlap": true,
+  "review": {
+    "independent": true,
+    "requestedModel": "gpt-6-astra",
+    "requestedReasoningEffort": "xhigh",
+    "actualRuntime": "not echoed",
+    "blockers": 0,
+    "nonBlocking": 0,
+    "manifestSha256": "7cc4f14d8d72403e4593fc0233c9e0aefe243703e16e1ca46e9f1cafa690b751"
+  },
+  "delegation": [
+    {
+      "task": "source lookup",
+      "model": "gpt-6-luna",
+      "effort": "high",
+      "runtime": "not echoed"
+    },
+    {
+      "task": "independent review",
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "runtime": "not echoed"
+    }
+  ],
+  "source": {
+    "head": "4d7b2fac9c49926d620129ac43d6317b4550dd04",
+    "root": "D:\\项目\\pi research\\.worktrees\\default-enabled-delivery-20261023",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "7d0d456161c457dd6f3aea85158ed9998b02e09ddeed89cafaf736b404d204bf"
+      },
+      {
+        "path": "packages/domain/types.ts",
+        "sha256": "c329682ace3f225664124cfd4f7faaa78dd788ef749ca18e35b6876efcdc210f"
+      },
+      {
+        "path": "packages/connectors/settings.ts",
+        "sha256": "16ff5d74a03c1f4893eed4667be59b515ff1f07a494fa3d2cea7aeaf90a0afdc"
+      },
+      {
+        "path": "packages/connectors/service.ts",
+        "sha256": "70cf8808e2dae000234457b1ba472a17863b5a6d364db08472b9b3d2cce3f4f3"
+      },
+      {
+        "path": "tests/unit/project-defaults.test.mjs",
+        "sha256": "2d902f592ff91615f2b30f2c30b0336d3796b4ff1c637413586cbbad00ce7bda"
+      },
+      {
+        "path": "tests/unit/collaboration.test.mjs",
+        "sha256": "f6e274fcb6624a1ab8cd55dc55efd6d0baabd0e72754e3df0e6953fbebf25b75"
+      },
+      {
+        "path": "tests/unit/chat-collaboration.test.mjs",
+        "sha256": "ca8e3ce1c3a54d88ef0f867d56c5234b602edd025032d716170d1f7ada4d5512"
+      },
+      {
+        "path": "tests/unit/development-review.test.mjs",
+        "sha256": "7923e96eb8c84f989ebe227ac159ffc999e88b38421d13fbccd7029782c93b50"
+      },
+      {
+        "path": "tests/unit/publication-dialogue.test.mjs",
+        "sha256": "eab95110abd59cd38e6a9d19f3c791ca42ce362f6030d51b9f72c689cc5222a1"
+      },
+      {
+        "path": "tests/unit/openresearch-connectors.test.mjs",
+        "sha256": "a0f419846f8a6ce1e58c0a6f591b9635e82eb503169c8ea4b42d38233e90e80a"
+      },
+      {
+        "path": "tests/unit/openresearch-integration.test.mjs",
+        "sha256": "2c5a760144603d1e9e9076d4608c4e825400dff0ca5906477b2191d63b2bfd23"
+      },
+      {
+        "path": "tests/integration/openresearch-cli.test.mjs",
+        "sha256": "a8793ff1385393398f038f9006f2bad7e2a654aed0a86e0bede417fce0dd1b37"
+      },
+      {
+        "path": "tests/integration/openresearch-http.test.mjs",
+        "sha256": "0d3d6efa3df8c29241d10c1fa33e3fcb965ae647828fb40e75594907af5e1d1a"
+      },
+      {
+        "path": "tests/unit/discovery-grants.test.mjs",
+        "sha256": "bbb90e220040f7efa7f18a384b58f37c256542c811a30504ee1f64a30c19c9f7"
+      }
+    ]
+  },
+  "notVerified": [
+    "external literature requests",
+    "production model calls",
+    "25 optional or platform-specific skipped full-suite cases"
+  ],
+  "delivery": {
+    "commitAndRemoteVerification": "recorded after push in final task message",
+    "runtimeEvidence": "main workspace .validation/defaults-live-20261023; no private operational data committed"
+  }
+}

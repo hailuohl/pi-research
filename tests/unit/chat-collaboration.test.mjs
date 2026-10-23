@@ -8,6 +8,7 @@ import {actor, result} from '../support/collaboration.mjs';
 test('chat task reads the live toggle, submits an approval-bound plan and returns results to its original session', async () => {
   const s = setup();
   try {
+    s.app.projects.settings(USER,s.project.id,{expectedVersion:s.project.version,enabled:false});
     const other = s.app.sessions.create(USER, s.project.id, {title: '另一会话'});
     const message = s.app.sessions.send(USER, s.session.id, {content: '核查现有资料中的缺失项，返回核查结果。'});
     const root = s.app.sessions.get(USER, s.session.id);

@@ -43,6 +43,7 @@ test('failed protected-source review creates no review, team, approval or host e
 
 test('Agent review preparation requires project collaboration before creating any team',()=>{const s=setup();try{
  readyBrief(s,s.session);const actor=startAgent(s),before={reviews:s.app.store.list('publication-review',s.project.id).length,teams:s.app.store.list('team',s.project.id).length,tasks:s.app.store.list('task',s.project.id).length,approvals:s.app.store.list('approval',s.project.id).length};
+ s.app.projects.settings(USER,s.project.id,{expectedVersion:s.project.version,enabled:false});
  assert.throws(()=>s.app.publicationReviews.prepare(actor,s.project.id,{resultId:'not-a-build',inputEvidenceIds:[]}),{code:'MULTI_AGENT_DISABLED'});
  assert.deepEqual({reviews:s.app.store.list('publication-review',s.project.id).length,teams:s.app.store.list('team',s.project.id).length,tasks:s.app.store.list('task',s.project.id).length,approvals:s.app.store.list('approval',s.project.id).length},before);
  }finally{s.close();}});

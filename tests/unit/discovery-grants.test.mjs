@@ -28,6 +28,7 @@ test('DiscoveryGrant freezes owner approval and disabled sources without creatin
  activate(s,g);assert.equal(s.app.store.get('session',s.session.id).discoveryGrantId,g.id);assert.deepEqual(s.app.connectors.settings(USER,s.project.id),cfg);
  for(const kind of ['connector-call','model-usage','run','sandbox-job'])assert.equal(s.app.store.list(kind).length,0);
  assert.throws(()=>prepare(s),{code:'DISCOVERY_SESSION_REQUIRED'});assert.throws(()=>s.app.discoveryGrants.prepare({type:'agent'},s.project.id,{}),{code:'PERMISSION_DENIED'});
+ s.app.connectors.configure(USER,s.project.id,{expectedVersion:cfg.version,enabled:{openalex:false}});
  const other=s.app.sessions.create(USER,s.project.id,{title:'disabled source'});assert.throws(()=>prepare(s,{sessionId:other.id,searches:[{...search,sources:['openalex']}]}),{code:'SOURCE_DISABLED'});
 }finally{s.close();}});
 

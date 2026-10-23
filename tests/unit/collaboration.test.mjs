@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {ResearchApp} from '../../dist/packages/research-app.js';
 import {USER,SYSTEM} from '../../dist/packages/domain/types.js';
 const result=(s='completed')=>({summary:'任务产物已检查；无未执行的测量声明。',outcome:s,evidenceIds:[],artifactIds:[],claims:[],unresolvedQuestions:[]});
-function setup(enabled=true){const dir=mkdtempSync(join(tmpdir(),'pi-team-'));const app=new ResearchApp(dir,process.cwd());let p=app.projects.create(USER,{name:'协作验收'});if(enabled)p=app.projects.settings(USER,p.id,{expectedVersion:p.version,enabled:true});const session=app.sessions.create(USER,p.id,{title:'主会话'});return {app,p,session,close(){app.close();rmSync(dir,{recursive:true,force:true});}};}
+function setup(enabled=true){const dir=mkdtempSync(join(tmpdir(),'pi-team-'));const app=new ResearchApp(dir,process.cwd());let p=app.projects.create(USER,{name:'协作验收'});p=app.projects.settings(USER,p.id,{expectedVersion:p.version,enabled});const session=app.sessions.create(USER,p.id,{title:'主会话'});return {app,p,session,close(){app.close();rmSync(dir,{recursive:true,force:true});}};}
 function team(s,tasks,budget=12){const t=s.app.teams.create(USER,s.session.id,{goal:'协作任务验收',tasks,budget});const a=s.app.store.get('approval',t.approvalId);s.app.approvals.decide(USER,a.id,a.version,true);return s.app.teams.activate(USER,t.id);}
 const simple=[{key:'a',role:'analyst',objective:'分析输入',dependencies:[]},{key:'b',role:'writer',objective:'整合成果',dependencies:['a']}];
 const actor=a=>({type:'agent',projectId:a.task.projectId,sessionId:a.attempt.sessionId,role:a.task.role,taskId:a.task.id,attemptId:a.attempt.id,generation:a.attempt.generation});
