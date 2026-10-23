@@ -25,36 +25,145 @@
       "pass": 2318,
       "fail": 0,
       "cancelled": 0,
-      "skipped": [
-        "﹣ POSIX backup preserves distinct case-sensitive sibling paths (0.1858ms) # SKIP",
-        "﹣ scope2 real local failure advances through a tested changed source into a new successful Run (264.0043ms) # Pinned Python Docker image unavailable",
-        "﹣ real IPC, Docker failure/repair and two trusted Run subprocesses continue one frozen goal exactly once (0.6682ms) # SKIP",
-        "﹣ optional formal Docker supervisor: success, integrity limits, cancellation, timeout and created recovery (0.0939ms) # SKIP",
-        "﹣ isolated compiler: pdflatex (1.5831ms) # SKIP",
-        "﹣ isolated compiler: xelatex (0.1084ms) # SKIP",
-        "﹣ isolated compiler: lualatex (0.0753ms) # SKIP",
-        "﹣ isolated compiler: chinese (0.068ms) # SKIP",
-        "﹣ isolated compiler: lua-chinese-budget (0.0819ms) # SKIP",
-        "﹣ isolated compiler: bibtex (0.0977ms) # SKIP",
-        "﹣ isolated compiler: biber (0.0976ms) # SKIP",
-        "﹣ isolated compiler: missing-image (0.068ms) # SKIP",
-        "﹣ isolated compiler: missing-package (0.0899ms) # SKIP",
-        "﹣ isolated compiler: undefined-reference (0.148ms) # SKIP",
-        "﹣ isolated compiler: shell-blocked (0.0818ms) # SKIP",
-        "﹣ isolated compiler: lua-blocked (0.06ms) # SKIP",
-        "﹣ isolated compiler: forged-result (0.0453ms) # SKIP",
-        "﹣ isolated compiler: lua-forged-host-result (0.0643ms) # SKIP",
-        "﹣ isolated compiler: pdf-before-error (0.0668ms) # SKIP",
-        "﹣ isolated compiler: absolute-write-blocked (0.2377ms) # SKIP",
-        "﹣ isolated compiler: biber-remote-blocked (0.0429ms) # SKIP",
-        "﹣ isolated compiler: biber-nonutf8-control (0.065ms) # SKIP",
-        "﹣ isolated compiler: timeout (0.0361ms) # SKIP",
-        "﹣ optional real Docker preserves ordinary and executable source modes (0.0922ms) # SKIP",
-        "﹣ POSIX source modes reflect actual exec bits and writes retain exact normal permission bits (0.098ms) # SKIP",
-        "﹣ privileged creation uses no-follow directory fds, never replaces files, and never repairs existing permissions (0.1231ms) # POSIX dir_fd and ownership require Linux bootstrap integration",
-        "﹣ SSH start keeps nested source directories traversable under umask 077 (0.104ms) # POSIX permission modes are unavailable on Windows"
-      ],
-      "duration_ms": 1957376.5786
+      "skipped": 27,
+      "duration_ms": 1957376.5786,
+      "skippedTests": [
+        {
+          "test": "﹣ POSIX backup preserves distinct case-sensitive sibling paths (0.1858ms) # SKIP",
+          "reason": "Windows platform; case-sensitive POSIX sibling-path test is excluded",
+          "guard": "tests/integration/data-backup.test.mjs: skip process.platform==='win32'"
+        },
+        {
+          "test": "﹣ scope2 real local failure advances through a tested changed source into a new successful Run (264.0043ms) # Pinned Python Docker image unavailable",
+          "reason": "Pinned Python Docker image unavailable",
+          "guard": "test-provided explicit skip reason"
+        },
+        {
+          "test": "﹣ real IPC, Docker failure/repair and two trusted Run subprocesses continue one frozen goal exactly once (0.6682ms) # SKIP",
+          "reason": "Pinned Python image inspection via Docker context desktop-linux returned nonzero",
+          "guard": "tests/integration/research-automation-host.test.mjs: skip !docker"
+        },
+        {
+          "test": "﹣ optional formal Docker supervisor: success, integrity limits, cancellation, timeout and created recovery (0.0939ms) # SKIP",
+          "reason": "PI_TEST_FORMAL_DOCKER was not enabled",
+          "guard": "tests/unit/formal-docker.test.mjs: PI_TEST_FORMAL_DOCKER !== '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: pdflatex (1.5831ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: xelatex (0.1084ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: lualatex (0.0753ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: chinese (0.068ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: lua-chinese-budget (0.0819ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: bibtex (0.0977ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: biber (0.0976ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: missing-image (0.068ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: missing-package (0.0899ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: undefined-reference (0.148ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: shell-blocked (0.0818ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: lua-blocked (0.06ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: forged-result (0.0453ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: lua-forged-host-result (0.0643ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: pdf-before-error (0.0668ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: absolute-write-blocked (0.2377ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: biber-remote-blocked (0.0429ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: biber-nonutf8-control (0.065ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ isolated compiler: timeout (0.0361ms) # SKIP",
+          "reason": "PI_LATEX_LIVE was not enabled; real isolated LaTeX compilation is opt-in",
+          "guard": "tests/unit/latex-runtime-live.test.mjs: skip !live, PI_LATEX_LIVE === '1'"
+        },
+        {
+          "test": "﹣ optional real Docker preserves ordinary and executable source modes (0.0922ms) # SKIP",
+          "reason": "PI_TEST_DOCKER_MODES was not enabled",
+          "guard": "tests/unit/sandbox-runtime.test.mjs: PI_TEST_DOCKER_MODES !== '1'"
+        },
+        {
+          "test": "﹣ POSIX source modes reflect actual exec bits and writes retain exact normal permission bits (0.098ms) # SKIP",
+          "reason": "Windows platform does not provide POSIX executable permission bits",
+          "guard": "tests/unit/source-modes.test.mjs: skip process.platform==='win32'"
+        },
+        {
+          "test": "﹣ privileged creation uses no-follow directory fds, never replaces files, and never repairs existing permissions (0.1231ms) # POSIX dir_fd and ownership require Linux bootstrap integration",
+          "reason": "POSIX dir_fd and ownership require Linux bootstrap integration",
+          "guard": "test-provided explicit skip reason"
+        },
+        {
+          "test": "﹣ SSH start keeps nested source directories traversable under umask 077 (0.104ms) # POSIX permission modes are unavailable on Windows",
+          "reason": "POSIX permission modes are unavailable on Windows",
+          "guard": "test-provided explicit skip reason"
+        }
+      ]
     },
     "cleanBuild": {
       "scope": "fresh output directory; reuses unchanged dependencies installed by successful npm ci",
@@ -160,7 +269,14 @@
   "notRun": [
     "external commercial model/provider timing",
     "mobile viewport matrix",
-    "real Docker/GPU paths skipped by regression environment guards"
+    "real Docker/LaTeX opt-in and POSIX-only checks listed in skippedTests",
+    "real GPU workloads"
   ],
-  "runningUserService": "Not restarted; working frontend bundle rebuilt from all current sources; existing Node service must restart to load the new server-side interval"
+  "runningUserService": "Not restarted; working frontend bundle rebuilt from all current sources; existing Node service must restart to load the new server-side interval",
+  "verificationSupport": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedReasoningEffort": "high",
+    "runtime": "not echoed; not verified",
+    "scope": "Read-only inspection of a long existing bearing-method test; original test process continued without restarting or rerunning"
+  }
 }
