@@ -791,10 +791,10 @@ class Inspector extends React.Component {
             /* @__PURE__ */ jsx("code", { children: short(run.id) })
           ] }),
           run.execution ? /* @__PURE__ */ jsxs("dl", { className: "details", children: [
-            /* @__PURE__ */ jsx("dt", { children: "Docker context" }),
-            /* @__PURE__ */ jsx("dd", { children: run.execution.dockerContext }),
-            /* @__PURE__ */ jsx("dt", { children: "\u5B9E\u9645\u955C\u50CF ID" }),
-            /* @__PURE__ */ jsx("dd", { children: /* @__PURE__ */ jsx("code", { className: "digest", children: run.execution.imageId ?? "\u7B49\u5F85\u5BB9\u5668\u9884\u68C0" }) })
+            /* @__PURE__ */ jsx("dt", { children: run.execution.backend === "local" ? "\u6267\u884C\u4F4D\u7F6E" : "Docker context" }),
+            /* @__PURE__ */ jsx("dd", { children: run.execution.backend === "local" ? "\u672C\u5730\u6267\u884C \xB7 \u5F53\u524D\u7528\u6237\u6743\u9650\uFF08\u4E0D\u9694\u79BB\uFF09" : run.execution.dockerContext }),
+            /* @__PURE__ */ jsx("dt", { children: run.execution.backend === "local" ? "\u56FA\u5B9A\u8FD0\u884C\u73AF\u5883" : "\u5B9E\u9645\u955C\u50CF ID" }),
+            /* @__PURE__ */ jsx("dd", { children: /* @__PURE__ */ jsx("code", { className: "digest", children: run.execution.backend === "local" ? run.manifest.localRuntime?.runtimeVersion ?? run.manifest.contract.localRuntimeId ?? "\u672C\u5730\u8FD0\u884C\u73AF\u5883\u672A\u8BB0\u5F55" : run.execution.imageId ?? "\u7B49\u5F85\u5BB9\u5668\u9884\u68C0" }) })
           ] }) : null,
           /* @__PURE__ */ jsxs("div", { className: "actions", children: [
             /* @__PURE__ */ jsx(Badge, { value: run.state }),

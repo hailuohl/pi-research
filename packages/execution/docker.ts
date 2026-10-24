@@ -5,6 +5,7 @@ import {randomUUID} from 'node:crypto';
 import {readStableFile} from '../workspace/stable-file.js';
 import {safePath} from '../workspace/files.js';
 import {digest} from '../storage/store.js';
+import {ensure} from '../domain/errors.js';
 import type {SourceSnapshot} from '../domain/types.js';
 import type {DataPaths} from '../storage/data-paths.js';
 /** Docker mechanics shared by development jobs and formal Runs; no business-purpose coupling. */
@@ -85,7 +86,7 @@ export async function docker(context: string, args: string[], timeout = 10000, l
 }
 export async function preflight(context: string, image: string, options:{allowLocalImageId?:boolean}={}): Promise<string> {
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,100}$/.test(context)) throw new Error('Explicit Docker context required');
-    if (!/^[a-zA-Z0-9][a-zA-Z0-9._:/-]*@sha256:[a-f0-9]{64}$/.test(image)&&!(options.allowLocalImageId&&/^sha256:[a-f0-9]{64}$/.test(image))) throw new Error('Docker image must be pinned by sha256 digest');
+    ensure(/^[a-zA-Z0-9][a-zA-Z0-9._:/-]*@sha256:[a-f0-9]{64}$/.test(image)||(options.allowLocalImageId&&/^sha256:[a-f0-9]{64}$/.test(image)),'INVALID_INPUT','Docker image must be pinned by sha256 digest；请使用名称@sha256:加64位小写十六进制摘要',400);
     const contexts = JSON.parse(await docker(context, ['context', 'inspect', context]));
     const endpoint = contexts[0]?.Endpoints?.docker?.Host;
     if (typeof endpoint !== 'string' || !(/^(unix:\/\/\/[^\0\r\n]+|npipe:\/\/\/\/\.\/pipe\/[^\0\r\n]+)$/.test(endpoint))) throw new Error('Only local Unix socket or named pipe Docker contexts are permitted');

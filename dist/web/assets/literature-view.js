@@ -42,10 +42,11 @@ async function fileBase64(file) {
 class LiteratureView extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { query: "", sources: ["crossref"], config: null, error: "", format: "provider-text", requestedVersion: "", result: null, document: null, loading: false, importLicense: "", paging: false };
+    this.state = { query: "", sources: ["crossref"], config: null, error: "", format: "provider-text", requestedVersion: "", result: null, document: null, location: this.props.selectedDocument, loading: false, importLicense: "", paging: false };
     this.mounted = true;
     this.documentEpoch = 0;
     this.taskEpoch = 0;
+    this.documentProjectId = this.props.data.project.id;
   }
   componentDidMount() {
     void this.loadConfig();
@@ -57,37 +58,51 @@ class LiteratureView extends React.Component {
     this.taskEpoch++;
   }
   componentDidUpdate(prev) {
-    if (prev.selectedDocument?.documentVersionId !== this.props.selectedDocument?.documentVersionId) {
-      if (this.props.selectedDocument) void this.loadDocument(this.props.selectedDocument.documentVersionId);
-      else {
+    const projectChanged = prev.data.project.id !== this.props.data.project.id;
+    if (projectChanged) {
+      this.documentEpoch++;
+      this.taskEpoch++;
+      this.setState({ document: null, location: void 0, result: null, config: null, loading: false, error: "" });
+      void this.loadConfig();
+    }
+    if (projectChanged || prev.selectedDocument !== this.props.selectedDocument) {
+      if (!this.props.onDocument) this.setState({ location: this.props.selectedDocument });
+      if (this.props.selectedDocument) {
+        if (projectChanged || prev.selectedDocument?.documentVersionId !== this.props.selectedDocument.documentVersionId) void this.loadDocument(this.props.selectedDocument.documentVersionId);
+      } else if (!projectChanged) {
         this.documentEpoch++;
-        this.setState({ document: null });
+        this.setState({ document: null, loading: false });
       }
     }
   }
   async loadConfig() {
+    const projectId = this.props.data.project.id;
     try {
-      const config = await api(`/projects/${this.props.data.project.id}/connectors`);
-      if (this.mounted) this.setState({ config, sources: this.state.sources.filter((s) => config.enabled[s]) });
+      const config = await api(`/projects/${projectId}/connectors`);
+      if (this.mounted && projectId === this.props.data.project.id) this.setState({ config, sources: this.state.sources.filter((s) => config.enabled[s]) });
     } catch (error) {
-      if (this.mounted) this.setState({ error: error instanceof Error ? error.message : String(error) });
+      if (this.mounted && projectId === this.props.data.project.id) this.setState({ error: error instanceof Error ? error.message : String(error) });
     }
   }
   async loadDocument(id) {
-    const epoch = ++this.documentEpoch;
+    const epoch = ++this.documentEpoch, projectId = this.props.data.project.id;
+    this.documentProjectId = projectId;
     this.setState({ loading: true, error: "", document: null });
     try {
-      const document = await call(this.props.data.project.id, "document_inspect", { documentVersionId: id });
-      if (this.mounted && epoch === this.documentEpoch) this.setState({ document });
+      const document = await call(projectId, "document_inspect", { documentVersionId: id });
+      if (this.mounted && epoch === this.documentEpoch && projectId === this.props.data.project.id) this.setState({ document });
     } catch (error) {
-      if (this.mounted && epoch === this.documentEpoch) this.setState({ error: error instanceof Error ? error.message : String(error) });
+      if (this.mounted && epoch === this.documentEpoch && projectId === this.props.data.project.id) this.setState({ error: error instanceof Error ? error.message : String(error) });
     } finally {
-      if (this.mounted && epoch === this.documentEpoch) this.setState({ loading: false });
+      if (this.mounted && epoch === this.documentEpoch && projectId === this.props.data.project.id) this.setState({ loading: false });
     }
   }
   selectDocument(target) {
     if (this.props.onDocument) this.props.onDocument(target);
-    else void this.loadDocument(target.documentVersionId);
+    else {
+      this.setState({ location: target });
+      if (this.state.document?.id !== target.documentVersionId) void this.loadDocument(target.documentVersionId);
+    }
   }
   async inspectTask(task) {
     const epoch = ++this.taskEpoch, projectId = this.props.data.project.id;
@@ -100,7 +115,7 @@ class LiteratureView extends React.Component {
     });
   }
   render() {
-    const { data, perform } = this.props, s = this.state, resultGrant = (data.discoveryGrants ?? []).find((g) => g.id === s.result?.discoveryGrant?.id && g.digest === s.result?.discoveryGrant?.digest), nextTask = (data.literatureTasks ?? []).find((task) => task.request.pageRequest?.previousSearchId === s.result?.id), page = s.result?.page, pageExpired = !!page?.nextCursorExpiresAt && Date.now() >= Date.parse(page.nextCursorExpiresAt), pageSource = s.result?.sources.length === 1 ? s.result.sources[0].source : null, pageName = pageSource === "openalex" ? "OpenAlex" : pageSource === "crossref" ? "Crossref" : pageSource === "biorxiv" ? "bioRxiv" : pageSource === "pubmed" ? "PubMed" : "\u672A\u77E5\u6765\u6E90";
+    const { data, perform } = this.props, s = this.state, location = this.props.onDocument ? this.props.selectedDocument : s.location, resultGrant = (data.discoveryGrants ?? []).find((g) => g.id === s.result?.discoveryGrant?.id && g.digest === s.result?.discoveryGrant?.digest), nextTask = (data.literatureTasks ?? []).find((task) => task.request.pageRequest?.previousSearchId === s.result?.id), page = s.result?.page, pageExpired = !!page?.nextCursorExpiresAt && Date.now() >= Date.parse(page.nextCursorExpiresAt), pageSource = s.result?.sources.length === 1 ? s.result.sources[0].source : null, pageName = pageSource === "openalex" ? "OpenAlex" : pageSource === "crossref" ? "Crossref" : pageSource === "biorxiv" ? "bioRxiv" : pageSource === "pubmed" ? "PubMed" : "\u672A\u77E5\u6765\u6E90";
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll", children: [
       /* @__PURE__ */ jsxs(SectionTitle, { level: this.props.embedded ? 2 : 1, title: "\u6587\u732E\u4EFB\u52A1\u4E0E\u539F\u6587", sub: "\u6458\u8981\u53CA\u4F9B\u5E94\u5546\u6587\u672C\u4E0D\u7B49\u4E8E\u539F PDF\u3002", children: [
         !this.props.readOnly && this.props.onSources ? /* @__PURE__ */ jsx("button", { className: "secondary", onClick: this.props.onSources, children: "\u7BA1\u7406\u6765\u6E90\u6388\u6743" }) : null,
@@ -287,7 +302,7 @@ class LiteratureView extends React.Component {
         ] }) }, document.id)),
         !data.documents?.length ? /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u6682\u65E0\u56FA\u5B9A\u6587\u6863\u7248\u672C\u3002" }) : null
       ] }),
-      s.loading ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u8BFB\u53D6\u56FA\u5B9A\u6587\u6863\u2026" }) : s.document ? /* @__PURE__ */ jsx(DocumentPane, { readOnly: this.props.readOnly, allowDocumentSelection: this.props.allowDocumentSelection, document: s.document, data, perform, session: this.props.session, onUseDocument: this.props.onUseDocument, location: this.props.selectedDocument, onLocation: (target) => this.selectDocument(target) }, s.document.id) : /* @__PURE__ */ jsx(Empty, { title: "\u9009\u62E9\u6587\u6863\u7248\u672C", children: /* @__PURE__ */ jsx("p", { children: data.documents?.length ? "\u9009\u62E9\u7248\u672C\u67E5\u770B\u539F\u6587\u3002" : "\u5BFC\u5165\u6587\u6863\u540E\u9009\u62E9\u7248\u672C\u3002" }) }),
+      s.loading ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u8BFB\u53D6\u56FA\u5B9A\u6587\u6863\u2026" }) : s.document && this.documentProjectId === data.project.id && (!location || location.documentVersionId === s.document.id) ? /* @__PURE__ */ jsx(DocumentPane, { readOnly: this.props.readOnly, allowDocumentSelection: this.props.allowDocumentSelection, document: s.document, data, perform, session: this.props.session, onUseDocument: this.props.onUseDocument, location, onLocation: (target) => this.selectDocument(target) }, s.document.id) : /* @__PURE__ */ jsx(Empty, { title: "\u9009\u62E9\u6587\u6863\u7248\u672C", children: /* @__PURE__ */ jsx("p", { children: data.documents?.length ? "\u9009\u62E9\u7248\u672C\u67E5\u770B\u539F\u6587\u3002" : "\u5BFC\u5165\u6587\u6863\u540E\u9009\u62E9\u7248\u672C\u3002" }) }),
       !this.props.readOnly ? /* @__PURE__ */ jsx(TextEvidencePanel, { configurationOnly: this.props.setupOnly, data, perform, onDocument: (target) => this.selectDocument(target), onSession: this.props.onSession }) : null
     ] });
   }

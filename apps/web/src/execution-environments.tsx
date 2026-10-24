@@ -25,7 +25,7 @@ export class ExecutionEnvironments extends React.Component<Props,{catalog:Catalo
  async mutate(name:string,input:unknown,notice:string,form?:HTMLFormElement){
   if(this.locked||!this.active()||this.props.readOnly||(this.props.localOnly&&(name.startsWith('ssh_target_')||name==='gpu_target_probe'&&!['local','docker'].includes((input as {backend?:string}).backend??''))))return false;const projectId=this.props.projectId,epoch=this.epoch;this.locked=true;this.readEpoch++;this.setState({busy:true,error:'',notice:''});
   try{await this.call(name,input,projectId);if(this.mounted&&epoch===this.epoch&&projectId===this.props.projectId){form?.reset();this.setState({notice});}}
-  catch(e){if(this.mounted&&epoch===this.epoch&&projectId===this.props.projectId)this.setState({error:String(e)});}
+  catch(e){if(this.mounted&&epoch===this.epoch&&projectId===this.props.projectId)this.setState({error:e instanceof Error?e.message:String(e)});}
   finally{if(this.mounted&&epoch===this.epoch&&projectId===this.props.projectId){if(this.active())await this.load();this.setState({busy:false});this.locked=false;}}
   return this.mounted&&epoch===this.epoch&&projectId===this.props.projectId;
  }

@@ -68,6 +68,7 @@ function assertBriefMethods(store, pid, brief, phase) { assertFrozenMethod(store
     ensure(digest(brief.protocolDocument) === digest({ path: brief.methodContract.protocolPath, digest: brief.methodContract.protocolDigest, compilerVersion: brief.methodContract.compilerVersion }), 'METHOD_PROTOCOL_ROLE_INVALID', '唯一完整protocolDocument绑定缺失或已改变');
 } }
 export function fixedResearchBrief(store, projectId, ref, phase) {
+    ensure(ref, 'BRIEF_REFERENCE_REQUIRED', '需要固定研究计划引用；普通 Run 不能用作规范报告来源');
     const root = store.get('session', ref.rootSessionId, projectId);
     ensure(root.role === 'coordinator' && !root.taskId && !root.teamId, 'INVALID_ROOT_SESSION', '研究简报只属于项目主协调会话');
     const row = store.get('research-brief', ref.id, projectId);

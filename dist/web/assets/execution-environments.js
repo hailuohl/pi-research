@@ -70,7 +70,7 @@ class ExecutionEnvironments extends React.Component {
         this.setState({ notice });
       }
     } catch (e) {
-      if (this.mounted && epoch === this.epoch && projectId === this.props.projectId) this.setState({ error: String(e) });
+      if (this.mounted && epoch === this.epoch && projectId === this.props.projectId) this.setState({ error: e instanceof Error ? e.message : String(e) });
     } finally {
       if (this.mounted && epoch === this.epoch && projectId === this.props.projectId) {
         if (this.active()) await this.load();

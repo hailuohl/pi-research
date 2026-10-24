@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { readStableFile } from '../workspace/stable-file.js';
 import { safePath } from '../workspace/files.js';
 import { digest } from '../storage/store.js';
+import { ensure } from '../domain/errors.js';
 /** Short-lived execution paths; the original approved manifest and its digest remain untouched. */
 export function physicalDockerJob(job, paths) {
     return { ...job, controlDir: paths.physical(job.controlDir), outputDir: paths.physical(job.outputDir), manifest: { ...job.manifest, inputSnapshot: paths.physicalSnapshot(job.manifest.inputSnapshot), dataArtifacts: job.manifest.dataArtifacts.map(a => ({ ...a, path: paths.physical(a.path) })) } };
@@ -94,8 +95,7 @@ export async function docker(context, args, timeout = 10000, limit = 1024 * 1024
 export async function preflight(context, image, options = {}) {
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,100}$/.test(context))
         throw new Error('Explicit Docker context required');
-    if (!/^[a-zA-Z0-9][a-zA-Z0-9._:/-]*@sha256:[a-f0-9]{64}$/.test(image) && !(options.allowLocalImageId && /^sha256:[a-f0-9]{64}$/.test(image)))
-        throw new Error('Docker image must be pinned by sha256 digest');
+    ensure(/^[a-zA-Z0-9][a-zA-Z0-9._:/-]*@sha256:[a-f0-9]{64}$/.test(image) || (options.allowLocalImageId && /^sha256:[a-f0-9]{64}$/.test(image)), 'INVALID_INPUT', 'Docker image must be pinned by sha256 digest；请使用名称@sha256:加64位小写十六进制摘要', 400);
     const contexts = JSON.parse(await docker(context, ['context', 'inspect', context]));
     const endpoint = contexts[0]?.Endpoints?.docker?.Host;
     if (typeof endpoint !== 'string' || !(/^(unix:\/\/\/[^\0\r\n]+|npipe:\/\/\/\/\.\/pipe\/[^\0\r\n]+)$/.test(endpoint)))

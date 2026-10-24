@@ -10,6 +10,17 @@ import { randomUUID } from 'node:crypto';
 import { challengeName, endpoint, hostToken, parseHostKeys, privateJson, savePrivateJson, scanHostKeys, setupError, sshOnboardingRequest, sshPrivateDir, trustName } from './ssh-onboarding.js';
 // ponytail: serialize one AppContext's probes; add a durable lease only if multi-server monitoring needs exclusion.
 const inFlight = new WeakMap();
+function ordinaryHostFile(path) {
+    try {
+        const file = lstatSync(path);
+        return file.isFile() && !file.isSymbolicLink();
+    }
+    catch (error) {
+        if (['ENOENT', 'ENOTDIR'].includes(error.code ?? ''))
+            return false;
+        throw error;
+    }
+}
 export class SshTargetService {
     c;
     request;
@@ -30,7 +41,7 @@ export class SshTargetService {
         const id = text(x.id, 'id', 80), host = text(x.host, 'host', 253), user = text(x.user, 'user', 64), remoteRoot = text(x.remoteRoot, 'remoteRoot', 500);
         ensure(/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(id) && /^[a-zA-Z0-9][a-zA-Z0-9.:-]*$/.test(host) && /^[a-zA-Z_][a-zA-Z0-9_-]*$/.test(user), 'INVALID_INPUT', 'SSH 目标名称、主机或用户无效', 400);
         ensure(/^\/[A-Za-z0-9_./-]+$/.test(remoteRoot) && !remoteRoot.split('/').slice(1).some(p => !p || p === '.' || p === '..') && remoteRoot.split('/').length > 2, 'INVALID_INPUT', 'SSH 工作根目录必须是固定规范绝对路径', 400);
-        const local = (v, k) => { const p = text(v, k, 2000); ensure(isAbsolute(p) && lstatSync(p).isFile() && !lstatSync(p).isSymbolicLink(), 'INVALID_INPUT', 'SSH 身份和 known_hosts 必须是宿主普通文件', 400); return resolve(p); };
+        const local = (v, k) => { const p = text(v, k, 2000); ensure(isAbsolute(p) && ordinaryHostFile(p), 'INVALID_INPUT', 'SSH 身份和 known_hosts 必须是已存在的宿主普通文件，且不能是符号链接', 400); return resolve(p); };
         const identityFile = local(x.identityFile, 'identityFile'), knownHostsFile = local(x.knownHostsFile, 'knownHostsFile');
         return this.c.store.transaction(() => {
             const all = this.read(), before = all[id];
@@ -164,7 +175,7 @@ export class SshTargetService {
         const id = text(x.id, 'id', 80), host = text(x.host, 'host', 253).toLowerCase().replace(/\.$/, ''), user = text(x.user, 'user', 64), remoteRoot = text(x.remoteRoot, 'remoteRoot', 500), identityFile = resolve(text(x.identityFile, 'identityFile', 2000));
         ensure(/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(id) && /^[a-zA-Z0-9][a-zA-Z0-9.:-]*$/.test(host) && /^[a-zA-Z_][a-zA-Z0-9_-]*$/.test(user), 'INVALID_INPUT', 'SSH 目标名称、主机或用户无效', 400);
         ensure(/^\/[A-Za-z0-9_./-]+$/.test(remoteRoot) && !remoteRoot.split('/').slice(1).some(p => !p || p === '.' || p === '..') && remoteRoot.split('/').length > 2, 'INVALID_INPUT', 'SSH 工作根目录必须是固定规范绝对路径', 400);
-        ensure(isAbsolute(String(x.identityFile)) && lstatSync(identityFile).isFile() && !lstatSync(identityFile).isSymbolicLink(), 'INVALID_INPUT', 'SSH 身份必须是宿主普通文件', 400);
+        ensure(isAbsolute(String(x.identityFile)) && ordinaryHostFile(identityFile), 'INVALID_INPUT', 'SSH 身份必须是已存在的宿主普通文件，且不能是符号链接；请检查私钥文件路径', 400);
         const expectedVersion = integer(x.expectedVersion, 'expectedVersion', 0), target = { id, host, port: integer(x.port ?? 22, 'port', 1, 65535), user, identityFile, remoteRoot, identityDigest: digest(readFileSync(identityFile)), version: expectedVersion + 1, gpuProtocol: true, managed: true };
         this.c.store.transaction(() => this.assertAvailable(id, expectedVersion));
         const keys = await this.scan(target), trusted = privateJson(this.c, trustName(target));

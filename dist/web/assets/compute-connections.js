@@ -413,8 +413,8 @@ class ComputeConnections extends React.Component {
           /* @__PURE__ */ jsx("span", { children: "\u5B9A\u671F\u6838\u9A8C\u5DF2\u4FE1\u4EFB\u8FDE\u63A5\u3002" })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs("dialog", { ref: this.editorDialog, className: "compute-dialog", "aria-labelledby": "ssh-editor-title", onCancel: () => this.setState({ editor: null, challenge: null, fingerprintConfirmed: false, confirmationUnknown: false }), onClose: () => {
-        if (this.state.editor) this.setState({ editor: null, challenge: null, fingerprintConfirmed: false, confirmationUnknown: false });
+      /* @__PURE__ */ jsxs("dialog", { ref: this.editorDialog, className: "compute-dialog", "aria-labelledby": "ssh-editor-title", onCancel: () => this.setState({ editor: null, challenge: null, fingerprintConfirmed: false, confirmationUnknown: false, error: "" }), onClose: () => {
+        if (this.state.editor) this.setState({ editor: null, challenge: null, fingerprintConfirmed: false, confirmationUnknown: false, error: "" });
       }, children: [
         /* @__PURE__ */ jsxs("header", { children: [
           /* @__PURE__ */ jsxs("div", { children: [

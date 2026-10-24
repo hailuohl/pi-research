@@ -110,6 +110,7 @@ function isIntact(brief: ResearchBrief) { return brief.digest === digest(payload
 function assertBriefMethods(store:Store,pid:string,brief:ResearchBrief,phase?:'formal') {assertFrozenMethod(store,pid,brief.methodContract,brief.sourceInputs,brief.rootSessionId,phase);if(brief.methodContract?.compilerVersion==='method-contract-v3'){validateProtocolRoles(brief.methodContract,brief.draftFiles,brief.draftRoles);ensure(digest(brief.protocolDocument)===digest({path:brief.methodContract.protocolPath,digest:brief.methodContract.protocolDigest,compilerVersion:brief.methodContract.compilerVersion}),'METHOD_PROTOCOL_ROLE_INVALID','唯一完整protocolDocument绑定缺失或已改变');}}
 
 export function fixedResearchBrief(store:Store,projectId:string,ref:ResearchBriefRef,phase?:'formal') {
+    ensure(ref,'BRIEF_REFERENCE_REQUIRED','需要固定研究计划引用；普通 Run 不能用作规范报告来源');
     const root=store.get<Session>('session',ref.rootSessionId,projectId);
     ensure(root.role==='coordinator'&&!root.taskId&&!root.teamId,'INVALID_ROOT_SESSION','研究简报只属于项目主协调会话');
     const row=store.get<ResearchBrief>('research-brief',ref.id,projectId);
