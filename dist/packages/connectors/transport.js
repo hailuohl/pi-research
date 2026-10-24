@@ -1,6 +1,8 @@
 import { DomainError, ensure } from '../domain/errors.js';
 import { setTimeout as delay } from 'node:timers/promises';
 const HOSTS = new Set(['api.alphaxiv.org', 'www.alphaxiv.org', 'api.openalex.org', 'api.biorxiv.org', 'eutils.ncbi.nlm.nih.gov', 'api.crossref.org', 'arxiv.org', 'www.biorxiv.org', 'content.openalex.org']);
+export const DEFAULT_CONNECTOR_TIMEOUT_MS = 12000;
+export const PAPER_READ_TIMEOUT_MS = 60000;
 /** Fixed HTTPS hosts, no redirects/proxies supplied by agents, bounded bodies and no implicit retries. */
 export class ConnectorTransport {
     fetcher;
@@ -8,10 +10,10 @@ export class ConnectorTransport {
     ncbiNext = 0;
     interval;
     constructor(options = {}) { this.fetcher = options.fetcher ?? ((...args) => fetch(...args)); this.interval = options.minIntervalMs ?? 350; }
-    async bytes(url, headers, validate, maxBytes = 2 * 1024 * 1024, signal, observe, beforeSend) {
+    async bytes(url, headers, validate, maxBytes = 2 * 1024 * 1024, signal, observe, beforeSend, timeoutMs = DEFAULT_CONNECTOR_TIMEOUT_MS) {
         ensure(url.protocol === 'https:' && HOSTS.has(url.hostname) && !url.port && !url.username && !url.password && !url.hash, 'CONNECTOR_HOST_DENIED', '只允许固定文献来源 HTTPS 地址', 403);
         const controller = new AbortController();
-        const deadline = setTimeout(() => controller.abort(), 12000);
+        const deadline = setTimeout(() => controller.abort(), timeoutMs);
         const abort = () => controller.abort();
         signal?.addEventListener('abort', abort, { once: true });
         let acquired = false;
@@ -92,8 +94,8 @@ export class ConnectorTransport {
                 this.active--;
         }
     }
-    async text(url, headers, validate, maxBytes = 2 * 1024 * 1024, signal, observe, beforeSend) {
-        const r = await this.bytes(url, headers, validate, maxBytes, signal, observe, beforeSend);
+    async text(url, headers, validate, maxBytes = 2 * 1024 * 1024, signal, observe, beforeSend, timeoutMs = DEFAULT_CONNECTOR_TIMEOUT_MS) {
+        const r = await this.bytes(url, headers, validate, maxBytes, signal, observe, beforeSend, timeoutMs);
         try {
             return { ...r, text: new TextDecoder('utf-8', { fatal: true }).decode(r.body) };
         }

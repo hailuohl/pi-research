@@ -11,6 +11,7 @@ import {attachmentPayload,type AttachmentManifest,type NativeAttachmentReference
 import {MANAGED_HTTP_APIS} from '../../packages/scheduler/model-http.js';
 import {s as schema,type JsonSchema} from '../../packages/contracts/operations/schema.js';
 import {toolResultDiagnostic} from '../../packages/pi-adapter/tool-diagnostic.js';
+import {PAPER_READ_TIMEOUT_MS} from '../../packages/connectors/transport.js';
 import {buildWorkerPrompt} from '../../packages/pi-adapter/prompt.js';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -52,8 +53,8 @@ function send(value: unknown) {
 }
 const display=workerDeltaSender(send);
 function httpRpc(type:'model_http_acquire'|'model_http_finish',key:string,result?:unknown,imageRefs?:unknown[],attachmentRefs?:NativeAttachmentReference[],contextRecovery?:'summary'|'resume'){return new Promise<unknown>((resolve,reject)=>{const requestId=++seq,startedAt=Date.now(),timer=setTimeout(()=>{pending.delete(requestId);reject(new Error(`MODEL_HTTP_CONTROL_TIMEOUT: HTTP额度控制未响应 (${type}, requestId=${requestId}, elapsedMs=${Date.now()-startedAt})`));},30000);pending.set(requestId,{resolve,reject,timer,attachmentRequest:!!attachmentRefs?.length});send({type,requestId,key,result,...(contextRecovery?{contextRecovery}:{}),...(imageRefs?{imageRefs}:{}),...(attachmentRefs?{attachmentRefs}:{})});});}
-// Host execution needs its 60-second run budget plus process-tree cleanup and IPC delivery.
-function rpc(tool: string, input: unknown, toolCallId: string) { return new Promise<unknown>((resolve, reject) => { const requestId = ++seq; const timer = setTimeout(() => { pending.delete(requestId); reject(new Error(`受控工具请求超时；结果未确认，请核对原调用，不要自动重试 (tool=${tool}, toolCallId=${toolCallId}, requestId=${requestId})`)); }, tool === 'host_execute' ? 80000 : 30000); pending.set(requestId, { resolve, reject, timer }); send({ type: 'tool', requestId, tool, input, toolCallId }); }); }
+// Paper reads and host execution need their service budget plus cleanup and IPC delivery.
+function rpc(tool: string, input: unknown, toolCallId: string) { return new Promise<unknown>((resolve, reject) => { const requestId = ++seq; const timer = setTimeout(() => { pending.delete(requestId); reject(new Error(`受控工具请求超时；结果未确认，请核对原调用，不要自动重试 (tool=${tool}, toolCallId=${toolCallId}, requestId=${requestId})`)); }, tool === 'paper_read' ? PAPER_READ_TIMEOUT_MS+20000 : tool === 'host_execute' ? 80000 : 30000); pending.set(requestId, { resolve, reject, timer }); send({ type: 'tool', requestId, tool, input, toolCallId }); }); }
 function clearPending() {
     for (const p of pending.values()) {
         clearTimeout(p.timer);

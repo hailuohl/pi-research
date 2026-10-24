@@ -1,3 +1,5 @@
+export declare const DEFAULT_CONNECTOR_TIMEOUT_MS = 12000;
+export declare const PAPER_READ_TIMEOUT_MS = 60000;
 export interface Credentials {
     openalexKey?: string;
     ncbiKey?: string;
@@ -17,7 +19,7 @@ export declare class ConnectorTransport {
     bytes(url: URL, headers: Record<string, string>, validate: () => void, maxBytes?: number, signal?: AbortSignal, observe?: (value: {
         httpStatus: number;
         retryAfter: string | null;
-    }) => void, beforeSend?: () => void): Promise<{
+    }) => void, beforeSend?: () => void, timeoutMs?: number): Promise<{
         body: Buffer<ArrayBuffer>;
         bytes: number;
         contentType: string;
@@ -27,7 +29,7 @@ export declare class ConnectorTransport {
     text(url: URL, headers: Record<string, string>, validate: () => void, maxBytes?: number, signal?: AbortSignal, observe?: (value: {
         httpStatus: number;
         retryAfter: string | null;
-    }) => void, beforeSend?: () => void): Promise<{
+    }) => void, beforeSend?: () => void, timeoutMs?: number): Promise<{
         text: string;
         body: Buffer<ArrayBuffer>;
         bytes: number;

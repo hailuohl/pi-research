@@ -1,15 +1,17 @@
 import {DomainError,ensure} from '../domain/errors.js';
 import {setTimeout as delay} from 'node:timers/promises';
 const HOSTS=new Set(['api.alphaxiv.org','www.alphaxiv.org','api.openalex.org','api.biorxiv.org','eutils.ncbi.nlm.nih.gov','api.crossref.org','arxiv.org','www.biorxiv.org','content.openalex.org']);
+export const DEFAULT_CONNECTOR_TIMEOUT_MS=12000;
+export const PAPER_READ_TIMEOUT_MS=60000;
 export interface Credentials {openalexKey?:string;ncbiKey?:string;email?:string;}
 export interface TransportOptions {fetcher?:typeof fetch;minIntervalMs?:number;}
 /** Fixed HTTPS hosts, no redirects/proxies supplied by agents, bounded bodies and no implicit retries. */
 export class ConnectorTransport {
  private fetcher:typeof fetch;private active=0;private ncbiNext=0;private interval:number;
  constructor(options:TransportOptions={}){this.fetcher=options.fetcher??((...args)=>fetch(...args));this.interval=options.minIntervalMs??350;}
- async bytes(url:URL,headers:Record<string,string>,validate:()=>void,maxBytes=2*1024*1024,signal?:AbortSignal,observe?:(value:{httpStatus:number;retryAfter:string|null})=>void,beforeSend?:()=>void) {
+ async bytes(url:URL,headers:Record<string,string>,validate:()=>void,maxBytes=2*1024*1024,signal?:AbortSignal,observe?:(value:{httpStatus:number;retryAfter:string|null})=>void,beforeSend?:()=>void,timeoutMs=DEFAULT_CONNECTOR_TIMEOUT_MS) {
   ensure(url.protocol==='https:'&&HOSTS.has(url.hostname)&&!url.port&&!url.username&&!url.password&&!url.hash,'CONNECTOR_HOST_DENIED','只允许固定文献来源 HTTPS 地址',403);
-  const controller=new AbortController();const deadline=setTimeout(()=>controller.abort(),12000);const abort=()=>controller.abort();signal?.addEventListener('abort',abort,{once:true});let acquired=false;let checkError:unknown;
+  const controller=new AbortController();const deadline=setTimeout(()=>controller.abort(),timeoutMs);const abort=()=>controller.abort();signal?.addEventListener('abort',abort,{once:true});let acquired=false;let checkError:unknown;
   const poll=setInterval(()=>{try{validate();}catch(e){checkError=e;controller.abort();}},150);
   try {
    validate();ensure(!signal?.aborted,'CONNECTOR_CANCELLED','请求已取消');
@@ -29,8 +31,8 @@ export class ConnectorTransport {
   }catch(e){if(checkError)throw checkError;if(e instanceof DomainError)throw e;throw new DomainError(controller.signal.aborted?'CONNECTOR_CANCELLED':'CONNECTOR_UNAVAILABLE',controller.signal.aborted?'连接器请求超时或已取消':'无法取得文献来源响应；这不代表没有相关论文',503);}
   finally{clearTimeout(deadline);clearInterval(poll);signal?.removeEventListener('abort',abort);if(acquired)this.active--;}
  }
- async text(url:URL,headers:Record<string,string>,validate:()=>void,maxBytes=2*1024*1024,signal?:AbortSignal,observe?:(value:{httpStatus:number;retryAfter:string|null})=>void,beforeSend?:()=>void) {
-  const r=await this.bytes(url,headers,validate,maxBytes,signal,observe,beforeSend);
+ async text(url:URL,headers:Record<string,string>,validate:()=>void,maxBytes=2*1024*1024,signal?:AbortSignal,observe?:(value:{httpStatus:number;retryAfter:string|null})=>void,beforeSend?:()=>void,timeoutMs=DEFAULT_CONNECTOR_TIMEOUT_MS) {
+  const r=await this.bytes(url,headers,validate,maxBytes,signal,observe,beforeSend,timeoutMs);
   try{return {...r,text:new TextDecoder('utf-8',{fatal:true}).decode(r.body)};}catch{throw new DomainError('PROVIDER_SCHEMA_INVALID','来源没有返回有效 UTF-8 文本',502);}
  }
 }

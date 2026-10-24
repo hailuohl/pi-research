@@ -27,7 +27,7 @@ async function worker(t,tool='host_execute'){
   let body='';for await(const part of req)body+=part;requests.push(JSON.parse(body));
   res.writeHead(200,{'content-type':'text/event-stream'});
   if(requests.length>1){finalResponse=res;return;}
-  const input=tool==='host_execute'?{argv:['offline-command'],timeoutMs:60000}:{};
+  const input=tool==='host_execute'?{argv:['offline-command'],timeoutMs:60000}:tool==='paper_read'?{id:'2401.01234v2'}:{};
   res.end(chunk({role:'assistant',tool_calls:[{index:0,id:'original-call-1',type:'function',function:{name:tool,arguments:JSON.stringify({input})}}]})+chunk({},'tool_calls')+'data: [DONE]\n\n');
  });
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -129,4 +129,44 @@ test('abort while waiting for host RPC settles without advancing the timeout clo
  assert.equal(f.requests.length,1,'abort must not start a further model turn');
  await until(()=>f.child.exitCode!==null,'aborted worker exit');
  assert.equal(f.calls.length,1);
+});
+
+test('paper_read accepts its original confirmed response after 45 seconds over real Worker IPC',async t=>{
+ const f=await worker(t,'paper_read');
+ await f.command('fixture_tick',{ms:45000});
+ const result={artifactId:'offline-paper-artifact',contentKind:'full_text',fullTextRead:true};
+ f.respond({result});
+ assert.equal((await f.toolEnd()).isError,false,'paper reads must outlive the old 30-second RPC budget');
+ assert.equal((await f.command('fixture_inspect')).timers,0);
+ await f.finish();
+ assert.equal(f.calls.length,1);const receipts=f.receipts();assert.equal(receipts.length,1);
+ assert.equal(receipts[0].toolCallId,f.call.toolCallId);assert.deepEqual(JSON.parse(receipts[0].content[0].text),result);
+});
+
+test('paper_read receives the original service failure during its delivery margin without retrying',async t=>{
+ const f=await worker(t,'paper_read');
+ await f.command('fixture_tick',{ms:74000});
+ f.respond({error:{code:'CONNECTOR_CANCELLED',message:'文献读取超时或已取消，未完成结果未保存'}});
+ const end=await f.toolEnd();assert.equal(end.isError,true);assert.deepEqual(end.diagnostic,{code:'CONNECTOR_CANCELLED'});
+ assert.equal((await f.command('fixture_inspect')).timers,0);
+ await f.finish();
+ assert.equal(f.calls.length,1);const receipts=f.receipts();assert.equal(receipts.length,1);
+ assert.equal(receipts[0].toolCallId,f.call.toolCallId);assert.match(JSON.stringify(receipts[0]),/CONNECTOR_CANCELLED/);
+ assert.doesNotMatch(JSON.stringify(receipts[0]),/结果未确认/);
+});
+
+test('paper_read stops waiting at 80 seconds and ignores a late result without resending',async t=>{
+ const f=await worker(t,'paper_read');
+ await f.command('fixture_tick',{ms:79999});
+ assert.equal(f.events.some(event=>event.type==='tool_execution_end'),false);
+ await f.command('fixture_tick',{ms:1});assert.equal((await f.toolEnd()).isError,true);
+ await until(()=>f.requests.length===2,'provider continuation with paper RPC timeout receipt');
+ f.respond({result:{artifactId:'late-paper-must-not-replace-timeout'}});
+ assert.equal((await f.command('fixture_inspect')).timers,0);
+ await f.finish();
+ assert.equal(f.calls.length,1);assert.equal(f.events.filter(event=>event.type==='tool_execution_end').length,1);
+ const receipts=f.receipts();assert.equal(receipts.length,1);const text=JSON.stringify(receipts[0]);
+ assert.match(text,/结果未确认/);assert.match(text,/不要自动重试/);
+ assert.ok(text.includes(`tool=${f.call.tool}`));assert.ok(text.includes(`toolCallId=${f.call.toolCallId}`));assert.ok(text.includes(`requestId=${f.call.requestId}`));
+ assert.doesNotMatch(text,/late-paper-must-not-replace-timeout/);
 });
