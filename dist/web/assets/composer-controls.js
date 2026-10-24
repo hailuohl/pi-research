@@ -40,26 +40,41 @@ class ComposerControls extends React.Component {
     void this.loadAttachmentTypes();
   }
   componentDidUpdate(previous) {
-    if (previous.projectId !== this.props.projectId) void this.loadSources();
-    if (previous.boot.modelManagement?.version !== this.props.boot.modelManagement?.version || previous.boot.modelManagementError !== this.props.boot.modelManagementError || previous.session?.id !== this.props.session?.id || previous.session?.model.provider !== this.props.session?.model.provider || previous.session?.model.model !== this.props.session?.model.model) void this.loadAttachmentTypes();
+    if (previous.projectId !== this.props.projectId) {
+      this.sourceWrite = void 0;
+      this.setState({ saving: false });
+    }
+    if (previous.projectId !== this.props.projectId || previous.readSuspended !== this.props.readSuspended) void this.loadSources();
+    if (previous.readSuspended !== this.props.readSuspended || previous.projectArchived !== this.props.projectArchived || previous.boot.modelManagement?.version !== this.props.boot.modelManagement?.version || previous.boot.modelManagementError !== this.props.boot.modelManagementError || previous.session?.id !== this.props.session?.id || previous.session?.state !== this.props.session?.state || previous.session?.role !== this.props.session?.role || previous.session?.taskId !== this.props.session?.taskId || previous.session?.teamId !== this.props.session?.teamId || previous.session?.model.provider !== this.props.session?.model.provider || previous.session?.model.model !== this.props.session?.model.model) void this.loadAttachmentTypes();
   }
   componentWillUnmount() {
     this.mounted = false;
+    this.sourceWrite = void 0;
     this.request++;
     this.attachmentRequest++;
+    this.sourceController?.abort();
+    this.attachmentController?.abort();
   }
   async loadAttachmentTypes() {
     const session = this.props.session, request = ++this.attachmentRequest;
+    this.attachmentController?.abort();
     this.setState({ attachmentTypes: null });
-    if (!session) return;
+    if (!this.mounted || this.props.readSuspended || this.props.projectArchived || !session || session.state === "archived" || session.role !== "coordinator" || session.taskId || session.teamId) {
+      if (this.mounted) this.setState({ uploadError: "" });
+      return;
+    }
+    const controller = new AbortController();
+    this.attachmentController = controller;
     try {
-      const types = await api(`/sessions/${session.id}/attachment-types`);
-      if (this.mounted && request === this.attachmentRequest && this.props.session?.id === session.id && modelKey(this.props.session.model) === modelKey(session.model) && modelKey(types.model) === modelKey(session.model)) this.setState({ attachmentTypes: types, uploadError: "" });
+      const types = await api(`/sessions/${session.id}/attachment-types`, void 0, "GET", controller.signal);
+      if (this.mounted && !controller.signal.aborted && request === this.attachmentRequest && this.props.session?.id === session.id && modelKey(this.props.session.model) === modelKey(session.model) && modelKey(types.model) === modelKey(session.model)) this.setState({ attachmentTypes: types, uploadError: "" });
     } catch (error) {
-      if (this.mounted && request === this.attachmentRequest) {
+      if (this.mounted && !controller.signal.aborted && request === this.attachmentRequest) {
         this.uploadRequest++;
         this.setState({ uploadError: error instanceof Error ? error.message : String(error) });
       }
+    } finally {
+      if (this.attachmentController === controller) this.attachmentController = void 0;
     }
   }
   allowedTypes() {
@@ -67,21 +82,34 @@ class ComposerControls extends React.Component {
     return available && available.model.provider === model?.provider && available.model.model === model?.model ? available.types : [{ mediaType: "text/plain", extensions: [".txt"], maxBytes: 32 * 1024 * 1024, native: false }, { mediaType: "text/markdown", extensions: [".md"], maxBytes: 32 * 1024 * 1024, native: false }];
   }
   async loadSources() {
-    const request = ++this.request, projectId = this.props.projectId;
-    this.setState({ loading: true, loadingError: "" });
+    const request = ++this.request, projectId = this.props.projectId, write = this.sourceWrite;
+    this.sourceController?.abort();
+    if (!this.mounted) return;
+    if (this.props.readSuspended || write?.pending) {
+      this.setState({ loading: false, loadingError: write?.error ?? "" });
+      return;
+    }
+    const controller = new AbortController();
+    this.sourceController = controller;
+    this.setState({ loading: true, loadingError: write?.error ?? "" });
     try {
-      const config = await api(`/projects/${encodeURIComponent(projectId)}/connectors`);
-      if (this.mounted && request === this.request && projectId === this.props.projectId)
-        this.setState({ config, sourceDraft: configCopy(config), loading: false });
+      const config = await api(`/projects/${encodeURIComponent(projectId)}/connectors`, void 0, "GET", controller.signal);
+      if (this.mounted && !controller.signal.aborted && request === this.request && projectId === this.props.projectId)
+        this.setState({ config, sourceDraft: configCopy(config), loading: false, loadingError: write?.error ?? "" });
     } catch (error) {
-      if (this.mounted && request === this.request)
-        this.setState({ loading: false, loadingError: error instanceof Error ? error.message : String(error) });
+      if (this.mounted && !controller.signal.aborted && request === this.request)
+        this.setState((current) => ({ loading: false, config: write?.error ? null : current.config, loadingError: write?.error ? write.error + "\uFF1B\u6765\u6E90\u72B6\u6001\u672A\u786E\u8BA4\uFF0C\u8BF7\u91CD\u65B0\u6253\u5F00\u83DC\u5355\u91CD\u8BD5\u3002" : error instanceof Error ? error.message : String(error) }));
+    } finally {
+      if (this.sourceController === controller) this.sourceController = void 0;
     }
   }
   async configureSource(source, enabled) {
     const { config } = this.state;
     if (!config || this.state.loading || this.state.saving || this.props.busy || this.props.projectArchived) return;
-    const projectId = this.props.projectId, request = this.request, current = () => this.mounted && request === this.request && projectId === this.props.projectId;
+    const projectId = this.props.projectId, write = { projectId, pending: true, error: "" }, current = () => this.mounted && this.sourceWrite === write && projectId === this.props.projectId;
+    this.sourceWrite = write;
+    this.request++;
+    this.sourceController?.abort();
     this.setState({ saving: true, loadingError: "", sourceDraft: { ...this.state.sourceDraft, [source]: enabled } });
     await this.props.perform(async () => {
       try {
@@ -89,14 +117,12 @@ class ComposerControls extends React.Component {
         if (current()) this.setState({ config: saved, sourceDraft: configCopy(saved) });
       } catch (error) {
         if (!current()) return;
-        const message = error instanceof Error ? error.message : String(error);
-        try {
-          const latest = await api(`/projects/${encodeURIComponent(projectId)}/connectors`);
-          if (current()) this.setState({ config: latest, sourceDraft: configCopy(latest), loadingError: message });
-        } catch {
-          if (current()) this.setState({ config: null, sourceDraft: configCopy(config), loadingError: message + "\uFF1B\u6765\u6E90\u72B6\u6001\u672A\u786E\u8BA4\uFF0C\u8BF7\u91CD\u65B0\u6253\u5F00\u83DC\u5355\u91CD\u8BD5\u3002" });
-        }
+        write.error = error instanceof Error ? error.message : String(error);
+        write.pending = false;
+        this.setState({ sourceDraft: configCopy(config), loadingError: write.error });
+        await this.loadSources();
       } finally {
+        write.pending = false;
         if (current()) this.setState({ saving: false });
       }
     });
@@ -152,6 +178,7 @@ class ComposerControls extends React.Component {
     const uploadDisabled = !session || projectArchived || !!session.taskId || session.state === "archived" || uploading || attachments.length >= 5;
     const sourceCount = SOURCES.filter((source) => sourceDraft[source]).length;
     const allowed = this.allowedTypes(), unsupported = attachments.some((a) => !allowed.some((t) => t.mediaType === a.mediaType)), accept = allowed.flatMap((t) => [...t.extensions, t.mediaType]).join(",");
+    const capabilityKnown = !!session && !!this.state.attachmentTypes && modelKey(this.state.attachmentTypes.model) === modelKey(session.model);
     const executing = !!session && !session.taskId && ["running", "queued"].includes(session.state), showStop = executing && !hasDraft;
     return /* @__PURE__ */ jsxs(Fragment, { children: [
       attachments.length ? /* @__PURE__ */ jsx("div", { className: "composer-attachment-list", "aria-label": "\u5F85\u53D1\u9001\u9644\u4EF6", children: attachments.map((attachment) => /* @__PURE__ */ jsxs("span", { className: "composer-attachment", children: [
@@ -160,10 +187,11 @@ class ComposerControls extends React.Component {
         /* @__PURE__ */ jsx("small", { children: attachment.mediaType.startsWith("text/") ? "\u9879\u76EE\u8D44\u6599 \xB7 \u6587\u672C\u539F\u4EF6" : "\u9879\u76EE\u8D44\u6599 \xB7 \u6574\u6587\u4EF6\u968F\u6D88\u606F\u53D1\u9001" }),
         /* @__PURE__ */ jsx("button", { type: "button", "aria-label": `\u4ECE\u8349\u7A3F\u79FB\u9664 ${attachment.title}`, title: "\u53EA\u79FB\u9664\u8349\u7A3F\u5F15\u7528\uFF0C\u4E0D\u5220\u9664\u9879\u76EE\u539F\u4EF6", disabled: busy, onClick: () => this.props.onRemoveAttachment(attachment.documentVersionId), children: /* @__PURE__ */ jsx(Icon, { name: "close", size: 13 }) })
       ] }, attachment.documentVersionId)) }) : null,
-      unsupported ? /* @__PURE__ */ jsxs("p", { className: "error-text composer-control-error", role: "alert", children: [
+      unsupported && capabilityKnown && !projectArchived && !this.props.readSuspended && session?.state !== "archived" ? /* @__PURE__ */ jsxs("p", { className: "error-text composer-control-error", role: "alert", children: [
         "\u8349\u7A3F\u9644\u4EF6\u8D85\u51FA\u5F53\u524D\u786E\u8BA4\u7684\u8F93\u5165\u80FD\u529B\uFF1B\u9644\u4EF6\u5DF2\u4FDD\u7559\uFF0C\u8BF7\u5207\u6362\u652F\u6301\u7684\u6A21\u578B\u6216\u79FB\u9664\u5F15\u7528\u3002",
         this.state.attachmentTypes?.fileCapabilityReason
       ] }) : null,
+      unsupported && !capabilityKnown && !projectArchived && !this.props.readSuspended && session?.state !== "archived" ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: "\u6B63\u5728\u786E\u8BA4\u5F53\u524D\u6A21\u578B\u7684\u9644\u4EF6\u80FD\u529B\uFF1B\u9644\u4EF6\u5DF2\u4FDD\u7559\u3002" }) : null,
       uploadError ? /* @__PURE__ */ jsx("p", { className: "error-text composer-control-error", role: "alert", children: uploadError }) : null,
       /* @__PURE__ */ jsxs("div", { className: "composer-toolbar", children: [
         /* @__PURE__ */ jsxs("div", { className: "composer-control-left", children: [

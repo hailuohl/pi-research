@@ -15,6 +15,7 @@ interface Props {
     boot: Bootstrap;
     projectId: string;
     projectArchived: boolean;
+    readSuspended?: boolean;
     modelLocked: boolean;
     session?: Row<Session>;
     busy: boolean;
@@ -51,6 +52,9 @@ export class ComposerControls extends React.Component<Props, State> {
     private request = 0;
     private attachmentRequest=0;
     private uploadRequest=0;
+    private sourceController?:AbortController;
+    private attachmentController?:AbortController;
+    private sourceWrite?:{projectId:string;pending:boolean;error:string};
 
     captureUploadError() {
         const upload=this.uploadRequest,capability=this.attachmentRequest,error=this.state.uploadError,project=this.props.projectId,session=this.props.session?.id,model=this.props.session&&modelKey(this.props.session.model);
@@ -61,29 +65,47 @@ export class ComposerControls extends React.Component<Props, State> {
     }
 
     componentDidMount() { void this.loadSources();void this.loadAttachmentTypes(); }
-    componentDidUpdate(previous: Props) { if (previous.projectId !== this.props.projectId) void this.loadSources();if(previous.boot.modelManagement?.version!==this.props.boot.modelManagement?.version||previous.boot.modelManagementError!==this.props.boot.modelManagementError||previous.session?.id!==this.props.session?.id||previous.session?.model.provider!==this.props.session?.model.provider||previous.session?.model.model!==this.props.session?.model.model)void this.loadAttachmentTypes(); }
-    componentWillUnmount() { this.mounted = false; this.request++;this.attachmentRequest++; }
-    private async loadAttachmentTypes(){const session=this.props.session,request=++this.attachmentRequest;this.setState({attachmentTypes:null});if(!session)return;try{const types=await api<AttachmentTypes>(`/sessions/${session.id}/attachment-types`);if(this.mounted&&request===this.attachmentRequest&&this.props.session?.id===session.id&&modelKey(this.props.session.model)===modelKey(session.model)&&modelKey(types.model)===modelKey(session.model))this.setState({attachmentTypes:types,uploadError:''});}catch(error){if(this.mounted&&request===this.attachmentRequest){this.uploadRequest++;this.setState({uploadError:error instanceof Error?error.message:String(error)});}}}
+    componentDidUpdate(previous: Props) {
+        if(previous.projectId!==this.props.projectId){this.sourceWrite=undefined;this.setState({saving:false});}
+        if(previous.projectId!==this.props.projectId||previous.readSuspended!==this.props.readSuspended)void this.loadSources();
+        if(previous.readSuspended!==this.props.readSuspended||previous.projectArchived!==this.props.projectArchived||previous.boot.modelManagement?.version!==this.props.boot.modelManagement?.version||previous.boot.modelManagementError!==this.props.boot.modelManagementError||previous.session?.id!==this.props.session?.id||previous.session?.state!==this.props.session?.state||previous.session?.role!==this.props.session?.role||previous.session?.taskId!==this.props.session?.taskId||previous.session?.teamId!==this.props.session?.teamId||previous.session?.model.provider!==this.props.session?.model.provider||previous.session?.model.model!==this.props.session?.model.model)void this.loadAttachmentTypes();
+    }
+    componentWillUnmount() { this.mounted = false; this.sourceWrite=undefined;this.request++;this.attachmentRequest++;this.sourceController?.abort();this.attachmentController?.abort(); }
+    private async loadAttachmentTypes(){
+        const session=this.props.session,request=++this.attachmentRequest;this.attachmentController?.abort();
+        this.setState({attachmentTypes:null});
+        if(!this.mounted||this.props.readSuspended||this.props.projectArchived||!session||session.state==='archived'||session.role!=='coordinator'||session.taskId||session.teamId){if(this.mounted)this.setState({uploadError:''});return;}
+        const controller=new AbortController();this.attachmentController=controller;
+        try{const types=await api<AttachmentTypes>(`/sessions/${session.id}/attachment-types`,undefined,'GET',controller.signal);if(this.mounted&&!controller.signal.aborted&&request===this.attachmentRequest&&this.props.session?.id===session.id&&modelKey(this.props.session.model)===modelKey(session.model)&&modelKey(types.model)===modelKey(session.model))this.setState({attachmentTypes:types,uploadError:''});}
+        catch(error){if(this.mounted&&!controller.signal.aborted&&request===this.attachmentRequest){this.uploadRequest++;this.setState({uploadError:error instanceof Error?error.message:String(error)});}}
+        finally{if(this.attachmentController===controller)this.attachmentController=undefined;}
+    }
     private allowedTypes(){const available=this.state.attachmentTypes,model=this.props.session?.model;return available&&available.model.provider===model?.provider&&available.model.model===model?.model?available.types:[{mediaType:'text/plain',extensions:['.txt'],maxBytes:32*1024*1024,native:false},{mediaType:'text/markdown',extensions:['.md'],maxBytes:32*1024*1024,native:false}];}
 
     private async loadSources() {
-        const request = ++this.request, projectId = this.props.projectId;
-        this.setState({ loading: true, loadingError: '' });
+        const request = ++this.request, projectId = this.props.projectId,write=this.sourceWrite;
+        this.sourceController?.abort();
+        if(!this.mounted)return;
+        if(this.props.readSuspended||write?.pending){this.setState({loading:false,loadingError:write?.error??''});return;}
+        const controller=new AbortController();this.sourceController=controller;
+        this.setState({ loading: true, loadingError: write?.error??'' });
         try {
-            const config = await api<ConnectorConfig>(`/projects/${encodeURIComponent(projectId)}/connectors`);
-            if (this.mounted && request === this.request && projectId === this.props.projectId)
-                this.setState({ config, sourceDraft: configCopy(config), loading: false });
+            const config = await api<ConnectorConfig>(`/projects/${encodeURIComponent(projectId)}/connectors`,undefined,'GET',controller.signal);
+            if (this.mounted && !controller.signal.aborted && request === this.request && projectId === this.props.projectId)
+                this.setState({ config, sourceDraft: configCopy(config), loading: false, loadingError:write?.error??'' });
         }
         catch (error) {
-            if (this.mounted && request === this.request)
-                this.setState({ loading: false, loadingError: error instanceof Error ? error.message : String(error) });
+            if (this.mounted && !controller.signal.aborted && request === this.request)
+                this.setState(current=>({ loading: false, config:write?.error?null:current.config, loadingError:write?.error?write.error+'；来源状态未确认，请重新打开菜单重试。':error instanceof Error?error.message:String(error) }));
         }
+        finally{if(this.sourceController===controller)this.sourceController=undefined;}
     }
 
     async configureSource(source:SourceId, enabled:boolean) {
         const { config } = this.state;
         if (!config || this.state.loading || this.state.saving || this.props.busy || this.props.projectArchived) return;
-        const projectId = this.props.projectId, request=this.request, current=()=>this.mounted&&request===this.request&&projectId===this.props.projectId;
+        const projectId = this.props.projectId,write={projectId,pending:true,error:''},current=()=>this.mounted&&this.sourceWrite===write&&projectId===this.props.projectId;
+        this.sourceWrite=write;this.request++;this.sourceController?.abort();
         this.setState({saving:true,loadingError:'',sourceDraft:{...this.state.sourceDraft,[source]:enabled}});
         await this.props.perform(async()=>{
         try {
@@ -91,10 +113,9 @@ export class ComposerControls extends React.Component<Props, State> {
             if(current())this.setState({config:saved,sourceDraft:configCopy(saved)});
         } catch(error) {
             if(!current())return;
-            const message=error instanceof Error?error.message:String(error);
-            try {const latest=await api<ConnectorConfig>(`/projects/${encodeURIComponent(projectId)}/connectors`);if(current())this.setState({config:latest,sourceDraft:configCopy(latest),loadingError:message});}
-            catch {if(current())this.setState({config:null,sourceDraft:configCopy(config),loadingError:message+'；来源状态未确认，请重新打开菜单重试。'});}
-        } finally {if(current())this.setState({saving:false});}
+            write.error=error instanceof Error?error.message:String(error);write.pending=false;
+            this.setState({sourceDraft:configCopy(config),loadingError:write.error});await this.loadSources();
+        } finally {write.pending=false;if(current())this.setState({saving:false});}
         });
     }
 
@@ -142,10 +163,12 @@ export class ComposerControls extends React.Component<Props, State> {
         const uploadDisabled = !session || projectArchived || !!session.taskId || session.state === 'archived' || uploading || attachments.length >= 5;
         const sourceCount = SOURCES.filter(source => sourceDraft[source]).length;
         const allowed=this.allowedTypes(),unsupported=attachments.some(a=>!allowed.some(t=>t.mediaType===a.mediaType)),accept=allowed.flatMap(t=>[...t.extensions,t.mediaType]).join(',');
+        const capabilityKnown=!!session&&!!this.state.attachmentTypes&&modelKey(this.state.attachmentTypes.model)===modelKey(session.model);
         const executing=!!session&&!session.taskId&&['running','queued'].includes(session.state),showStop=executing&&!hasDraft;
         return <>
             {attachments.length ? <div className="composer-attachment-list" aria-label="待发送附件">{attachments.map(attachment => <span className="composer-attachment" key={attachment.documentVersionId}><Icon name="evidence" size={14}/><span title={`已保存项目资料：${attachment.title}`}>{attachment.title}</span><small>{attachment.mediaType.startsWith('text/')?'项目资料 · 文本原件':'项目资料 · 整文件随消息发送'}</small><button type="button" aria-label={`从草稿移除 ${attachment.title}`} title="只移除草稿引用，不删除项目原件" disabled={busy} onClick={() => this.props.onRemoveAttachment(attachment.documentVersionId)}><Icon name="close" size={13}/></button></span>)}</div> : null}
-            {unsupported?<p className="error-text composer-control-error" role="alert">草稿附件超出当前确认的输入能力；附件已保留，请切换支持的模型或移除引用。{this.state.attachmentTypes?.fileCapabilityReason}</p>:null}
+            {unsupported&&capabilityKnown&&!projectArchived&&!this.props.readSuspended&&session?.state!=='archived'?<p className="error-text composer-control-error" role="alert">草稿附件超出当前确认的输入能力；附件已保留，请切换支持的模型或移除引用。{this.state.attachmentTypes?.fileCapabilityReason}</p>:null}
+            {unsupported&&!capabilityKnown&&!projectArchived&&!this.props.readSuspended&&session?.state!=='archived'?<p className="small muted" role="status">正在确认当前模型的附件能力；附件已保留。</p>:null}
             {uploadError ? <p className="error-text composer-control-error" role="alert">{uploadError}</p> : null}
             <div className="composer-toolbar">
                 <div className="composer-control-left">

@@ -14,6 +14,7 @@ class HostAccessControl extends React.Component {
     this.state = { status: null, permission: null, open: false, menuOpen: false, error: "", saving: false };
     this.alive = true;
     this.request = 0;
+    this.readError = "";
     this.trigger = React.createRef();
     this.menu = React.createRef();
     this.dialogEnabled = false;
@@ -64,25 +65,51 @@ class HostAccessControl extends React.Component {
   componentDidMount() {
     void this.load();
     this.timer = setInterval(() => {
-      if (!this.state.saving) void this.load();
+      if (!this.state.saving && !this.props.archived && !this.props.readSuspended) void this.load();
     }, 1500);
     window.addEventListener("resize", this.positionMenu);
     window.addEventListener("scroll", this.positionMenu, true);
   }
+  componentDidUpdate(previous) {
+    if (previous.sessionId !== this.props.sessionId || previous.archived !== this.props.archived || previous.readSuspended !== this.props.readSuspended) {
+      this.invalidateRead();
+      if (previous.sessionId !== this.props.sessionId) {
+        this.readError = "";
+        this.setState({ error: "" });
+      }
+      void this.load();
+    }
+  }
+  invalidateRead() {
+    this.request++;
+    this.readController?.abort();
+    this.readController = void 0;
+  }
   componentWillUnmount() {
     this.alive = false;
-    this.request++;
+    this.invalidateRead();
     clearInterval(this.timer);
     window.removeEventListener("resize", this.positionMenu);
     window.removeEventListener("scroll", this.positionMenu, true);
   }
   async load() {
-    const request = ++this.request;
+    if (!this.alive || this.props.readSuspended || this.readController) return;
+    const request = ++this.request, controller = new AbortController();
+    this.readController = controller;
     try {
-      const permission = await api(`/sessions/${encodeURIComponent(this.props.sessionId)}/permissions`);
-      if (this.alive && request === this.request) this.setState({ permission, status: permission.hostAccess });
+      const permission = await api(`/sessions/${encodeURIComponent(this.props.sessionId)}/permissions`, void 0, "GET", controller.signal);
+      if (this.alive && !controller.signal.aborted && request === this.request) {
+        const priorError = this.readError;
+        this.readError = "";
+        this.setState((current) => ({ permission, status: permission.hostAccess, error: current.error === priorError ? "" : current.error }));
+      }
     } catch (error) {
-      if (this.alive && request === this.request) this.setState({ status: null, permission: null, error: error instanceof Error ? error.message : String(error) });
+      if (this.alive && !controller.signal.aborted && request === this.request) {
+        this.readError = error instanceof Error ? error.message : String(error);
+        this.setState({ status: null, permission: null, error: this.readError });
+      }
+    } finally {
+      if (this.readController === controller) this.readController = void 0;
     }
   }
   async saveMode(mode) {
@@ -94,7 +121,7 @@ class HostAccessControl extends React.Component {
       if (status.pending || status.researchAutomation) await this.save(false);
       return;
     }
-    this.request++;
+    this.invalidateRead();
     this.setState({ saving: true, error: "" });
     await this.props.perform(async () => {
       try {
@@ -117,7 +144,7 @@ class HostAccessControl extends React.Component {
       this.setState({ open: false, error: "\u6743\u9650\u72B6\u6001\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9" });
       return;
     }
-    this.request++;
+    this.invalidateRead();
     this.setState({ saving: true, error: "" });
     await this.props.perform(async () => {
       try {

@@ -698,7 +698,7 @@ class ModelManagementPanel extends React.Component {
         ] }),
         /* @__PURE__ */ jsxs("label", { children: [
           "\u63D0\u4F9B\u5546 ID",
-          /* @__PURE__ */ jsx("input", { "aria-label": "\u8FDE\u63A5\u63D0\u4F9B\u5546 ID", required: true, pattern: "[A-Za-z0-9._-]+", maxLength: 100, value: draft.provider, disabled: locked || !!provider, onChange: (e) => edit({ provider: e.target.value }) })
+          /* @__PURE__ */ jsx("input", { "aria-label": "\u8FDE\u63A5\u63D0\u4F9B\u5546 ID", required: true, pattern: "[A-Za-z0-9][A-Za-z0-9._\\-]{0,99}", maxLength: 100, value: draft.provider, disabled: locked || !!provider, onChange: (e) => edit({ provider: e.target.value }) })
         ] })
       ] }),
       /* @__PURE__ */ jsxs("label", { children: [

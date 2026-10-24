@@ -12,34 +12,58 @@ class PermissionActions extends React.Component {
     this.alive = true;
     this.request = 0;
     this.preparing = false;
+    this.readError = "";
   }
   componentDidMount() {
     void this.load();
     this.timer = setInterval(() => {
-      if (!this.state.saving) void this.load();
+      if (!this.state.saving && !this.props.archived && !this.props.readSuspended) void this.load();
     }, 1500);
+  }
+  componentDidUpdate(previous) {
+    if (previous.sessionId !== this.props.sessionId || previous.archived !== this.props.archived || previous.readSuspended !== this.props.readSuspended) {
+      this.invalidateRead();
+      if (previous.sessionId !== this.props.sessionId) {
+        this.readError = "";
+        this.setState({ error: "" });
+      }
+      void this.load();
+    }
+  }
+  invalidateRead() {
+    this.request++;
+    this.readController?.abort();
+    this.readController = void 0;
   }
   componentWillUnmount() {
     this.alive = false;
-    this.request++;
+    this.invalidateRead();
     clearInterval(this.timer);
   }
   async load() {
-    const request = ++this.request;
+    if (!this.alive || this.props.readSuspended || this.readController) return;
+    const request = ++this.request, controller = new AbortController();
+    this.readController = controller;
     try {
-      const result = await api(`/sessions/${encodeURIComponent(this.props.sessionId)}/permissions`);
-      if (this.alive && request === this.request) {
-        const actions = result.actions ?? [];
-        this.setState({ actions, hasMore: !!result.hasMoreActions });
+      const result = await api(`/sessions/${encodeURIComponent(this.props.sessionId)}/permissions`, void 0, "GET", controller.signal);
+      if (this.alive && !controller.signal.aborted && request === this.request) {
+        const actions = result.actions ?? [], priorError = this.readError;
+        this.readError = "";
+        this.setState((current) => ({ actions, hasMore: !!result.hasMoreActions, error: current.error === priorError ? "" : current.error }));
         this.props.onPendingChange?.(actions.filter((action) => !action.approval.automaticApproval && action.state === "pending" && action.approval.status === "pending").map((action) => action.approval.id));
       }
     } catch (error) {
-      if (this.alive && request === this.request) this.setState({ error: error instanceof Error ? error.message : String(error) });
+      if (this.alive && !controller.signal.aborted && request === this.request) {
+        this.readError = error instanceof Error ? error.message : String(error);
+        this.setState({ error: this.readError });
+      }
+    } finally {
+      if (this.readController === controller) this.readController = void 0;
     }
   }
   async decide(action, approved) {
     if (this.state.saving || this.props.busy || this.props.archived) return;
-    this.request++;
+    this.invalidateRead();
     this.setState({ saving: action.id, error: "" });
     await this.props.perform(async () => {
       try {
@@ -68,7 +92,7 @@ class PermissionActions extends React.Component {
     if (!this.alive || !input || this.workspacePreparationDisabled()) return;
     const { projectId, sessionId } = this.props;
     this.preparing = true;
-    this.request++;
+    this.invalidateRead();
     this.setState({ saving: action.id, error: "" });
     try {
       await this.props.perform(async () => {

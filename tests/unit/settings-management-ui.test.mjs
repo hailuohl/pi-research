@@ -16,6 +16,14 @@ const boot={model:selection,models:[selection],modelVersion:1,runtime:{ready:tru
 const panel=()=>{const view=synchronousState(new ModelManagementPanel({boot,perform:async fn=>fn()}));view.observe(data());return view;};
 function mock(t,fetch){const previous=globalThis.fetch;globalThis.fetch=fetch;t.after(()=>globalThis.fetch=previous);}
 
+test('provider ID native pattern compiles in Unicode sets mode and matches the backend ID boundary',()=>{
+ const view=panel();view.openEditor('connection');
+ const input=find(view.render(),node=>node.type==='input'&&node.props['aria-label']==='连接提供商 ID');
+ const pattern=new RegExp(`^(?:${input.props.pattern})$`,'v');
+ for(const value of ['a','Provider.1_test-2','a'.repeat(100)])assert.equal(pattern.test(value),true,value);
+ for(const value of ['','bad provider','提供商','-provider','.provider','_provider','a/b','a'.repeat(101)])assert.equal(pattern.test(value),false,value);
+});
+
 test('provider grouping and saved model selection retain stable identifiers and native required limits',()=>{
  const view=panel();assert.equal(view.providers().length,2);view.chooseProvider('second');assert.equal(view.state.model,'fast');assert.equal(view.models().length,1);assert.equal(view.definitionDraft().defaultLevel,'low');
  view.openEditor('connection');assert.match(JSON.stringify(view.render()),/fast/);for(const [label,max,editor] of [['连接提供商 ID',100,'connection'],['模型 ID',160,'model']]){view.openEditor(editor);const input=find(view.render(),n=>n.type==='input'&&n.props['aria-label']===label);assert.equal(input.props.required,true);assert.equal(input.props.maxLength,max);assert.equal(input.props.disabled,true);}
