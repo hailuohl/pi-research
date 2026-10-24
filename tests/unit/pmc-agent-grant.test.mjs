@@ -130,3 +130,9 @@ test('two PMC controllers share one final search slot and cannot replay after ex
  const result=s.app.store.list('text-evidence-search')[0];assert.equal(read(s,f,result.hits[0].evidenceId).quote,result.hits[0].quote);
  for(const i of [0,1])assert.throws(()=>search(s,f,'race-'+i,{query:'adsorption '+i}),{code:'TEXT_GRANT_EXHAUSTED'});
 }finally{s.close();}});
+
+
+test('retired PMC grant preserves old evidence reads while refusing new provider-text evidence',()=>{const s=setup();try{
+ const f=fixture(s),grant=activate(s,f),found=search(s,f,'retired-pmc-original'),hit=found.hits[0],before={grant:s.app.store.get('text-corpus-grant',grant.id),approval:s.app.store.get('approval',grant.approvalId),uses:s.app.store.list('text-corpus-grant-use'),evidence:s.app.store.list('evidence')};let current=s.app.sessions.get(USER,s.session.id);current=s.app.store.update('session',current.id,current.version,{state:'idle',leaseUntil:0});const a=s.app.sessions.archive(USER,current.id,current.version);s.app.sessions.unarchive(USER,current.id,a.version);current=s.app.sessions.get(USER,s.session.id);const live=s.app.store.update('session',current.id,current.version,{state:'running',generation:current.generation+1,leaseUntil:Date.now()+30000});f.actor={...f.actor,generation:live.generation};
+ assert.equal(read(s,f,hit.evidenceId,'retired-pmc-history').id,hit.evidenceId);assert.throws(()=>s.app.evidence.registerGrantedProviderText(f.actor,s.project.id,hit.providerText,hit.locator.start,hit.locator.end,'new evidence',{id:grant.id,digest:grant.digest,approvalId:grant.approvalId}),{code:'GRANT_RETIRED'});assert.throws(()=>search(s,f,'retired-pmc-new'),{code:'GRANT_RETIRED'});assert.deepEqual({grant:s.app.store.get('text-corpus-grant',grant.id),approval:s.app.store.get('approval',grant.approvalId),uses:s.app.store.list('text-corpus-grant-use'),evidence:s.app.store.list('evidence')},before);
+}finally{s.close();}});

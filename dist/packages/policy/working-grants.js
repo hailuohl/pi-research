@@ -1,3 +1,4 @@
+import { assertGrantAdmission } from './grant-retirement.js';
 import { assertDiscoveryArtifact } from './discovery-grant-validation.js';
 import { randomUUID } from 'node:crypto';
 import { join, dirname, basename } from 'node:path';
@@ -57,6 +58,7 @@ export class WorkingGrantService {
         scope(actor, pid);
         const g = this.app.store.get('working-grant', id, pid), uses = this.uses(pid, id), reasons = [];
         try {
+            assertGrantAdmission(this.app.store, pid, 'working-grant', id);
             const checked = assertWorkingGrantRecord(this.app.store, pid, id);
             this.origin(g);
             if (g.state === 'draft')
@@ -110,6 +112,7 @@ export class WorkingGrantService {
         return this.app.store.transaction(() => {
             assertProjectWritable(this.app.store, pid);
             const { grant: g } = assertWorkingGrantRecord(this.app.store, pid, text(x.grantId, 'grantId', 100)), s = this.session(actor, pid, g.sessionId);
+            assertGrantAdmission(this.app.store, pid, 'working-grant', g.id);
             if (g.state === 'active') {
                 ensure(s.workingGrantId === g.id, 'WORKING_GRANT_STALE', '会话授权绑定不符');
                 return this.inspect(actor, pid, g.id);

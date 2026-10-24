@@ -1,3 +1,4 @@
+import {assertSessionIdle,retireSessionAuthority} from './session-lifecycle.js';
 import {sessionCatalog,sessionMessagePage,sessionMessageContent,sessionQueue,canSteerSession,type SessionView} from './session-history.js';
 import {availableSelections,type PreparedModelSelection} from './model-management.js';
 import {assertModelEnabled,assertModelRestoreCurrent,bindModelRestoreEpoch} from './model-connections.js';
@@ -17,6 +18,7 @@ import { object, text, oneOf, integer } from '../contracts/validation.js';
 import type { SkillService } from '../skills/service.js';
 export class SessionService {
     onStop?:(sessionId:string,reason:string)=>void;
+    onRetire?:(sessionId:string)=>void;
     parsedAttachmentMetadata?: (actor:Actor,session:Row<Session>,pair:ParsedAttachmentPair)=>ParsedAttachmentMetadata;
     permissionCapture?: (sessionId:string)=>import('../policy/session-permissions.js').PermissionReference;
     taskPermissionCapture?: (sessionId:string)=>import('../policy/session-permissions.js').PermissionReference;
@@ -71,7 +73,7 @@ export class SessionService {
             this.c.store.event(s.projectId,'session.model_changed',{sessionId:id,model});return updated;
         });
     }
-    get(actor: Actor, id: string) { const s = this.c.store.get<Session>('session', id); scope(actor, s.projectId!);assertProjectReadable(this.c.store,s.projectId!,actor); return s; }
+    get(actor: Actor, id: string) { const s = this.c.store.get<Session>('session', id); scope(actor, s.projectId!);assertProjectReadable(this.c.store,s.projectId!,actor);ensure(!s.deletedAt,'SESSION_DELETED','会话已删除',410); return s; }
     createRoot(actor:Actor,projectId:string,input:unknown,prepared:PreparedModelSelection){
         userOnly(actor);scope(actor,projectId);assertProjectWritable(this.c.store,projectId);
         const x=object(input);ensure(Object.keys(x).every(k=>['projectId','title','reuseSessionId','expectedVersion'].includes(k)),'INVALID_INPUT','新会话包含未知字段');
@@ -167,7 +169,30 @@ export class SessionService {
         });
     }
     rename(actor: Actor, id: string, title: string, expectedVersion: number) { userOnly(actor); const s=this.get(actor, id);assertProjectWritable(this.c.store,s.projectId!); return this.c.store.update<Session>('session', id, expectedVersion, { title: text(title, 'title', 160) }); }
-    archive(actor: Actor, id: string, expectedVersion: number) { userOnly(actor);return this.c.store.transaction(()=>{ const s = this.get(actor, id);assertProjectWritable(this.c.store,s.projectId!); ensure(s.state !== 'running' && !s.taskId, 'SESSION_BUSY', '运行中或任务会话不能归档'); this.onStop?.(id,'会话已归档');return this.c.store.update<Session>('session', id, expectedVersion, { state: 'archived' });}); }
+    archive(actor:Actor,id:string,expectedVersion:number){return this.retire(actor,id,expectedVersion);}
+    delete(actor:Actor,id:string,expectedVersion:number,confirmTitle:string){return this.retire(actor,id,expectedVersion,text(confirmTitle,'confirmTitle',160));}
+    private retire(actor:Actor,id:string,expectedVersion:number,confirmTitle?:string){
+        userOnly(actor);return this.c.store.transaction(()=>{
+            const s=this.get(actor,id);assertProjectWritable(this.c.store,s.projectId!);
+            ensure(s.version===expectedVersion,'VERSION_CONFLICT','会话版本已变化，请刷新');
+            if(confirmTitle!==undefined)ensure(confirmTitle===s.title,'SESSION_TITLE_MISMATCH','确认标题与当前会话不一致');
+            assertSessionIdle(this.c.store,s);
+            this.onStop?.(id,confirmTitle===undefined?'会话已归档':'会话已删除');
+            this.onRetire?.(id);retireSessionAuthority(this.c.store,s);
+            const current=this.get(actor,id),updated=this.c.store.update<Session>('session',id,current.version,{state:'archived',generation:current.generation+1,leaseUntil:0,...(confirmTitle===undefined?{}:{deletedAt:new Date().toISOString()})});
+            this.c.store.event(s.projectId,confirmTitle===undefined?'session.archived':'session.deleted',{sessionId:id});return updated;
+        });
+    }
+    unarchive(actor:Actor,id:string,expectedVersion:number){
+        userOnly(actor);return this.c.store.transaction(()=>{
+            const s=this.get(actor,id);assertProjectWritable(this.c.store,s.projectId!);
+            ensure(s.version===expectedVersion,'VERSION_CONFLICT','会话版本已变化，请刷新');ensure(s.state==='archived','SESSION_STATE_INVALID','只有归档会话可取消归档');assertSessionIdle(this.c.store,s);
+            // Legacy archives did not retire ordinary queued input or execution authority.
+            this.onStop?.(id,'取消归档前清理旧执行权限');this.onRetire?.(id);retireSessionAuthority(this.c.store,s);
+            const current=this.get(actor,id),updated=this.c.store.update<Session>('session',id,current.version,{state:'idle',generation:current.generation+1,leaseUntil:0});
+            this.c.store.event(s.projectId,'session.unarchived',{sessionId:id});return updated;
+        });
+    }
     interrupt(actor: Actor, id: string) {
         userOnly(actor);
         const s = this.get(actor, id);
@@ -182,7 +207,7 @@ export class SessionService {
     }
     messages(actor: Actor, id: string) { const s = this.get(actor, id); return this.c.store.db.prepare("SELECT data FROM records WHERE kind='message' AND json_extract(data,'$.sessionId')=? AND project_id=? ORDER BY rowid").all(id,s.projectId!).map(r=>JSON.parse(r.data as string) as Row<Message>); }
     list(actor:Actor,pid:string,input:unknown={}){userOnly(actor);scope(actor,pid);assertProjectReadable(this.c.store,pid,actor);return this.c.store.readSnapshot(()=>sessionCatalog(this.c.store,pid,input));}
-    recent(actor:Actor,pid:string,selectedId?:string){userOnly(actor);scope(actor,pid);assertProjectReadable(this.c.store,pid,actor);const rows=this.c.store.db.prepare("SELECT data FROM records WHERE kind='session' AND project_id=? ORDER BY rowid DESC LIMIT 30").all(pid).map(r=>JSON.parse(r.data as string) as Row<Session>);const selected=selectedId?this.c.store.get<Session>('session',selectedId,pid):(()=>{const row=this.c.store.db.prepare("SELECT data FROM records WHERE kind='session' AND project_id=? AND json_extract(data,'$.role')='coordinator' AND json_extract(data,'$.state')<>'archived' ORDER BY rowid DESC LIMIT 1").get(pid);return row?JSON.parse(row.data as string) as Row<Session>:undefined;})();if(selected&&!rows.some(s=>s.id===selected.id))rows.unshift(selected);return rows;}
+    recent(actor:Actor,pid:string,selectedId?:string){userOnly(actor);scope(actor,pid);assertProjectReadable(this.c.store,pid,actor);const rows=this.c.store.db.prepare("SELECT data FROM records WHERE kind='session' AND project_id=? AND json_extract(data,'$.deletedAt') IS NULL ORDER BY rowid DESC LIMIT 30").all(pid).map(r=>JSON.parse(r.data as string) as Row<Session>);const selected=selectedId?this.get(actor,selectedId):(()=>{const row=this.c.store.db.prepare("SELECT data FROM records WHERE kind='session' AND project_id=? AND json_extract(data,'$.deletedAt') IS NULL AND json_extract(data,'$.role')='coordinator' AND json_extract(data,'$.state')<>'archived' ORDER BY rowid DESC LIMIT 1").get(pid);return row?JSON.parse(row.data as string) as Row<Session>:undefined;})();if(selected)ensure(selected.projectId===pid,'SCOPE_DENIED','会话不属于此项目',403);if(selected&&!rows.some(s=>s.id===selected.id))rows.unshift(selected);return rows;}
     messageRead(actor:Actor,id:string,input:unknown){userOnly(actor);return this.c.store.readSnapshot(()=>sessionMessageContent(this.c.store,this.get(actor,id),input));}
     /** Durable messages and the current generation's bounded preview share one read snapshot. */
     view(actor:Actor,id:string,input:unknown={}):SessionView {

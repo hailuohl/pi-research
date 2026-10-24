@@ -46,7 +46,7 @@ export class HostAccessService {
             activeCommands: jobs.filter(j => ['starting', 'running'].includes(j.state)).length, unknownCommands: jobs.filter(j => j.state === 'unknown').length,
             jobs: jobs.slice(-20).map(({ id, state, pid, exitCode, error, createdAt, epoch }) => ({ id, state, pid, exitCode, error, createdAt, epoch })) };
     }
-    session(actor, id) { const session = this.c.store.get('session', id); scope(actor, session.projectId); ensure(actor.type === 'user' || actor.sessionId === id, 'SCOPE_DENIED', '只能查看自己的宿主权限', 403); return session; }
+    session(actor, id) { const session = this.c.store.get('session', id); scope(actor, session.projectId); ensure(!session.deletedAt, 'SESSION_DELETED', '会话已删除', 410); ensure(actor.type === 'user' || actor.sessionId === id, 'SCOPE_DENIED', '只能查看自己的宿主权限', 403); return session; }
     executionActive(session) { return session.state === 'running' || this.c.sessionHeld(session.id) || [...this.active.values()].some(job => job.sessionId === session.id); }
     enable(actor, id, input) {
         userOnly(actor);

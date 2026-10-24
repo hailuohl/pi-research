@@ -1,3 +1,4 @@
+import {assertGrantAdmission} from './grant-retirement.js';
 import type {Store} from '../storage/store.js';
 import {digest} from '../storage/store.js';
 import type {Approval,Row,Session,SourceSnapshot} from '../domain/types.js';
@@ -30,6 +31,7 @@ export function assertWorkingGrantReference(store:Store,pid:string,ref:WorkingGr
     ensure(g.state==='active','WORKING_GRANT_REVOKED','私有实现授权尚未激活或已撤销');
     ensure(approval.status==='approved','APPROVAL_STALE','私有实现授权的原批准已失效');
     if(admission){
+        assertGrantAdmission(store,pid,'working-grant',g.id);
         ensure(Date.parse(g.expiresAt)>Date.now(),'WORKING_GRANT_EXPIRED','私有实现授权已到期；历史产物保留');
         const s=store.get<Session>('session',g.sessionId,pid);
         ensure(s.workingGrantId===g.id&&s.role==='coordinator'&&!s.taskId&&s.sourceRevisionId===g.sourceRevisionId&&digest(s.model)===digest(g.model),'WORKING_GRANT_SCOPE_CHANGED','会话、模型或固定来源已改变');

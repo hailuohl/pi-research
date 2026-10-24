@@ -8,6 +8,7 @@ export declare class SessionService {
     private c;
     private skills;
     onStop?: (sessionId: string, reason: string) => void;
+    onRetire?: (sessionId: string) => void;
     parsedAttachmentMetadata?: (actor: Actor, session: Row<Session>, pair: ParsedAttachmentPair) => ParsedAttachmentMetadata;
     permissionCapture?: (sessionId: string) => import('../policy/session-permissions.js').PermissionReference;
     taskPermissionCapture?: (sessionId: string) => import('../policy/session-permissions.js').PermissionReference;
@@ -77,6 +78,9 @@ export declare class SessionService {
     queueAction(actor: Actor, id: string, value: unknown): Row<Message>;
     rename(actor: Actor, id: string, title: string, expectedVersion: number): Row<Session>;
     archive(actor: Actor, id: string, expectedVersion: number): Row<Session>;
+    delete(actor: Actor, id: string, expectedVersion: number, confirmTitle: string): Row<Session>;
+    private retire;
+    unarchive(actor: Actor, id: string, expectedVersion: number): Row<Session>;
     interrupt(actor: Actor, id: string): Row<Session>;
     messages(actor: Actor, id: string): Row<Message>[];
     list(actor: Actor, pid: string, input?: unknown): import("./session-history.js").SessionCatalogPage;

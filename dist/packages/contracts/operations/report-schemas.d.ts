@@ -175,7 +175,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                             readonly type: "integer";
                         };
                     };
-                    readonly required: ("id" | "createdAt" | "title" | "artifactId" | "projectId" | "formatVersion" | "updatedAt" | "runCount" | "claimCount")[];
+                    readonly required: ("id" | "createdAt" | "projectId" | "title" | "artifactId" | "formatVersion" | "updatedAt" | "runCount" | "claimCount")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -515,7 +515,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: readonly [...("id" | "status" | "digest" | "publicationResultId" | "approvalId" | "teamId" | "taskId" | "sourceDigest" | "revisionId" | "rootSessionId" | "artifactIds" | "requiredEvidenceIds" | "jobId" | "validity" | "pdfDigest")[], "referenceId"];
+                                readonly required: readonly [...("id" | "rootSessionId" | "status" | "digest" | "publicationResultId" | "approvalId" | "teamId" | "taskId" | "sourceDigest" | "revisionId" | "artifactIds" | "requiredEvidenceIds" | "jobId" | "validity" | "pdfDigest")[], "referenceId"];
                                 readonly type: "object";
                                 readonly additionalProperties: false;
                             };

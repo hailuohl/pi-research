@@ -1,3 +1,4 @@
+import {assertGrantAdmission} from '../policy/grant-retirement.js';
 import type { ResearchApp } from '../research-app.js';
 import type { Actor, Artifact } from '../domain/types.js';
 import { USER } from '../domain/types.js';
@@ -196,6 +197,7 @@ export class TextEvidenceService {
         ensure(ids.length + pairs.length + pmcPairs.length > 0, 'TEXT_SOURCE_REQUIRED', '必须明确指定本次检索的原文 ID', 400);
         ensure(ids.length + pairs.length + pmcPairs.length <= LIMITS.files, 'TEXT_CORPUS_LIMIT', '本次检索的原文合计最多 30 项', 413);
         const grant = (pairs.length||pmcPairs.length) && actor.type === 'agent' ? assertTextCorpusGrantActor(this.app.store, actor, projectId) : undefined;
+        if(grant)assertGrantAdmission(this.app.store,projectId,'text-corpus-grant',grant.id);
         if(pmcPairs.length&&grant)ensure(grant.pmcDocuments&&pairs.length===0,'PERMISSION_DENIED','此授权不允许 PMC 与 PDF 混合检索',403);
         if (pairs.length && !grant) userOnly(actor);
         if(grant)ensure(ids.length===0,'TEXT_GRANT_SOURCE_DENIED','PDF 授权检索不能混入其他文本来源',403);

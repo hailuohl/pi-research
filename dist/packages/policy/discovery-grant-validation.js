@@ -1,3 +1,4 @@
+import { assertGrantAdmission } from './grant-retirement.js';
 import { resolveTaskModel, taskModelSpec } from '../collaboration/task-model.js';
 import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
@@ -53,7 +54,7 @@ export function isTaskDiscoveryScope(g) {
     }
     return fixed && (search || doi);
 }
-export function assertDiscoveryContext(store, pid, ctx, newRequest = false) { const g = assertDiscoveryGrantReference(store, pid, ctx.reference); if (g.taskBinding) {
+export function assertDiscoveryContext(store, pid, ctx, newRequest = false) { const g = assertDiscoveryGrantReference(store, pid, ctx.reference); assertGrantAdmission(store, pid, 'discovery-grant', g.id); if (g.taskBinding) {
     const { task } = assertTaskDiscoveryBinding(store, pid, g, { requireApproved: true }), s = store.get('session', ctx.sessionId, pid), a = ctx.attemptId ? store.get('task-attempt', ctx.attemptId, pid) : undefined;
     ensure(ctx.taskId === task.id && !!a && task.execution === 'running' && task.attemptId === a.id && task.sessionId === s.id && task.generation === ctx.generation && a.generation === ctx.generation && a.taskId === task.id && a.sessionId === s.id && a.state === 'running' && a.leaseUntil > Date.now() && a.discoveryGrant?.id === g.id && a.discoveryGrant.digest === g.digest && a.discoveryGrant.approvalId === g.approvalId, 'DISCOVERY_TASK_BINDING_REQUIRED', '发现授权与当前任务尝试不符');
     ensure(s.discoveryGrantId === g.id && s.taskId === task.id && s.teamId === task.teamId && s.role === 'literature' && s.state === 'running' && s.leaseUntil > Date.now() && digest(s.model) === digest(g.model), 'DISCOVERY_SCOPE_CHANGED', '任务会话、角色、模型或租约已改变');

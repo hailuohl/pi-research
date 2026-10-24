@@ -1,3 +1,4 @@
+import {assertGrantAdmission} from './grant-retirement.js';
 import {resolveTaskModel,type TaskModelPlan} from '../collaboration/task-model.js';
 import type {Store} from '../storage/store.js';
 import {digest} from '../storage/store.js';
@@ -17,7 +18,7 @@ export function assertRunGrantRecord(store:Store,pid:string,id:string){
 }
 export function assertRunGrantReference(store:Store,pid:string,ref:RunGrantReference,admission=false){
     const {grant:g,approval}=assertRunGrantRecord(store,pid,ref.id);ensure(g.digest===ref.digest&&g.approvalId===ref.approvalId,'RUN_GRANT_STALE','运行授权的原身份已改变');ensure(g.state==='active','RUN_GRANT_REVOKED','运行授权尚未激活或已撤销');ensure(approval.status==='approved','APPROVAL_STALE','运行授权的原批准已失效');
-    if(admission){ensure(Date.parse(g.expiresAt)>Date.now(),'RUN_GRANT_EXPIRED','运行授权已到期；历史结果保留');if(!g.taskBinding){const s=store.get<Session>('session',g.sessionId!,pid);ensure(s.runGrantId===g.id&&s.role==='coordinator'&&!s.taskId&&s.state!=='archived'&&digest(s.model)===digest(g.model),'RUN_GRANT_SCOPE_CHANGED','指定会话或模型已改变');}}return g;
+    if(admission){assertGrantAdmission(store,pid,'run-grant',g.id);ensure(Date.parse(g.expiresAt)>Date.now(),'RUN_GRANT_EXPIRED','运行授权已到期；历史结果保留');if(!g.taskBinding){const s=store.get<Session>('session',g.sessionId!,pid);ensure(s.runGrantId===g.id&&s.role==='coordinator'&&!s.taskId&&s.state!=='archived'&&digest(s.model)===digest(g.model),'RUN_GRANT_SCOPE_CHANGED','指定会话或模型已改变');}}return g;
 }
 export function buildRunGrantTaskBinding(store:Store,pid:string,task:Row<Task>){
     ensure(task.role==='analyst','RUN_GRANT_TASK_REQUIRED','只支持 analyst Task 的固定运行授权');

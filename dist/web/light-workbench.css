@@ -171,16 +171,16 @@ select:not([multiple]):not([size]):disabled { color: var(--muted); opacity: .6; 
 /* Fixed-size inline Lucide glyphs and single-line session rows. */
 .ui-icon { flex-shrink: 0; vertical-align: middle; }
 .nav-list button .ui-icon, .workspace-tool-items > button .ui-icon,
-.sidebar-sessions > button .ui-icon, .inspector-title > .ui-icon { color: var(--muted); }
+:is(.sidebar-sessions,.session-list-row) > button .ui-icon, .inspector-title > .ui-icon { color: var(--muted); }
 .nav-list button:hover .ui-icon, .nav-list button.active .ui-icon,
 .workspace-tool-items > button:hover .ui-icon, .workspace-tool-items > button.active .ui-icon,
-.sidebar-sessions > button.selected-session .ui-icon { color: var(--ink); }
-.nav-list button, .sidebar-sessions > button, .workspace-tool-items > button {
+:is(.sidebar-sessions,.session-list-row) > button.selected-session .ui-icon { color: var(--ink); }
+.nav-list button, :is(.sidebar-sessions,.session-list-row) > button, .workspace-tool-items > button {
   transition: background-color .14s ease, color .14s ease, box-shadow .14s ease;
 }
-.sidebar-sessions > button { border-radius: 8px; }
-.sidebar-sessions > button:hover:not(.selected-session) { background: var(--quiet); color: var(--ink); }
-.sidebar-sessions > button.selected-session {
+:is(.sidebar-sessions,.session-list-row) > button { border-radius: 8px; }
+:is(.sidebar-sessions,.session-list-row) > button:hover:not(.selected-session) { background: var(--quiet); color: var(--ink); }
+:is(.sidebar-sessions,.session-list-row) > button.selected-session {
   background: var(--green-soft); color: var(--ink); font-weight: 600;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 7%, transparent);
 }
@@ -319,7 +319,7 @@ tbody tr.selected-row:hover { background: var(--green-soft); }
   scrollbar-color: color-mix(in srgb, var(--muted) 32%, var(--paper)) transparent;
 }
 @media (prefers-reduced-motion: reduce) {
-  .nav-list button, .sidebar-sessions > button, .workspace-tool-items > button,
+  .nav-list button, :is(.sidebar-sessions,.session-list-row) > button, .workspace-tool-items > button,
   select:not([multiple]):not([size]), select::picker-icon,
   .primary, .secondary, .danger-outline, .icon-button, .text-button,
   .composer-tool-button, .file-tree button, .artifact-item { transition: none; }

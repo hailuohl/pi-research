@@ -1,3 +1,4 @@
+import {digest} from '../../dist/packages/storage/store.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {ResearchApp} from '../../dist/packages/research-app.js';
@@ -61,3 +62,10 @@ test('analyst cannot bypass Task identity through the RunService direct entry',(
   assert.equal(s.app.store.list('run-grant-use',s.project.id).length,0);
  }finally{s.close();}
 });
+
+
+test('retired task grant blocks claim before creating an attempt or workspace',()=>{const s=setup();try{
+ const {team,task,grant}=taskGrant(s);activate(s,grant);
+ const approval=s.app.store.get('approval',team.approvalId);if(approval.status==='pending')approve(s.app,approval.id);if(s.app.teams.get(USER,team.id).state==='awaiting_approval')s.app.teams.activate(USER,team.id);
+ const grantKind='run-grant',grantId=grant.id;s.app.store.create('grant-retirement',s.project.id,{grantKind,grantId,rootSessionId:s.session.id},digest({grantKind,grantId}));assert.equal(s.app.teams.claim(team.id),null);assert.equal(s.app.store.list('task-attempt').length,0);assert.equal(s.app.store.list('task-workspace').length,0);assert.match(s.app.store.get('task',task.id).blockReason,/GRANT_RETIRED/);
+}finally{s.close();}});

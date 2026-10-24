@@ -124,7 +124,13 @@ test('historical waiting reason is hidden after reopen without read-side writes'
 for(const operation of ['interrupt','archive'])test(`queued workflow ${operation} preserves caller CAS, cancellation and reopened history`,()=>{
  for(const olderInvalidated of [false,true]){const state=setup();try{
   if(olderInvalidated){const older=source(state,'brief'),saved=confirm(state,input(state,'brief',older),'older'),binding=state.app.store.get('workflow-continuation',saved.id);state.app.workflowContinuations.fail(state.app.store.get('message',binding.initialMessageId),'WORKFLOW_MODEL_UNAVAILABLE');}
-  const kind=olderInvalidated?'campaign':'brief',row=source(state,kind),receipt=confirm(state,input(state,kind,row),'current'),binding=state.app.store.get('workflow-continuation',receipt.id),before=state.app.store.get('session',state.session.id),savedSource=state.app.store.get(kind==='brief'?'research-brief':'campaign',row.id),messages=state.app.sessions.messages(USER,before.id);
+  const kind=olderInvalidated?'campaign':'brief',row=source(state,kind),receipt=confirm(state,input(state,kind,row),'current');
+  if(operation==='archive'&&kind==='campaign'){
+   const beforeRecords=JSON.stringify(state.app.store.db.prepare('SELECT * FROM records ORDER BY kind,id').all()),root=state.app.store.get('session',state.session.id);
+   assert.throws(()=>state.app.sessions.archive(USER,root.id,root.version),{code:'SESSION_BUSY'});assert.equal(JSON.stringify(state.app.store.db.prepare('SELECT * FROM records ORDER BY kind,id').all()),beforeRecords);
+   const active=state.app.campaigns.get(USER,row.id);state.app.campaigns.pause(USER,row.id,active.version);
+  }
+  const binding=state.app.store.get('workflow-continuation',receipt.id),before=state.app.store.get('session',state.session.id),savedSource=state.app.store.get(kind==='brief'?'research-brief':'campaign',row.id),messages=state.app.sessions.messages(USER,before.id);
   assert.equal(before.state,'queued');
   if(operation==='archive'){
    assert.throws(()=>state.app.sessions.archive(USER,before.id,before.version+1),{code:'VERSION_CONFLICT'});

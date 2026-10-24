@@ -15,7 +15,7 @@ function bodyBytes(value, total) { if (value === null && total === 0)
     return Buffer.alloc(0); ensure(value instanceof Uint8Array, 'MESSAGE_ENCODING_INVALID', '保存的消息正文缺失；原始记录未改写'); return value; }
 export function sessionCatalog(store, pid, value = {}) {
     const x = closed(value, ['query', 'beforeSessionId', 'role', 'stateFilter', 'limit']), query = text(x.query ?? '', 'query', 160, true).trim(), role = oneOf(x.role ?? 'coordinator', roles, 'role'), stateFilter = oneOf(x.stateFilter ?? 'all', ['active', 'archived', 'all'], 'stateFilter'), limit = integer(x.limit ?? 10, 'limit', 1, 50);
-    let where = "kind='session' AND project_id=?", params = [pid];
+    let where = "kind='session' AND project_id=? AND json_extract(data,'$.deletedAt') IS NULL", params = [pid];
     if (role !== 'all') {
         where += " AND json_extract(data,'$.role')=?";
         params.push(role);

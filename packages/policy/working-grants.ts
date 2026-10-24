@@ -1,3 +1,4 @@
+import {assertGrantAdmission} from './grant-retirement.js';
 import {assertDiscoveryArtifact} from './discovery-grant-validation.js';
 import {randomUUID} from 'node:crypto';
 import {join,dirname,basename} from 'node:path';
@@ -43,7 +44,7 @@ export class WorkingGrantService {
     private uses(pid:string,id:string){return this.app.store.list<WorkingGrantUse>('working-grant-use',pid).filter(u=>u.grantId===id);}
     inspect(actor:Actor,pid:string,id:string):WorkingGrantDTO {
         userOnly(actor);scope(actor,pid);const g=this.app.store.get<WorkingGrant>('working-grant',id,pid),uses=this.uses(pid,id),reasons:string[]=[];
-        try{const checked=assertWorkingGrantRecord(this.app.store,pid,id);this.origin(g);if(g.state==='draft')ensure(['pending','approved'].includes(checked.approval.status),'APPROVAL_STALE','授权草案的批准已失效');else if(g.state==='active')assertWorkingGrantReference(this.app.store,pid,workingGrantReference(g));}catch(error){reasons.push(asError(error).code);}
+        try{assertGrantAdmission(this.app.store,pid,'working-grant',id);const checked=assertWorkingGrantRecord(this.app.store,pid,id);this.origin(g);if(g.state==='draft')ensure(['pending','approved'].includes(checked.approval.status),'APPROVAL_STALE','授权草案的批准已失效');else if(g.state==='active')assertWorkingGrantReference(this.app.store,pid,workingGrantReference(g));}catch(error){reasons.push(asError(error).code);}
         if(g.state==='revoked')reasons.push('WORKING_GRANT_REVOKED');
         const {baselineSnapshot,dataArtifacts,...fields}=g,remaining=Math.max(0,g.maxTests-uses.length);
         const effectiveState=g.state==='revoked'?'revoked':reasons.length?'stale':g.state==='draft'?'draft':Date.now()>=Date.parse(g.expiresAt)?'expired':remaining===0?'exhausted':'active';
@@ -70,6 +71,7 @@ export class WorkingGrantService {
         userOnly(actor);scope(actor,pid);const x=object(value);
         return this.app.store.transaction(()=>{
             assertProjectWritable(this.app.store,pid);const {grant:g}=assertWorkingGrantRecord(this.app.store,pid,text(x.grantId,'grantId',100)),s=this.session(actor,pid,g.sessionId);
+            assertGrantAdmission(this.app.store,pid,'working-grant',g.id);
             if(g.state==='active'){ensure(s.workingGrantId===g.id,'WORKING_GRANT_STALE','会话授权绑定不符');return this.inspect(actor,pid,g.id);}
             ensure(g.state==='draft','WORKING_GRANT_REVOKED','已撤销授权不能重新激活');ensure(g.version===integer(x.expectedVersion,'expectedVersion',1),'VERSION_CONFLICT','授权草案已更新');ensure(!s.workingGrantId,'WORKING_GRANT_ALREADY_BOUND','会话不能替换已有授权');
             ensure(s.state!=='archived'&&s.sourceRevisionId===g.sourceRevisionId&&digest(s.model)===digest(g.model),'WORKING_GRANT_SCOPE_CHANGED','会话模型或来源已改变');assertWorkspaceReady(this.app.context,s.id);ensure(Date.parse(g.expiresAt)>Date.now(),'WORKING_GRANT_EXPIRED','授权已到期');this.origin(g);

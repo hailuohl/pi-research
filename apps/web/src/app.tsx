@@ -56,6 +56,7 @@ const navigationGroups = [
     { name: '管理', ids: ['integrations', 'environment', 'settings'] },
 ];
 const normalizeView = (tab:string) => tab==='scheduler'?'environment':['experiments','campaigns','implementation','changes','literature','evidence','reports'].includes(tab) ? 'chat' : tab;
+const deletedSession=(error:unknown)=>error instanceof ApiError&&error.code==='SESSION_DELETED';
 const deletedRead=(error:unknown)=>error instanceof ApiError&&(error.status===404||error.status===410||error.code==='PROJECT_DELETED');
 function saved() {
     try {
@@ -133,15 +134,19 @@ export class App extends React.Component<{}, State> {
             let data:ProjectState|null=null;
             try{data=projectId?await api<ProjectState>(`/projects/${projectId}/state${requestedSession?'?sessionId='+encodeURIComponent(requestedSession):''}`,undefined,'GET',controller.signal):null;}
             catch(error){
-                if(!deletedRead(error))throw error;
+                if(deletedSession(error)){requestedSession='';data=await api<ProjectState>(`/projects/${projectId}/state`,undefined,'GET',controller.signal);}
+                else {if(!deletedRead(error))throw error;
                 recoveringDeleted=true;
                 if(this.mounted&&epoch===this.refreshEpoch)await this.clearDeletedView(projectId);
                 projectId=boot.projects.find(p=>p.id!==projectId)?.id??'';requestedSession='';
-                data=projectId?await api<ProjectState>(`/projects/${projectId}/state`,undefined,'GET',controller.signal):null;
+                data=projectId?await api<ProjectState>(`/projects/${projectId}/state`,undefined,'GET',controller.signal):null;}
             }
-            const sessionId=requestedSession||(data?.sessions.find(s=>s.role==='coordinator'&&s.state!=='archived')?.id??'');
-            const anchor=requestedSession?this.state.historyAnchor:null;
-            const view=sessionId?await api<CurrentSessionView>(`/sessions/${sessionId}/view${anchor?'?'+(anchor.direction==='before'?'beforeMessageId':'afterMessageId')+'='+encodeURIComponent(anchor.id):''}`,undefined,'GET',controller.signal):null;
+            let sessionId=requestedSession||(data?.sessions.find(s=>s.role==='coordinator'&&s.state!=='archived')?.id??'');
+            let anchor=requestedSession?this.state.historyAnchor:null;
+            let view:CurrentSessionView|null=null;
+            try{view=sessionId?await api<CurrentSessionView>(`/sessions/${sessionId}/view${anchor?'?'+(anchor.direction==='before'?'beforeMessageId':'afterMessageId')+'='+encodeURIComponent(anchor.id):''}`,undefined,'GET',controller.signal):null;}
+            catch(error){if(!deletedSession(error))throw error;data=await api<ProjectState>(`/projects/${projectId}/state`,undefined,'GET',controller.signal);sessionId=data.sessions.find(s=>s.role==='coordinator'&&s.state!=='archived'&&!s.deletedAt)?.id??'';anchor=null;view=sessionId?await api<CurrentSessionView>(`/sessions/${sessionId}/view`,undefined,'GET',controller.signal):null;}
+
             const modelManagement=await modelManagementRead;
             if(!this.mounted||epoch!==this.refreshEpoch)return false;
             if(view&&view.session.id!==sessionId)throw Error('会话快照与当前选择不一致');
@@ -155,6 +160,10 @@ export class App extends React.Component<{}, State> {
             return true;
         }catch(error){
             if(!this.mounted||epoch!==this.refreshEpoch||controller.signal.aborted)return false;
+            if(deletedSession(error)){
+                this.setState({...this.sessionSelection(''),data:this.state.data?{...this.state.data,sessions:this.state.data.sessions.filter(s=>s.id!==this.state.sessionId)}:null,connected:false,projectReadError:'会话已删除，请重新读取当前项目'});
+                return false;
+            }
             if(deletedRead(error)&&requestedProjectId&&!recoveringDeleted){
                 await this.clearDeletedView(requestedProjectId);
                 if(!this.mounted||epoch!==this.refreshEpoch)return false;
@@ -264,6 +273,16 @@ export class App extends React.Component<{}, State> {
             if(!this.mounted||this.state.projectId!==currentId||this.projectSelectionEpoch!==currentEpoch)return;
             await this.switchProject(boot.projects[0]?.id??'');
         }else await this.refresh();
+    };
+    confirmSessionLifecycle=(session:Row<Session>,action:'archive'|'unarchive'|'delete')=>{
+        if(!this.mounted||this.state.projectId!==session.projectId||this.state.data?.project.id!==session.projectId)return;
+        this.invalidateRead();
+        this.setState(current=>{
+            if(current.projectId!==session.projectId||current.data?.project.id!==session.projectId)return null;
+            const existing=current.data.sessions.find(s=>s.id===session.id);if(existing&&existing.version>session.version)return null;
+            const sessions=action==='delete'?current.data.sessions.filter(s=>s.id!==session.id):existing?current.data.sessions.map(s=>s.id===session.id?session:s):[...current.data.sessions,session];
+            return {...current,data:{...current.data,sessions},...(action==='delete'&&current.sessionId===session.id?this.sessionSelection(sessions.find(s=>!s.deletedAt&&s.role==='coordinator'&&s.state!=='archived')?.id??''):{} )};
+        });
     };
     selectSession(id: string,tab='chat') { this.invalidateRead(); this.setState(this.sessionSelection(id,tab), () => { void this.refresh(); }); }
     private showExperiments=()=>this.setState({tab:'chat'},()=>this.conversationPanel.current?.showExperiments());
@@ -415,7 +434,7 @@ export class App extends React.Component<{}, State> {
         return <div className={'app-shell' + (this.state.navigationOpen ? ' navigation-open' : '')} onKeyDown={event=>{if(event.key==='Escape'&&this.state.navigationOpen)this.toggleNavigation();}}><nav id="main-navigation" className="sidebar" aria-label="主导航"><div className="sidebar-brand"><a className="brand" href="#" onClick={(e: any) => { e.preventDefault(); this.setState({ tab: 'chat', navigationOpen: false }); }}><span>π</span><div>研舟π<small>科研工作台</small></div></a><button id="navigation-close" className="icon-button mobile-navigation" aria-label="关闭导航" onClick={this.toggleNavigation}><Icon name="close"/></button></div>
  <label className="sidebar-project">项目<select aria-label="当前项目" value={data?.project.archived?'':this.state.projectId} onChange={(e: any) => {const id=String(e.target.value);this.chooseProject(id);}}>{nativeSelectButton}{data?.project.archived?<option value="" disabled>{data.project.name} · 已归档</option>:!boot?.projects.length?<option value="">尚未创建项目</option>:null}{boot?.projects.map(p => <option value={p.id} key={p.id}>{p.name}</option>)}</select></label><div className="sidebar-project-actions"><button className="new-project" onClick={() => this.setState({ navigationOpen: false },()=>void this.open('project'))}><Icon name="plus" size={16}/>新建项目</button><button className="text-button project-management-trigger" onClick={()=>this.setState({navigationOpen:false},()=>void this.open('projects'))}><Icon name="archive" size={15}/>项目管理</button></div>
   <div className="sidebar-body"><div className="nav-groups">{navigationGroups.map(group=><details key={group.name} open={group.name==='研究'||group.ids.includes(tab)}><summary>{group.name}</summary><div className="nav-list">{group.ids.map(id=>{const entry=navigation.find(item=>item[0]===id)!;return <button key={id} aria-current={id!=='chat'&&tab===id?'page':undefined} className={id!=='chat'&&tab===id?'active':''} disabled={id==='chat'&&(!this.state.projectId||this.state.busy||!!data?.project.archived)} onClick={()=>id==='chat'?this.newSession():this.selectTab(id)}><Icon name={entry[2]} size={18}/><span>{id==='chat'?'新建会话':entry[1]}</span></button>;})}</div></details>)}</div>
-  <SessionList projectId={this.state.projectId} selectedId={this.state.sessionId} selected={currentSession} creationSignal={this.state.sessionCreationSignal} busy={this.state.busy} onSelect={id=>{this.setState({navigationOpen:false});this.selectSession(id);}}/></div><div className="sidebar-footer"><div className="local-avatar"><Icon name="folder"/></div><div><strong>本地工作空间</strong></div><span className={'status-dot ' + (this.state.connected ? '' : 'amber')}/></div></nav>
+  <SessionList projectArchived={!!this.state.data?.project.archived} onChanged={this.confirmSessionLifecycle} projectId={this.state.projectId} selectedId={this.state.sessionId} selected={currentSession} creationSignal={this.state.sessionCreationSignal} busy={this.state.busy} onSelect={id=>{this.setState({navigationOpen:false});this.selectSession(id);}}/></div><div className="sidebar-footer"><div className="local-avatar"><Icon name="folder"/></div><div><strong>本地工作空间</strong></div><span className={'status-dot ' + (this.state.connected ? '' : 'amber')}/></div></nav>
  {this.state.navigationOpen?<button className="navigation-backdrop" aria-label="收起导航" onClick={this.toggleNavigation}/>:null}<div className="workspace-shell" inert={this.state.navigationOpen?true:undefined}><header className="topbar"><button id="navigation-toggle" ref={node=>{this.navigationToggle=node;}} className="icon-button mobile-navigation" aria-label="打开导航" aria-expanded={this.state.navigationOpen} aria-controls="main-navigation" onClick={this.toggleNavigation}><Icon name="menu"/></button><div className="breadcrumb"><span>{data?.project.name??'项目'}</span><Icon name="chevron" size={12}/><strong>{navigation.find(item=>item[0]===tab)?.[1]??'研究会话'}</strong></div><div className="topbar-right"><span className={'connection-state ' + (this.state.connected ? 'ready' : '')}><span className={'status-dot ' + (this.state.connected ? '' : 'amber')}/>{this.state.connected ? '本地服务在线' : '正在重连'}</span></div></header>
  {data?.project.archived?<div className="project-readonly-notice" role="status"><Icon name="archive" size={16}/><span>已归档项目 · 只读查看会话、源码与已有成果</span><button className="text-button" onClick={()=>void this.open('projects')}>管理归档</button><button type="button" className="text-button" aria-expanded={this.state.archiveHistoryOpen} aria-controls="chat-task-drawer" onClick={this.toggleArchiveHistory}>{this.state.archiveHistoryOpen?'收起历史资料':'查看历史资料'}</button></div>:null}{this.state.eventNotice?<p className="small muted" role="status">{this.state.eventNotice}</p>:null}{this.state.error ? <div className="global-error" role="alert"><strong>操作未完成</strong><span>{this.state.error}</span><button className="icon-button" aria-label="关闭错误提示" onClick={() => this.setState({ error: '' })}><Icon name="close" size={16}/></button></div> : null}{data?projectReadFailure:null}{this.state.notice ? <div className="toast" role="status"><Icon name="check" size={16}/>{this.state.notice}</div> : null}
  <ConversationLayout projectId={this.state.projectId} active={tab==='chat'} inspector={null} panel={<ConversationPanel ref={this.conversationPanel} key={this.state.projectId} projectId={this.state.projectId} active={tab==='chat'&&!!data} data={data} collaboration={inspector} experimentDetails={inspector?React.cloneElement(inspector,{tab:'experiments',inlineWorkflows:false}):null} selectedExperiment={this.state.selectedExp} onExperiment={this.selectExperiment} onWorkspace={()=>this.selectTab('workspace')} onChooseProject={()=>{if(boot?.projects.length){this.setState({navigationOpen:true},()=>document.querySelector<HTMLSelectElement>('.sidebar-project select')?.focus());}else void this.open('project');}} onRetry={()=>void this.refresh()} error={this.state.projectReadError}/>}>

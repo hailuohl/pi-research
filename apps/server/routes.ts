@@ -201,6 +201,10 @@ export function writeRoute(app: ResearchApp, host: AgentHost, path: string, body
             return app.sessions.branch(USER, id, text(x.messageId, 'messageId', 100));
         if (action === 'retry')
             return app.sessions.retry(USER, id, text(x.messageId, 'messageId', 100));
+        if (action === 'delete')
+            return app.sessions.delete(USER,id,integer(x.expectedVersion,'expectedVersion',1),text(x.confirmTitle,'confirmTitle',160));
+        if (action === 'unarchive')
+            return app.sessions.unarchive(USER,id,integer(x.expectedVersion,'expectedVersion',1));
         if (action === 'archive')
             return app.sessions.archive(USER, id, integer(x.expectedVersion, 'expectedVersion', 1));
         if (action === 'model') {

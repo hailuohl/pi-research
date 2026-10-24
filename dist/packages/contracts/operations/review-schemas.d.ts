@@ -452,7 +452,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("id" | "revision" | "digest" | "rootSessionId")[];
+                readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
                 readonly additionalProperties: false;
             };
             readonly sourceInputs: {
@@ -993,7 +993,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("id" | "revision" | "digest" | "rootSessionId")[];
+                readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
                 readonly additionalProperties: false;
             };
             readonly sourceInputs: {

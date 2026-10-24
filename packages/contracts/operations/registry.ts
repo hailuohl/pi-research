@@ -472,7 +472,7 @@ export class OperationRegistry {
         scope(actor, pid);
         const lifecycleEpoch=assertProjectReadable(this.app.store,pid,actor).lifecycleEpoch;
         if (options.sessionId) {
-            const selected = this.app.store.get<Session>('session', text(options.sessionId, 'sessionId', 100), pid);
+            const selected = this.app.sessions.get(actor,text(options.sessionId,'sessionId',100));ensure(selected.projectId===pid,'SCOPE_DENIED','会话不属于此项目',403);
             ensure(!session || selected.id === session.id, 'SCOPE_DENIED', '不能切换 Agent 的会话工作区', 403);
             session = selected;
         }
@@ -482,6 +482,7 @@ export class OperationRegistry {
         const cached = !['session_action_resume','session_action_execute','session_action_inspect','research_brief_inspect','research_history_list'].includes(id) && (actor.type === 'agent' || spec.idempotencyPolicy === 'key-required');
         if (cached||spec.idempotencyPolicy==='key-required') ensure(typeof key === 'string' && key.trim() && key.length <= 200, 'OPERATION_ID_REQUIRED', '写操作需要 Idempotency-Key', 400);
         const context: OperationContext = {...options, app: this.app, actor, session, validate: () => {
+            if(session){const current=this.app.sessions.get(actor,session.id);ensure(spec.idempotencyPolicy==='read-only'||current.state!=='archived','SESSION_ARCHIVED','会话已归档');}
             ensure(!options.signal?.aborted, 'CONNECTOR_CANCELLED', '连接请求已取消或超时', 409);
             if (actor.type === 'agent') this.authorizeAgent(actor, id);
             assertProjectWritable(this.app.store, pid,lifecycleEpoch);
@@ -573,6 +574,7 @@ export class OperationRegistry {
             return saved;
         };
         const invoke = () => {
+            if(session){const current=this.app.sessions.get(actor,session.id);if(spec.idempotencyPolicy!=='read-only')ensure(current.state!=='archived','SESSION_ARCHIVED','会话已归档');}
             if(spec.idempotencyPolicy!=='read-only')assertProjectWritable(this.app.store,pid,lifecycleEpoch);
             else assertProjectReadable(this.app.store,pid,actor);
             if (actor.type === 'agent') this.authorizeAgent(actor, id);
@@ -652,7 +654,7 @@ export class OperationRegistry {
                     reserved = true;
                     return;
                 }
-                this.app.store.create('operation-pending', pid, {hash, operation: id}, pendingId);
+                this.app.store.create('operation-pending', pid, {hash, operation: id,...(session?{sessionId:session.id}:{})}, pendingId);
                 reserved = true;
             });
             const clear = () => { if (reserved) this.app.store.db.prepare('DELETE FROM records WHERE kind=? AND id=?').run('operation-pending', pendingId); };

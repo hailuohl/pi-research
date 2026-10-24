@@ -77,6 +77,7 @@ export interface ModelConfig {
     thinking: string;
 }
 export interface Session {
+    deletedAt?: string;
     lastConsumedHumanMessageId?:string;
     executionPermission?: import('../policy/session-permissions.js').PermissionReference;
     researchBriefId?: string;

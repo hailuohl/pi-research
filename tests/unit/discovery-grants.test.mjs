@@ -8,7 +8,7 @@ import {ResearchApp} from '../../dist/packages/research-app.js';
 import {ConnectorService} from '../../dist/packages/connectors/service.js';
 import {ConnectorTransport} from '../../dist/packages/connectors/transport.js';
 import {DocumentService} from '../../dist/packages/documents/service.js';
-import {assertDiscoveryArtifact,normalizedDiscoveryOperation} from '../../dist/packages/policy/discovery-grant-validation.js';
+import {assertDiscoveryArtifact,assertDiscoveryDocument,normalizedDiscoveryOperation} from '../../dist/packages/policy/discovery-grant-validation.js';
 
 const search={query:'bounded fixture',sources:['crossref'],limit:1};
 const item={DOI:'10.1000/fixture',title:['Fixture metadata'],published:{'date-parts':[[2024,1,1]]}};
@@ -105,4 +105,30 @@ test('PDF grants freeze canonical versions and never widen an explicit arXiv or 
  assert.equal(normalizedDiscoveryOperation({kind:'retrieve',target:targets[0]}).target.id,'2401.01234v2');const g=activate(s,prepare(s,{searches:[],targets,allowSearchResults:false,formats:['original-pdf']}));network(s,async()=>{calls++;return new Response('%PDF-1.7\nfixture',{headers:{'Content-Type':'application/pdf'}});});
  const who=s.app.discoveryGrants.owner(USER,s.project.id,g.id);await assert.rejects(s.app.documents.acquire(who,s.project.id,{...targets[0],requestedVersion:'3'},'wrong'),{code:'DISCOVERY_TARGET_DENIED'});
  const d=await s.app.documents.acquire(who,s.project.id,targets[1],'pdf');assert.equal(d.source.requestedVersion,'1');assert.equal(d.discoveryGrant.id,g.id);assert.equal(calls,1);
+}finally{s.close();}});
+
+
+test('session retirement closes active and unbound draft discovery admissions without rewriting history',()=>{for(const activated of [false,true]){const s=setup();try{
+ const prepared=prepare(s),g=activated?activate(s,prepared):prepared,grant=s.app.store.get('discovery-grant',g.id),approval=s.app.store.get('approval',g.approvalId),current=s.app.sessions.get(USER,s.session.id),archived=s.app.sessions.archive(USER,current.id,current.version);s.app.sessions.unarchive(USER,current.id,archived.version);
+ assert.deepEqual(s.app.store.get('discovery-grant',g.id),grant);assert.deepEqual(s.app.store.get('approval',g.approvalId),approval);assert.equal(s.app.discoveryGrants.inspect(USER,s.project.id,g.id).effectiveState,'stale');
+ if(activated)assert.throws(()=>s.app.literatureTasks.create(USER,s.project.id,{kind:'search',search,discoveryGrantId:g.id}),{code:'GRANT_RETIRED'});else {approve(s.app,g.approvalId);assert.throws(()=>s.app.discoveryGrants.activate(USER,s.project.id,{grantId:g.id,expectedVersion:g.version}),{code:'GRANT_RETIRED'});}
+ assert.equal(s.app.store.list('literature-task').length,0);assert.equal(s.app.store.list('connector-call').length,0);
+}finally{s.close();}}});
+test('discovery preflight and INSERT recheck reject deterministic retirement interleaving',()=>{const s=setup();try{
+ const g=activate(s),transaction=s.app.store.transaction.bind(s.app.store);let entered=false;s.app.store.transaction=fn=>{if(!entered){entered=true;const current=s.app.sessions.get(USER,s.session.id),a=s.app.sessions.archive(USER,current.id,current.version);s.app.sessions.unarchive(USER,current.id,a.version);}return transaction(fn);};
+ assert.throws(()=>s.app.literatureTasks.create(USER,s.project.id,{kind:'search',search,discoveryGrantId:g.id}),{code:'GRANT_RETIRED'});assert.equal(entered,true);assert.equal(s.app.store.list('literature-task').length,0);
+}finally{s.close();}});
+
+
+test('retired discovery grant retains historical document, artifact, approval and request proofs',async()=>{const s=setup();try{
+ network(s);const g=activate(s),who=agent(s),found=await op(s,who,'literature_discover',search,'retirement-search'),paper=await op(s,who,'paper_read',{source:'crossref',id:found.items[0].id},'retirement-paper'),document=s.app.documents.createFromPaper(USER,s.project.id,paper.id,'retirement-document'),before={grant:s.app.store.get('discovery-grant',g.id),approval:s.app.store.get('approval',g.approvalId),calls:s.app.store.list('connector-call'),paper:s.app.store.get('paper-read',paper.id),document:s.app.store.get('document-version',document.id)};
+ let current=s.app.sessions.get(USER,s.session.id);current=s.app.store.update('session',current.id,current.version,{state:'idle',leaseUntil:0});const a=s.app.sessions.archive(USER,current.id,current.version);s.app.sessions.unarchive(USER,current.id,a.version);
+ assert.doesNotThrow(()=>assertDiscoveryArtifact(s.app.store,s.project.id,s.app.store.get('artifact',paper.artifactId)));assert.doesNotThrow(()=>assertDiscoveryDocument(s.app.store,s.project.id,s.app.store.get('document-version',document.id)));assert.deepEqual({grant:s.app.store.get('discovery-grant',g.id),approval:s.app.store.get('approval',g.approvalId),calls:s.app.store.list('connector-call'),paper:s.app.store.get('paper-read',paper.id),document:s.app.store.get('document-version',document.id)},before);
+}finally{s.close();}});
+
+
+test('retirement leaves independent branch admission intact and failed cleanup creates no markers',()=>{const s=setup();try{
+ const m=s.app.store.create('message',s.project.id,{sessionId:s.session.id,role:'assistant',mode:'prompt',status:'completed',content:'independent history'}),branch=s.app.sessions.branch(USER,s.session.id,m.id),rootGrant=prepare(s),branchGrant=activate(s,prepare(s,{sessionId:branch.id}));
+ const current=s.app.sessions.get(USER,s.session.id);assert.throws(()=>s.app.sessions.archive(USER,current.id,current.version+1),{code:'VERSION_CONFLICT'});assert.equal(s.app.store.list('grant-retirement').length,0);const held=s.app.store.create('agent-admission',s.project.id,{sessionId:current.id,state:'reserved'});assert.throws(()=>s.app.sessions.archive(USER,current.id,current.version),{code:'SESSION_BUSY'});assert.equal(s.app.store.list('grant-retirement').length,0);s.app.store.db.prepare('DELETE FROM records WHERE kind=? AND id=?').run('agent-admission',held.id);
+ const a=s.app.sessions.archive(USER,current.id,current.version);s.app.sessions.unarchive(USER,current.id,a.version);assert.equal(s.app.discoveryGrants.inspect(USER,s.project.id,rootGrant.id).effectiveState,'stale');assert.equal(s.app.discoveryGrants.inspect(USER,s.project.id,branchGrant.id).effectiveState,'active');assert.equal(s.app.literatureTasks.create(USER,s.project.id,{kind:'search',search,discoveryGrantId:branchGrant.id}).scopeSessionId,branch.id);
 }finally{s.close();}});

@@ -76,7 +76,7 @@ export declare const RESEARCH_BRIEF_REFERENCE_SCHEMA: {
             readonly maxLength: number;
         };
     };
-    readonly required: ("id" | "revision" | "digest" | "rootSessionId")[];
+    readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
     readonly additionalProperties: false;
 };
 export declare const RESEARCH_BRIEF_INPUT_SCHEMAS: {
@@ -679,7 +679,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "id" | "createdAt" | "status" | "revision" | "digest" | "projectId" | "rootSessionId" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
+        readonly required: ("version" | "id" | "createdAt" | "projectId" | "rootSessionId" | "status" | "revision" | "digest" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
         readonly additionalProperties: false;
     };
     readonly research_brief_inspect: {
@@ -1040,7 +1040,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("version" | "id" | "createdAt" | "status" | "revision" | "digest" | "projectId" | "rootSessionId" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
+                    readonly required: ("version" | "id" | "createdAt" | "projectId" | "rootSessionId" | "status" | "revision" | "digest" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
                     readonly additionalProperties: false;
                 }, {
                     readonly type: "null";
@@ -1485,7 +1485,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "id" | "createdAt" | "status" | "revision" | "digest" | "projectId" | "rootSessionId" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
+        readonly required: ("version" | "id" | "createdAt" | "projectId" | "rootSessionId" | "status" | "revision" | "digest" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
         readonly additionalProperties: false;
     };
 };

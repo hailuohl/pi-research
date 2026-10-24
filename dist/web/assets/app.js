@@ -21,6 +21,7 @@ const navigationGroups = [
   { name: "\u7BA1\u7406", ids: ["integrations", "environment", "settings"] }
 ];
 const normalizeView = (tab) => tab === "scheduler" ? "environment" : ["experiments", "campaigns", "implementation", "changes", "literature", "evidence", "reports"].includes(tab) ? "chat" : tab;
+const deletedSession = (error) => error instanceof ApiError && error.code === "SESSION_DELETED";
 const deletedRead = (error) => error instanceof ApiError && (error.status === 404 || error.status === 410 || error.code === "PROJECT_DELETED");
 function saved() {
   try {
@@ -129,6 +130,17 @@ class App extends React.Component {
         if (!this.mounted || this.state.projectId !== currentId || this.projectSelectionEpoch !== currentEpoch) return;
         await this.switchProject(boot.projects[0]?.id ?? "");
       } else await this.refresh();
+    };
+    this.confirmSessionLifecycle = (session, action) => {
+      if (!this.mounted || this.state.projectId !== session.projectId || this.state.data?.project.id !== session.projectId) return;
+      this.invalidateRead();
+      this.setState((current) => {
+        if (current.projectId !== session.projectId || current.data?.project.id !== session.projectId) return null;
+        const existing = current.data.sessions.find((s) => s.id === session.id);
+        if (existing && existing.version > session.version) return null;
+        const sessions = action === "delete" ? current.data.sessions.filter((s) => s.id !== session.id) : existing ? current.data.sessions.map((s) => s.id === session.id ? session : s) : [...current.data.sessions, session];
+        return { ...current, data: { ...current.data, sessions }, ...action === "delete" && current.sessionId === session.id ? this.sessionSelection(sessions.find((s) => !s.deletedAt && s.role === "coordinator" && s.state !== "archived")?.id ?? "") : {} };
+      });
     };
     this.showExperiments = () => this.setState({ tab: "chat" }, () => this.conversationPanel.current?.showExperiments());
     this.selectExperiment = (id, runId = "") => {
@@ -271,16 +283,30 @@ class App extends React.Component {
       try {
         data = projectId ? await api(`/projects/${projectId}/state${requestedSession ? "?sessionId=" + encodeURIComponent(requestedSession) : ""}`, void 0, "GET", controller.signal) : null;
       } catch (error) {
-        if (!deletedRead(error)) throw error;
-        recoveringDeleted = true;
-        if (this.mounted && epoch === this.refreshEpoch) await this.clearDeletedView(projectId);
-        projectId = boot.projects.find((p) => p.id !== projectId)?.id ?? "";
-        requestedSession = "";
-        data = projectId ? await api(`/projects/${projectId}/state`, void 0, "GET", controller.signal) : null;
+        if (deletedSession(error)) {
+          requestedSession = "";
+          data = await api(`/projects/${projectId}/state`, void 0, "GET", controller.signal);
+        } else {
+          if (!deletedRead(error)) throw error;
+          recoveringDeleted = true;
+          if (this.mounted && epoch === this.refreshEpoch) await this.clearDeletedView(projectId);
+          projectId = boot.projects.find((p) => p.id !== projectId)?.id ?? "";
+          requestedSession = "";
+          data = projectId ? await api(`/projects/${projectId}/state`, void 0, "GET", controller.signal) : null;
+        }
       }
-      const sessionId = requestedSession || (data?.sessions.find((s) => s.role === "coordinator" && s.state !== "archived")?.id ?? "");
-      const anchor = requestedSession ? this.state.historyAnchor : null;
-      const view = sessionId ? await api(`/sessions/${sessionId}/view${anchor ? "?" + (anchor.direction === "before" ? "beforeMessageId" : "afterMessageId") + "=" + encodeURIComponent(anchor.id) : ""}`, void 0, "GET", controller.signal) : null;
+      let sessionId = requestedSession || (data?.sessions.find((s) => s.role === "coordinator" && s.state !== "archived")?.id ?? "");
+      let anchor = requestedSession ? this.state.historyAnchor : null;
+      let view = null;
+      try {
+        view = sessionId ? await api(`/sessions/${sessionId}/view${anchor ? "?" + (anchor.direction === "before" ? "beforeMessageId" : "afterMessageId") + "=" + encodeURIComponent(anchor.id) : ""}`, void 0, "GET", controller.signal) : null;
+      } catch (error) {
+        if (!deletedSession(error)) throw error;
+        data = await api(`/projects/${projectId}/state`, void 0, "GET", controller.signal);
+        sessionId = data.sessions.find((s) => s.role === "coordinator" && s.state !== "archived" && !s.deletedAt)?.id ?? "";
+        anchor = null;
+        view = sessionId ? await api(`/sessions/${sessionId}/view`, void 0, "GET", controller.signal) : null;
+      }
       const modelManagement = await modelManagementRead;
       if (!this.mounted || epoch !== this.refreshEpoch) return false;
       if (view && view.session.id !== sessionId) throw Error("\u4F1A\u8BDD\u5FEB\u7167\u4E0E\u5F53\u524D\u9009\u62E9\u4E0D\u4E00\u81F4");
@@ -304,6 +330,10 @@ class App extends React.Component {
       return true;
     } catch (error) {
       if (!this.mounted || epoch !== this.refreshEpoch || controller.signal.aborted) return false;
+      if (deletedSession(error)) {
+        this.setState({ ...this.sessionSelection(""), data: this.state.data ? { ...this.state.data, sessions: this.state.data.sessions.filter((s) => s.id !== this.state.sessionId) } : null, connected: false, projectReadError: "\u4F1A\u8BDD\u5DF2\u5220\u9664\uFF0C\u8BF7\u91CD\u65B0\u8BFB\u53D6\u5F53\u524D\u9879\u76EE" });
+        return false;
+      }
       if (deletedRead(error) && requestedProjectId && !recoveringDeleted) {
         await this.clearDeletedView(requestedProjectId);
         if (!this.mounted || epoch !== this.refreshEpoch) return false;
@@ -617,7 +647,7 @@ class App extends React.Component {
               ] }, id);
             }) })
           ] }, group.name)) }),
-          /* @__PURE__ */ jsx(SessionList, { projectId: this.state.projectId, selectedId: this.state.sessionId, selected: currentSession, creationSignal: this.state.sessionCreationSignal, busy: this.state.busy, onSelect: (id) => {
+          /* @__PURE__ */ jsx(SessionList, { projectArchived: !!this.state.data?.project.archived, onChanged: this.confirmSessionLifecycle, projectId: this.state.projectId, selectedId: this.state.sessionId, selected: currentSession, creationSignal: this.state.sessionCreationSignal, busy: this.state.busy, onSelect: (id) => {
             this.setState({ navigationOpen: false });
             this.selectSession(id);
           } })

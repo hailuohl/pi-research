@@ -1,3 +1,4 @@
+import {digest} from '../../dist/packages/storage/store.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {ResearchApp} from '../../dist/packages/research-app.js';
@@ -251,3 +252,15 @@ test('original Team approval and TaskSpec changes stop a bound task before HTTP'
   assert.equal(fetch.count(),0);assert.equal(s.app.store.list('connector-call',s.project.id).length,0);
  }finally{fetch.restore();s.close();}}
 });
+
+
+test('retired task grant blocks claim before creating an attempt or workspace',()=>{const s=setup();try{
+ const {team,task,grant}=prepareTask(s);activateTaskGrant(s,grant);
+ const approval=s.app.store.get('approval',team.approvalId);if(approval.status==='pending')approve(s.app,approval.id);if(s.app.teams.get(USER,team.id).state==='awaiting_approval')s.app.teams.activate(USER,team.id);
+ const grantKind='discovery-grant',grantId=grant.id;s.app.store.create('grant-retirement',s.project.id,{grantKind,grantId,rootSessionId:s.session.id},digest({grantKind,grantId}));assert.equal(s.app.teams.claim(team.id),null);assert.equal(s.app.store.list('task-attempt').length,0);assert.equal(s.app.store.list('task-workspace').length,0);assert.match(s.app.store.get('task',task.id).blockReason,/GRANT_RETIRED/);
+}finally{s.close();}});
+
+
+test('root retirement marks an owned task discovery grant without rewriting its proof',()=>{const s=setup();try{
+ const {team,task,grant}=prepareTask(s);activateTaskGrant(s,grant);const before=s.app.store.get('discovery-grant',grant.id),approval=s.app.store.get('approval',grant.approvalId);s.app.store.update('task',task.id,s.app.store.get('task',task.id).version,{execution:'cancelled'});const root=s.app.sessions.get(USER,s.session.id);s.app.sessions.archive(USER,root.id,root.version);assert.equal(s.app.store.get('grant-retirement',digest({grantKind:'discovery-grant',grantId:grant.id})).rootSessionId,root.id);assert.deepEqual(s.app.store.get('discovery-grant',grant.id),before);assert.deepEqual(s.app.store.get('approval',grant.approvalId),approval);
+}finally{s.close();}});

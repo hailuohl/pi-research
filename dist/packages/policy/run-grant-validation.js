@@ -1,3 +1,4 @@
+import { assertGrantAdmission } from './grant-retirement.js';
 import { resolveTaskModel } from '../collaboration/task-model.js';
 import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
@@ -19,6 +20,7 @@ export function assertRunGrantReference(store, pid, ref, admission = false) {
     ensure(g.state === 'active', 'RUN_GRANT_REVOKED', '运行授权尚未激活或已撤销');
     ensure(approval.status === 'approved', 'APPROVAL_STALE', '运行授权的原批准已失效');
     if (admission) {
+        assertGrantAdmission(store, pid, 'run-grant', g.id);
         ensure(Date.parse(g.expiresAt) > Date.now(), 'RUN_GRANT_EXPIRED', '运行授权已到期；历史结果保留');
         if (!g.taskBinding) {
             const s = store.get('session', g.sessionId, pid);

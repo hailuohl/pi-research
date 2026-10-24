@@ -17,7 +17,7 @@ function prefix(bytes:Uint8Array,complete:boolean){try{const d=new TextDecoder('
 function bodyBytes(value:unknown,total:number){if(value===null&&total===0)return Buffer.alloc(0);ensure(value instanceof Uint8Array,'MESSAGE_ENCODING_INVALID','保存的消息正文缺失；原始记录未改写');return value;}
 export function sessionCatalog(store:Store,pid:string,value:unknown={}):SessionCatalogPage {
  const x=closed(value,['query','beforeSessionId','role','stateFilter','limit']),query=text(x.query??'','query',160,true).trim(),role=oneOf(x.role??'coordinator',roles,'role'),stateFilter=oneOf(x.stateFilter??'all',['active','archived','all'] as const,'stateFilter'),limit=integer(x.limit??10,'limit',1,50);
- let where="kind='session' AND project_id=?",params:Array<string|number>=[pid];
+ let where="kind='session' AND project_id=? AND json_extract(data,'$.deletedAt') IS NULL",params:Array<string|number>=[pid];
  if(role!=='all'){where+=" AND json_extract(data,'$.role')=?";params.push(role);}
  if(stateFilter!=='all'){where+=` AND json_extract(data,'$.state')${stateFilter==='archived'?'=':'<>'}?`;params.push('archived');}
  if(query){where+=" AND (instr(lower(json_extract(data,'$.title')),lower(?))>0 OR instr(lower(id),lower(?))>0)";params.push(query,query);}

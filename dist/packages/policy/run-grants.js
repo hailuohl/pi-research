@@ -1,3 +1,4 @@
+import { assertGrantAdmission } from './grant-retirement.js';
 import { randomUUID } from 'node:crypto';
 import { object, integer, strings, text } from '../contracts/validation.js';
 import { ensure, asError } from '../domain/errors.js';
@@ -29,6 +30,7 @@ export class RunGrantService {
         scope(actor, pid);
         const g = this.app.store.get('run-grant', id, pid), uses = this.app.store.list('run-grant-use', pid).filter(u => u.grantId === id), reasons = [];
         try {
+            assertGrantAdmission(this.app.store, pid, 'run-grant', id);
             const { approval } = assertRunGrantRecord(this.app.store, pid, id);
             if (g.state === 'active') {
                 assertRunGrantReference(this.app.store, pid, runGrantReference(g));
@@ -95,6 +97,7 @@ export class RunGrantService {
         return this.app.store.transaction(() => {
             assertProjectWritable(this.app.store, pid);
             const { grant: g } = assertRunGrantRecord(this.app.store, pid, text(x.grantId, 'grantId', 100)), s = g.taskBinding ? undefined : this.app.store.get('session', g.sessionId, pid);
+            assertGrantAdmission(this.app.store, pid, 'run-grant', g.id);
             if (g.state === 'active') {
                 if (g.taskBinding)
                     assertRunGrantTaskBinding(this.app.store, pid, g);

@@ -197,7 +197,7 @@ export function stateCheck(db, forPurge = false) {
             busy = true;
         if (kind === 'team')
             busy = ['active', 'draining'].includes(state);
-        if (kind === 'team' && !rows.some(p => p.kind === 'project' && p.id === r.projectId && ['archived', 'trashed', 'purging'].includes(String(p.value.status))) && r.autoSummarize === true && ['completed', 'partial', 'failed', 'cancelled'].includes(state)) {
+        if (kind === 'team' && sessions.get(String(r.rootSessionId))?.state !== 'archived' && !rows.some(p => p.kind === 'project' && p.id === r.projectId && ['archived', 'trashed', 'purging'].includes(String(p.value.status))) && r.autoSummarize === true && ['completed', 'partial', 'failed', 'cancelled'].includes(state)) {
             const source = teamWakeupSource(r, rows.filter(x => x.kind === 'task' && x.value.teamId === id).map(x => x.value)), existing = rows.find(x => x.kind === 'wakeup' && x.id === wakeupId(source));
             busy = !existing || ['pending', 'queued', 'running'].includes(String(existing.value.state));
         }

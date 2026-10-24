@@ -43,6 +43,7 @@ export declare class WakeupService {
     private sourceStatus;
     private block;
     private clearEmptyQueue;
+    stopSession(sessionId: string): void;
     private invalidate;
     reconcile(): void;
     private continuationRunResult;
@@ -403,7 +404,7 @@ export declare class WakeupService {
         team: {
             id: string;
             goal: string;
-            state: "failed" | "cancelled" | "completed" | "partial" | "active" | "awaiting_approval" | "paused" | "draining";
+            state: "failed" | "cancelled" | "active" | "completed" | "partial" | "awaiting_approval" | "paused" | "draining";
         };
         tasks: {
             id: string;

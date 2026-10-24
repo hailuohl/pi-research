@@ -1,3 +1,4 @@
+import {assertGrantAdmission} from '../policy/grant-retirement.js';
 import {assertDiscoveryArtifact,assertDiscoveryDocument} from '../policy/discovery-grant-validation.js';
 import {assertPdfArtifactRead,assertTextCorpusGrantActor,type TextCorpusGrantReference} from '../policy/text-corpus-grants.js';
 import {verifyDocumentLink} from './document-link.js';
@@ -86,7 +87,7 @@ export class EvidenceService {
     registerGrantedProviderText(actor:Actor,projectId:string,providerText:ProviderTextEvidenceLink,start:number,end:number,description:string,reference?:TextCorpusGrantReference){
         return this.c.store.transaction(()=>{
             ensure(reference,'TEXT_GRANT_REQUIRED','缺少固定检索授权');
-            const grant=assertTextCorpusGrantActor(this.c.store,actor,projectId,reference);
+            const grant=assertTextCorpusGrantActor(this.c.store,actor,projectId,reference);assertGrantAdmission(this.c.store,projectId,'text-corpus-grant',grant.id);
             ensure(grant.pmcDocuments?.some(p=>p.documentVersionId===providerText.documentVersionId),'TEXT_GRANT_SOURCE_DENIED','PMC 证据来源不在授权内',403);
             return this.registerProviderTextCore({type:'system'},projectId,providerText,start,end,description);
         });
@@ -102,7 +103,7 @@ export class EvidenceService {
     registerGrantedDocument(actor:Actor,projectId:string,input:Parameters<EvidenceService['registerDocument']>[2],reference?:TextCorpusGrantReference){
         return this.c.store.transaction(()=>{
             ensure(reference,'TEXT_GRANT_REQUIRED','缺少固定检索授权');
-            const grant=assertTextCorpusGrantActor(this.c.store,actor,projectId,reference);
+            const grant=assertTextCorpusGrantActor(this.c.store,actor,projectId,reference);assertGrantAdmission(this.c.store,projectId,'text-corpus-grant',grant.id);
             ensure(grant.documents.some(p=>p.documentVersionId===input.documentVersionId&&p.parseResultId===input.parseResultId),'TEXT_GRANT_SOURCE_DENIED','证据来源不在授权内',403);
             return this.registerDocumentCore({type:'system'},projectId,input);
         });

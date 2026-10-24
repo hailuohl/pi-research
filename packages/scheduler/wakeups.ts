@@ -66,7 +66,7 @@ export class WakeupService {
             automatic: c.autoAnalyze, sourceDigest: digest({ id: o.id, contentDigest: o.contentDigest,
                 goal: c.goal, roundId: c.currentRoundId, contractDigest: c.contractDigest }) };
     }
-    private runResultSource(run: Row<Run>): Source | undefined {
+    private runResultSource(run: Row<Run>,retiring=false): Source | undefined {
         const analysis = run.manifest.analysis;
         if (!TERMINAL_RUNS.includes(run.state) || !analysis || analysis.maxAttempts !== 1 ||
             run.runGrant || !run.intentId) return;
@@ -80,7 +80,7 @@ export class WakeupService {
             digest(run.manifest.sourceFiles) !== run.manifest.snapshotDigest ||
             run.manifest.researchBrief && run.manifest.researchBrief.rootSessionId !== analysis.rootSessionId) return;
         const root = this.app.store.maybe<Session>('session', analysis.rootSessionId);
-        if (!root || root.projectId !== pid || root.role !== 'coordinator' || root.taskId || root.teamId || root.state === 'archived') return;
+        if (!root || root.projectId !== pid || root.role !== 'coordinator' || root.taskId || root.teamId || root.deletedAt || !retiring&&root.state === 'archived') return;
         const approval = this.app.store.maybe<Approval>('approval', intent.approvalId);
         if (!approval || approval.projectId !== pid || approval.subjectKind !== 'run-intent' || approval.subjectId !== intent.id ||
             approval.digest !== run.manifestDigest || approval.scope !== 'run.submit' || approval.status !== 'approved' ||
@@ -122,6 +122,7 @@ export class WakeupService {
         return {sourceKind:'task-continuation',sourceId:id,ownerId:c.id,rootSessionId:c.rootSessionId,continuationId:c.id,jobKind:kind,automatic:true,sourceDigest:digest({id:j.id,manifestDigest:j.manifestDigest,state:j.state,integrity:j.integrity,exitCode:j.exitCode,error:j.error,artifactIds:j.artifactIds,...('evidenceIds'in j?{evidenceIds:j.evidenceIds}:{})})};
     }
     private enqueue(projectId: string, source: Source) {
+        const root=this.app.store.maybe<Session>('session',source.rootSessionId);if(!root||root.projectId!==projectId||root.deletedAt||root.state==='archived')return;
         const project=this.app.store.get('project',projectId);
         if(project.status!=='active')return;
         const kind=source.sourceKind==='team'?'team':source.sourceKind==='campaign-result'?'run-observation':source.sourceKind==='run-result'?'run':source.sourceKind==='approval-result'?'development-task':'research-continuation';
@@ -190,9 +191,24 @@ export class WakeupService {
         if (w.blockReason !== reason) this.app.store.update<Wakeup>('wakeup', w.id, w.version, { blockReason: reason });
     }
     private clearEmptyQueue(sessionId: string) {
-        const s = this.app.sessions.get(SYSTEM, sessionId);
+        const s = this.app.store.get<Session>('session',sessionId);if(s.deletedAt)return;
         if (s.state === 'queued' && !this.app.sessions.messages(SYSTEM, sessionId).some(m => ['queued', 'running'].includes(m.status)))
             this.app.store.update<Session>('session', s.id, s.version, { state: 'idle' });
+    }
+    stopSession(sessionId:string){
+        const root=this.app.store.get<Session>('session',sessionId),pid=root.projectId!;
+        // Retired roots cannot enqueue; retain the same deterministic source identity as a terminal receipt.
+        const cancelSource=(source:Source)=>{const id=wakeupId(source);if(this.app.store.maybe('wakeup',id))return;
+            this.app.store.create<Wakeup>('wakeup',pid,{...source,requested:false,state:'cancelled',attempts:0,maxAttempts:source.sourceKind==='run-result'?1:2,error:'会话已清理'},id);
+            this.app.store.event(pid,'wakeup.cancelled',{wakeupId:id,reason:'会话已清理'});
+        };
+
+        for(const t of this.app.store.list<Team>('team',pid).filter(t=>t.rootSessionId===sessionId&&DONE_TEAMS.includes(t.state)))cancelSource(this.teamSource(t));
+        for(const c of this.app.store.list<Campaign>('campaign',pid).filter(c=>c.rootSessionId===sessionId&&['active','paused'].includes(c.state)))for(const o of this.app.campaigns.observations(SYSTEM,c.id).filter(o=>o.status==='pending'&&o.roundId===c.currentRoundId))cancelSource(this.campaignSource(c,o));
+        for(const run of this.app.store.list<Run>('run',pid).filter(r=>TERMINAL_RUNS.includes(r.state)&&r.manifest?.analysis?.rootSessionId===sessionId)){
+            let source:Source|undefined;try{source=this.runResultSource(run,true);}catch{continue;}if(source)cancelSource(source);
+        }
+        for(const w of this.app.store.list<Wakeup>('wakeup',pid).filter(w=>w.rootSessionId===sessionId&&['pending','queued'].includes(w.state)))this.invalidate(w,'cancelled','会话已清理');
     }
     private invalidate(w: Row<Wakeup>, state: 'cancelled' | 'superseded', reason: string) {
         if (!LIVE.includes(w.state)) return w;

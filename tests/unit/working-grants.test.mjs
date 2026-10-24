@@ -8,7 +8,7 @@ import {setup,USER,approve} from '../support/research.mjs';
 import {actor,result} from '../support/collaboration.mjs';
 import {digest} from '../../dist/packages/storage/store.js';
 import {readSourceMode,snapshotDirectory} from '../../dist/packages/workspace/files.js';
-import {workingGrantPayload,assertWorkingGrantManifest} from '../../dist/packages/policy/working-grant-validation.js';
+import {workingGrantPayload,assertWorkingGrantManifest,assertWorkingGrantJob} from '../../dist/packages/policy/working-grant-validation.js';
 
 const input={command:['python','check.py'],environmentImageDigest:`python@sha256:${'a'.repeat(64)}`,resources:{cpus:2,memoryMb:512}};
 const physical=(s,reference)=>s.app.store.paths.physical(reference);
@@ -101,4 +101,17 @@ test('two independent controllers racing for the last slot submit exactly one jo
  const workers=tasks.map(task=>new Worker(`const {parentPort,workerData}=require('node:worker_threads');(async()=>{const {ResearchApp}=await import(workerData.module);const app=new ResearchApp(workerData.dir,workerData.repo);parentPort.postMessage({ready:true});Atomics.wait(new Int32Array(workerData.buffer),0,0);try{const job=app.development.submit({type:'user'},workerData.pid,workerData.id);parentPort.postMessage({jobId:job.id});}catch(error){parentPort.postMessage({code:error.code});}finally{app.close();}})().catch(error=>{parentPort.postMessage({code:error.code??String(error)});});`,{eval:true,workerData:{module,dir:s.dir,repo:process.cwd(),pid:s.project.id,id:task.id,buffer}}));
  const exits=workers.map(worker=>new Promise(resolve=>worker.on('exit',resolve))),results=workers.map(worker=>new Promise((resolve,reject)=>{worker.on('message',value=>{if(value.ready){ready.push(true);if(ready.length===2){Atomics.store(new Int32Array(buffer),0,1);Atomics.notify(new Int32Array(buffer),0);}}else resolve(value);});worker.on('error',reject);}));
  const done=await Promise.all(results);await Promise.all(exits);assert.equal(done.filter(r=>r.jobId).length,1);assert.deepEqual(done.filter(r=>r.code).map(r=>r.code),['WORKING_GRANT_EXHAUSTED']);assert.equal(s.app.store.list('sandbox-job').length,1);assert.equal(s.app.store.list('working-grant-use').length,1);
+}finally{s.close();}});
+
+
+test('session retirement closes active and unbound draft working admissions while preserving grant and approval bytes',()=>{for(const activated of [false,true]){const s=setup();try{
+ const {grant:g}=activated?active(s):prepared(s),grant=s.app.store.get('working-grant',g.id),approval=s.app.store.get('approval',g.approvalId),current=s.app.sessions.get(USER,s.session.id),a=s.app.sessions.archive(USER,current.id,current.version);s.app.sessions.unarchive(USER,current.id,a.version);
+ assert.deepEqual(s.app.store.get('working-grant',g.id),grant);assert.deepEqual(s.app.store.get('approval',g.approvalId),approval);assert.equal(s.app.workingGrants.inspect(USER,s.project.id,g.id).effectiveState,'stale');
+ if(activated)assert.throws(()=>prepareTest(s),{code:'GRANT_RETIRED'});else {approve(s.app,g.approvalId);assert.throws(()=>s.app.workingGrants.activate(USER,s.project.id,{grantId:g.id,expectedVersion:g.version}),{code:'GRANT_RETIRED'});}assert.equal(s.app.store.list('sandbox-job').length,0);assert.equal(s.app.store.list('working-grant-use').length,0);
+}finally{s.close();}}});
+
+
+test('retired working grant preserves completed job and use proofs',()=>{const s=setup();try{
+ const {grant}=active(s),task=prepareTest(s),job=finished(s,task),before={grant:s.app.store.get('working-grant',grant.id),job:s.app.store.get('sandbox-job',job.id),uses:s.app.store.list('working-grant-use'),approvals:s.app.store.list('approval')};const root=s.app.sessions.get(USER,s.session.id),a=s.app.sessions.archive(USER,root.id,root.version);s.app.sessions.unarchive(USER,root.id,a.version);
+ assert.doesNotThrow(()=>assertWorkingGrantJob(s.app.store,s.app.store.get('sandbox-job',job.id)));assert.deepEqual({grant:s.app.store.get('working-grant',grant.id),job:s.app.store.get('sandbox-job',job.id),uses:s.app.store.list('working-grant-use'),approvals:s.app.store.list('approval')},before);assert.equal(s.app.development.inspect(USER,s.project.id,job.id).state,'succeeded');
 }finally{s.close();}});

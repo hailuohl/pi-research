@@ -1,3 +1,4 @@
+import { assertGrantAdmission } from './grant-retirement.js';
 import { assertAutomaticApprovalReference, assertAutomaticTextContinuation } from './automatic-approval-proof.js';
 import { randomUUID } from 'node:crypto';
 import { digest, now } from '../storage/store.js';
@@ -82,6 +83,7 @@ export class TextCorpusGrantService {
         if (g.pmcDocuments)
             pmcOwner(actor);
         try {
+            assertGrantAdmission(this.app.store, pid, 'text-corpus-grant', id);
             const { approval } = record(this.app.store, pid, id);
             ensure(g.state === 'draft' ? ['pending', 'approved'].includes(approval.status) : g.state === 'active' && approval.status === 'approved', 'TEXT_GRANT_REVOKED', '原文授权已失效');
             const s = this.app.store.get('session', g.sessionId, pid);
@@ -126,6 +128,7 @@ export class TextCorpusGrantService {
         return this.app.store.transaction(() => {
             assertProjectWritable(this.app.store, pid);
             const { grant: g } = record(this.app.store, pid, text(x.grantId, 'grantId', 100)), s = this.app.store.get('session', g.sessionId, pid);
+            assertGrantAdmission(this.app.store, pid, 'text-corpus-grant', g.id);
             if (g.pmcDocuments)
                 pmcOwner(actor);
             ensure(g.state === 'draft' && g.version === integer(x.expectedVersion, 'expectedVersion', 1), 'VERSION_CONFLICT', '草案已变化或撤销');

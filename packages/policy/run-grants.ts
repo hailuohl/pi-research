@@ -1,3 +1,4 @@
+import {assertGrantAdmission} from './grant-retirement.js';
 import {randomUUID} from 'node:crypto';
 import type {ResearchApp} from '../research-app.js';
 import type {Actor,Approval,Experiment,Row,RunIntent,Session,Task} from '../domain/types.js';
@@ -22,7 +23,7 @@ export class RunGrantService {
     }
     inspect(actor:Actor,pid:string,id:string):RunGrantDTO {
         userOnly(actor);scope(actor,pid);const g=this.app.store.get<RunGrant>('run-grant',id,pid),uses=this.app.store.list<RunGrantUse>('run-grant-use',pid).filter(u=>u.grantId===id),reasons:string[]=[];
-        try{const {approval}=assertRunGrantRecord(this.app.store,pid,id);if(g.state==='active'){assertRunGrantReference(this.app.store,pid,runGrantReference(g));if(g.taskBinding)assertRunGrantTaskBinding(this.app.store,pid,g);}else if(g.state==='draft')ensure(['pending','approved'].includes(approval.status),'APPROVAL_STALE','授权草案批准已失效');
+        try{assertGrantAdmission(this.app.store,pid,'run-grant',id);const {approval}=assertRunGrantRecord(this.app.store,pid,id);if(g.state==='active'){assertRunGrantReference(this.app.store,pid,runGrantReference(g));if(g.taskBinding)assertRunGrantTaskBinding(this.app.store,pid,g);}else if(g.state==='draft')ensure(['pending','approved'].includes(approval.status),'APPROVAL_STALE','授权草案批准已失效');
             for(const entry of g.entries){const intent=this.app.store.get<RunIntent>('run-intent',entry.intentId,pid);assertRunGrantEntry(this.app.store,pid,g,intent);if(g.state==='active'){const a=this.app.store.get<Approval>('approval',intent.approvalId,pid);ensure(a.status==='approved'&&digest(a.runGrant)===digest(runGrantReference(g))&&digest(intent.runGrant)===digest(runGrantReference(g)),'RUN_GRANT_STALE','绑定清单或派生批准已改变');}}
         }catch(error){reasons.push(asError(error).code);}
         if(g.state==='revoked')reasons.push('RUN_GRANT_REVOKED');const remaining=Math.max(0,g.maxRuns-uses.length),effectiveState=g.state==='revoked'?'revoked':reasons.length?'stale':g.state==='draft'?'draft':Date.now()>=Date.parse(g.expiresAt)?'expired':remaining===0?'exhausted':'active';
@@ -46,6 +47,7 @@ export class RunGrantService {
         userOnly(actor);scope(actor,pid);const x=object(value);
         return this.app.store.transaction(()=>{
             assertProjectWritable(this.app.store,pid);const {grant:g}=assertRunGrantRecord(this.app.store,pid,text(x.grantId,'grantId',100)),s=g.taskBinding?undefined:this.app.store.get<Session>('session',g.sessionId,pid);
+            assertGrantAdmission(this.app.store,pid,'run-grant',g.id);
             if(g.state==='active'){if(g.taskBinding)assertRunGrantTaskBinding(this.app.store,pid,g);else ensure(s?.runGrantId===g.id,'RUN_GRANT_STALE','会话绑定已改变');return this.inspect(actor,pid,g.id);}ensure(g.state==='draft','RUN_GRANT_REVOKED','已撤销授权不能重新激活');ensure(g.version===integer(x.expectedVersion,'expectedVersion',1),'VERSION_CONFLICT','授权草案已变化');if(g.taskBinding)assertRunGrantTaskBinding(this.app.store,pid,g,{requireUnclaimed:true});else ensure(s&&!s.runGrantId&&s.role==='coordinator'&&!s.taskId&&s.state!=='archived'&&digest(s.model)===digest(g.model),'RUN_GRANT_SCOPE_CHANGED','指定会话、模型或已有授权已改变');ensure(Date.parse(g.expiresAt)>Date.now(),'RUN_GRANT_EXPIRED','授权已过期');this.app.approvals.assert(g.approvalId,pid,g.id,g.digest,'run-grant.activate');
             for(const entry of g.entries)this.fresh(pid,g,this.app.store.get<RunIntent>('run-intent',entry.intentId,pid));const ref=runGrantReference(g);
             for(const entry of g.entries){const i=this.app.store.get<RunIntent>('run-intent',entry.intentId,pid),a=this.app.store.get<Approval>('approval',i.approvalId,pid);this.app.store.update<RunIntent>('run-intent',i.id,i.version,{runGrant:ref});this.app.store.update<Approval>('approval',a.id,a.version,{status:'approved',runGrant:ref,decidedAt:now(),reason:'由冻结集合RunGrant派生；提交时永久计次，不批准集合外清单'});}

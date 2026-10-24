@@ -45,6 +45,8 @@ export class LiteratureTaskService {
             request = { ...request, pageRequest: { number: 1, previousSearchId: null, cursor: '*', expiresAt: null } };
         return this.app.store.transaction(() => {
             assertProjectWritable(this.app.store, pid);
+            if (ctx)
+                assertDiscoveryContext(this.app.store, pid, ctx);
             if (continuationId) {
                 const current = ownerSearchNextPage(this.app.store, pid, continuationId);
                 ensure(request.kind === 'search' && digest(current) === digest({ search: request.search, pageRequest: request.pageRequest }), 'LITERATURE_PAGE_STALE', '前页查询或游标已改变');

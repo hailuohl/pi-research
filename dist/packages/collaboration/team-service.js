@@ -1,3 +1,4 @@
+import { assertGrantAdmission } from '../policy/grant-retirement.js';
 import { resolveTaskModel } from './task-model.js';
 import { assertTaskModelCurrentSync } from '../pi-adapter/thinking-policy.js';
 import { formalReviewInputs, validateFormalReportAssessment } from '../publications/formal-report-review-types.js';
@@ -46,6 +47,7 @@ export class TeamService {
     validatePlan(actor, rootSessionId, value, inheritSource = true) {
         ensure(actor.type === 'user' || actor.type === 'agent' && actor.role === 'coordinator' && !actor.taskId, 'DELEGATION_DEPTH_EXCEEDED', '只有主协调者可委派，助手不能递归创建团队', 403);
         const s = this.sessions.get(actor, rootSessionId);
+        ensure(s.state !== 'archived', 'SESSION_ARCHIVED', '主会话已归档');
         if (actor.type === 'agent')
             ensure(actor.sessionId === rootSessionId, 'SCOPE_DENIED', '只能在自己的主会话中委派', 403);
         ensure(s.role === 'coordinator' && !s.taskId, 'DELEGATION_DEPTH_EXCEEDED', '只能从主会话建立团队', 403);
@@ -142,6 +144,8 @@ export class TeamService {
             ensure(!current || current.mode === 'legacy' && current.epoch === 0 && current.hostEpoch === 0, 'SESSION_PERMISSION_STALE', '旧协作计划没有当前权限依据');
     }
     assertDispatchPlan(t) {
+        const root = this.sessions.get(SYSTEM, t.rootSessionId);
+        ensure(root.state !== 'archived', 'SESSION_ARCHIVED', '主会话已归档');
         const p = assertProjectWritable(this.c.store, t.projectId);
         this.assertPermission(t);
         ensure(t.delegationEnabled && p.settings.enabled, 'MULTI_AGENT_DISABLED', '协作已经关闭');
@@ -198,6 +202,7 @@ export class TeamService {
                 if (task.discoveryGrantId) {
                     try {
                         const { grant, approval } = assertDiscoveryGrantRecord(this.c.store, p.id, task.discoveryGrantId);
+                        assertGrantAdmission(this.c.store, p.id, 'discovery-grant', grant.id);
                         assertTaskDiscoveryBinding(this.c.store, p.id, grant, { requireApproved: true });
                         if (grant.state !== 'active' || approval.status !== 'approved' || Date.now() >= Date.parse(grant.expiresAt) || connectorSettings(this.c.store, p.id).version !== grant.settingsVersion)
                             continue;
@@ -213,6 +218,7 @@ export class TeamService {
                 if (task.runGrantId) {
                     try {
                         const { grant, approval } = assertRunGrantRecord(this.c.store, p.id, task.runGrantId);
+                        assertGrantAdmission(this.c.store, p.id, 'run-grant', grant.id);
                         assertRunGrantTaskBinding(this.c.store, p.id, grant, { requireApprovedTeam: true });
                         if (grant.state === 'revoked' || approval.status === 'rejected' || approval.status === 'stale' || Date.now() >= Date.parse(grant.expiresAt)) {
                             this.c.store.update('task', task.id, task.version, { execution: 'blocked', blockReason: '固定运行授权已撤销、失效或过期' });

@@ -1,3 +1,4 @@
+import {assertGrantAdmission} from './grant-retirement.js';
 import {assertAutomaticApprovalReference,assertAutomaticTextContinuation} from './automatic-approval-proof.js';
 import {randomUUID} from 'node:crypto';
 import type {ResearchApp} from '../research-app.js';
@@ -82,7 +83,7 @@ export class TextCorpusGrantService {
     constructor(private app:ResearchApp){}
     inspect(actor:Actor,pid:string,id:string):TextCorpusGrantDTO {
         userOnly(actor);scope(actor,pid);const g=this.app.store.get<TextCorpusGrant>('text-corpus-grant',id,pid),reasons:string[]=[];if(g.pmcDocuments)pmcOwner(actor);
-        try{const {approval}=record(this.app.store,pid,id);ensure(g.state==='draft'?['pending','approved'].includes(approval.status):g.state==='active'&&approval.status==='approved','TEXT_GRANT_REVOKED','原文授权已失效');const s=this.app.store.get<Session>('session',g.sessionId,pid);ensure(s.role==='coordinator'&&!s.taskId&&s.state!=='archived'&&digest(s.model)===digest(g.model)&&(g.state!=='active'||s.textCorpusGrantId===g.id),'TEXT_GRANT_SCOPE_CHANGED','指定会话或模型改变');sources(this.app.store,pid,g);}catch(error){reasons.push(asError(error).code);}
+        try{assertGrantAdmission(this.app.store,pid,'text-corpus-grant',id);const {approval}=record(this.app.store,pid,id);ensure(g.state==='draft'?['pending','approved'].includes(approval.status):g.state==='active'&&approval.status==='approved','TEXT_GRANT_REVOKED','原文授权已失效');const s=this.app.store.get<Session>('session',g.sessionId,pid);ensure(s.role==='coordinator'&&!s.taskId&&s.state!=='archived'&&digest(s.model)===digest(g.model)&&(g.state!=='active'||s.textCorpusGrantId===g.id),'TEXT_GRANT_SCOPE_CHANGED','指定会话或模型改变');sources(this.app.store,pid,g);}catch(error){reasons.push(asError(error).code);}
         const uses=this.app.store.list<TextCorpusGrantUse>('text-corpus-grant-use',pid).filter(u=>u.grantId===id),remaining=Math.max(0,g.maxSearches-uses.length);
         const effectiveState=g.state==='revoked'?'revoked':reasons.length?'stale':Date.now()>=Date.parse(g.expiresAt)?'expired':g.state==='draft'?'draft':remaining===0?'exhausted':'active';
         return {...g,effectiveState,validity:reasons.length?'stale':'current',reasons,usage:{limit:g.maxSearches,used:uses.length,remaining,unit:'search'},uses,searchResults:uses.map(u=>this.app.store.get('text-evidence-search',u.searchId,pid))};
@@ -105,6 +106,7 @@ export class TextCorpusGrantService {
     activate(actor:Actor,pid:string,value:unknown){
         userOnly(actor);scope(actor,pid);const x=object(value);return this.app.store.transaction(()=>{
             assertProjectWritable(this.app.store,pid);const {grant:g}=record(this.app.store,pid,text(x.grantId,'grantId',100)),s=this.app.store.get<Session>('session',g.sessionId,pid);
+            assertGrantAdmission(this.app.store,pid,'text-corpus-grant',g.id);
             if(g.pmcDocuments)pmcOwner(actor);
             ensure(g.state==='draft'&&g.version===integer(x.expectedVersion,'expectedVersion',1),'VERSION_CONFLICT','草案已变化或撤销');
             ensure(!s.textCorpusGrantId&&s.role==='coordinator'&&!s.taskId&&s.state!=='archived'&&digest(s.model)===digest(g.model),'TEXT_GRANT_SCOPE_CHANGED','指定会话或模型改变');

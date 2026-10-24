@@ -1,3 +1,4 @@
+import { assertGrantAdmission } from './grant-retirement.js';
 import { assertProjectWritable } from './lifecycle.js';
 import { userOnly, scope } from './permissions.js';
 import { object, text, integer, bool, oneOf } from '../contracts/validation.js';
@@ -17,6 +18,7 @@ export class DiscoveryGrantService {
         scope(actor, pid);
         const g = this.app.store.get('discovery-grant', id, pid), reasons = [];
         try {
+            assertGrantAdmission(this.app.store, pid, 'discovery-grant', id);
             const { approval } = assertDiscoveryGrantRecord(this.app.store, pid, id);
             ensure(g.state === 'draft' ? ['pending', 'approved'].includes(approval.status) : g.state === 'active' && approval.status === 'approved', 'DISCOVERY_GRANT_REVOKED', '授权已失效');
         }
@@ -76,7 +78,7 @@ export class DiscoveryGrantService {
             return this.inspect(actor, pid, id);
         });
     }
-    activate(actor, pid, value) { userOnly(actor); scope(actor, pid); const x = object(value); return this.app.store.transaction(() => { assertProjectWritable(this.app.store, pid); const { grant: g } = assertDiscoveryGrantRecord(this.app.store, pid, text(x.grantId, 'grantId', 100)); if (g.state === 'active') {
+    activate(actor, pid, value) { userOnly(actor); scope(actor, pid); const x = object(value); return this.app.store.transaction(() => { assertProjectWritable(this.app.store, pid); const { grant: g } = assertDiscoveryGrantRecord(this.app.store, pid, text(x.grantId, 'grantId', 100)); assertGrantAdmission(this.app.store, pid, 'discovery-grant', g.id); if (g.state === 'active') {
         if (g.taskBinding)
             assertTaskDiscoveryBinding(this.app.store, pid, g);
         else
