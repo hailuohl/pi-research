@@ -18,6 +18,8 @@ import { safePath } from '../../packages/workspace/files.js';
 import { USER,type ModelConfig } from '../../packages/domain/types.js';
 import { readRoute, writeRoute,guardProjectRoute } from './routes.js';
 import {EventStreamHub,eventQuery} from './event-stream.js';
+import {documentFileRoute,DOCUMENT_UPLOAD_TIMEOUT_MS} from './document-file-routes.js';
+import {filePolicy} from '../../packages/storage/file-policy.js';
 export interface ServerOptions {
     dataDir: string;
     repoRoot: string;
@@ -25,6 +27,7 @@ export interface ServerOptions {
     computeMonitoring?: boolean;
 }
 export function createHttpServer(options: ServerOptions) {
+    filePolicy();
     const app = new ResearchApp(options.dataDir, options.repoRoot), host = new AgentHost(app);
     const events=new EventStreamHub(app.store);
     let port = options.port ?? 4317;
@@ -42,6 +45,7 @@ export function createHttpServer(options: ServerOptions) {
             }
             if (path.startsWith('/api/')) {
                 const route = path.slice(4);
+                const documentFile=await documentFileRoute(app,route,url,req,res);if(documentFile)return json(documentFile.result);
                 if (req.method === 'GET') {
                     guardProjectRoute(app,route);
                     const attachment=attachmentRoute(app,route,url,req.method!);if(attachment)return json(attachment.result);
@@ -71,12 +75,13 @@ export function createHttpServer(options: ServerOptions) {
                 const key = rawKey === undefined && route.startsWith('/operations/') ? undefined : text(rawKey, 'Idempotency-Key', 200);
                 let size = 0;
                 const chunks: Buffer[] = [];
-                for await (const chunk of req) {
+                const bodyTimeout=setTimeout(()=>req.destroy(),20000);bodyTimeout.unref();
+                try {for await (const chunk of req) {
                     size += chunk.length;
                     const maximum=/^\/sessions\/[^/]+\/attachments$/.test(route)||route==='/operations/document_import'?48*1024*1024:/^\/sessions\/[^/]+\/native-media$/.test(route)?32*1024*1024:['/operations/manuscript_create','/operations/publication_template_import','/publication-templates'].includes(route)?24*1024*1024:3*1024*1024;
                     ensure(size <= maximum, 'BODY_TOO_LARGE', route==='/operations/document_import'?'文档导入 JSON 最多 48 MiB；原始文件最多 32 MiB':['/operations/manuscript_create','/operations/publication_template_import','/publication-templates'].includes(route)?'文稿或模板输入 JSON 最多 24 MiB；原始文件合计最多 16 MiB':'请求最多 3 MiB', 413);
                     chunks.push(Buffer.from(chunk));
-                }
+                }} finally {clearTimeout(bodyTimeout);}
                 let body: unknown;
                 try {
                     body = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
@@ -149,7 +154,7 @@ export function createHttpServer(options: ServerOptions) {
                 res.end();
         }
     });
-    server.requestTimeout = 20000;
+    server.requestTimeout = DOCUMENT_UPLOAD_TIMEOUT_MS;
     server.headersTimeout = 10000;
     server.maxHeadersCount = 50;
     let closing:Promise<void>|undefined;

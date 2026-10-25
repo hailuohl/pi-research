@@ -1,0 +1,117 @@
+{
+  "batch": 1,
+  "base": "c7e1dfaa92ef576cad307e8d6d2513fab84f7870",
+  "policy": {
+    "defaultMaxFileBytes": 536870912,
+    "configuration": "PI_RESEARCH_MAX_FILE_BYTES"
+  },
+  "fullRegression": {
+    "snapshot": "original frozen batch1 candidate before necessary retention fix",
+    "total": 2557,
+    "pass": 2532,
+    "skip": 25,
+    "fail": 0,
+    "durationMs": 2332553.2465
+  },
+  "afterFix": {
+    "streamDocumentsRetentionBackupCli": {
+      "total": 33,
+      "pass": 33,
+      "skip": 0,
+      "fail": 0
+    },
+    "maintenance": {
+      "total": 47,
+      "pass": 46,
+      "skip": 1,
+      "fail": 0,
+      "skipReason": "POSIX-only on Windows"
+    },
+    "capacity": {
+      "cases": [
+        {
+          "sizeBytes": 104857600,
+          "node": "24.19.0",
+          "heapLimitMiB": 192,
+          "passed": true,
+          "uploadMilliseconds": 1512,
+          "reopenedAtByte": 65533,
+          "originalDigest": "c95a8de7af3b484fae069c6eb8e75d409f86a522064168ebd8ad42aa308795fa",
+          "peakRssBytes": 175550464,
+          "totalMilliseconds": 1640,
+          "exitCode": 0
+        },
+        {
+          "sizeBytes": 314572800,
+          "node": "24.19.0",
+          "heapLimitMiB": 192,
+          "passed": true,
+          "uploadMilliseconds": 4656,
+          "reopenedAtByte": 65533,
+          "originalDigest": "2bcc9a224c2c9e87d6ed6e1cbd2f5ebabaaf387f65ab23cfc7e07091b2f652b7",
+          "peakRssBytes": 186126336,
+          "totalMilliseconds": 4815,
+          "exitCode": 0
+        },
+        {
+          "sizeBytes": 536870912,
+          "node": "24.19.0",
+          "heapLimitMiB": 192,
+          "passed": true,
+          "uploadMilliseconds": 7734,
+          "reopenedAtByte": 65533,
+          "originalDigest": "5a9a07c814f13e147bbe6600e35bb7b8eab44b599941bf27dd833d80efcd2fef",
+          "peakRssBytes": 219807744,
+          "totalMilliseconds": 7913,
+          "exitCode": 0
+        }
+      ],
+      "passed": true
+    },
+    "cleanBuild": {
+      "identical": true,
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "files": 767,
+      "distManifestSha256": "a777f57e053080e75f3078480bc6aeb89da572f6957ed20d3590e99822e4ae2b"
+    },
+    "integratedCodeHashesMatchReviewedFix": 36
+  },
+  "review": {
+    "initialBlocker": "idempotency conflict published unowned CAS and blocked purge",
+    "fixed": true,
+    "finalBlockingFindings": 0,
+    "base": "c7e1dfaa92ef576cad307e8d6d2513fab84f7870",
+    "fixTrackedDiffSha256": "181bc3cb9c8292eff88a2d2aafc9cd49d667b67fbf091913680ff9ff3a9d8877"
+  },
+  "modelRequests": {
+    "implementation": {
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "runtimeEcho": false
+    },
+    "review": {
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "runtimeEcho": false
+    }
+  },
+  "notRun": [
+    "live provider",
+    "Docker",
+    "browser"
+  ],
+  "subsequentBatches": "Wait for 运行 ResearchClawBench 评测 completion as requested; preserve its in-flight changes"
+}

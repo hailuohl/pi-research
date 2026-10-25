@@ -10,14 +10,58 @@ import {integer,text,oneOf} from '../contracts/validation.js';
 import type {EvidenceService} from '../evidence/service.js';
 import type {ConnectorService} from '../connectors/service.js';
 import {routePaperId} from '../connectors/contracts.js';
-import type {DocumentVersion,DocumentAcquireInput,LiteratureDocumentAcquireInput} from './types.js';
+import type {DocumentVersion,DocumentAcquireInput,LiteratureDocumentAcquireInput,DocumentTextSource,DocumentStreamInput,DocumentTextPageInput} from './types.js';
+import {filePolicy,TEXT_PAGE_BYTES,LEGACY_DOCUMENT_BYTES} from '../storage/file-policy.js';
+import {prepareStreamedText,publishStreamedText,readStreamedText,verifyStreamedBlob} from '../storage/streamed-blob.js';
 import {assertUploadedMedia} from './uploaded-media.js';
 import {ATTACHMENT_MEDIA_TYPES,NATIVE_ATTACHMENT_BYTES} from '../pi-adapter/attachment-input.js';
 export class DocumentService {
  constructor(private c:AppContext,private evidence:EvidenceService,private connectors:ConnectorService){}
  get(actor:Actor,pid:string,id:string){userOnly(actor);scope(actor,pid);assertProjectReadable(this.c.store,pid,actor);return this.c.store.get<DocumentVersion>('document-version',id,pid);}
  inspect(actor:Actor,pid:string,id:string){const d=this.get(actor,pid,id);this.verify(d);return d;}
- private verify(d:Row<DocumentVersion>){for(const item of [d.original,...(d.derivedText?[d.derivedText]:[])]){const {artifact:a}=this.evidence.read({type:'system'},item.artifactId);ensure(a.projectId===d.projectId&&a.digest===item.digest&&a.size===item.size&&a.mediaType===item.mediaType,'DOCUMENT_INVALID','文档原件或派生文本绑定已失效');}}
+ private verify(d:Row<DocumentVersion>){
+  if(this.c.store.maybe('document-text-source',d.id)){const fixed=this.textSource(d);verifyStreamedBlob(this.c.store,fixed.source);verifyStreamedBlob(this.c.store,fixed.indexBlob);return;}
+  ensure(d.original.size<=LEGACY_DOCUMENT_BYTES,'DOCUMENT_TEXT_INDEX_REQUIRED','大原件缺少固定文本索引，不能退回旧全文读取路径',409);
+  for(const item of [d.original,...(d.derivedText?[d.derivedText]:[])]){const {artifact:a}=this.evidence.read({type:'system'},item.artifactId);ensure(a.projectId===d.projectId&&a.digest===item.digest&&a.size===item.size&&a.mediaType===item.mediaType,'DOCUMENT_INVALID','文档原件或派生文本绑定已失效');}
+ }
+ private textSource(d:Row<DocumentVersion>) {
+  ensure(d.source.kind==='upload'&&d.contentKind==='user-text'&&!d.discoveryGrant&&!d.scopeSessionId&&!d.scopeTaskId&&!d.derivedText,'DOCUMENT_TEXT_SOURCE_DENIED','分页只接受用户上传的固定文本原件',403);
+  const fixed=this.c.store.maybe<DocumentTextSource>('document-text-source',d.id);ensure(fixed,'DOCUMENT_TEXT_INDEX_REQUIRED','该原件没有流式文本索引；旧 JSON 导入保留原读取协议',409);ensure(fixed.projectId===d.projectId,'SCOPE_DENIED','固定文本索引属于其他项目',403);
+  ensure(fixed.documentVersionId===d.id&&digest(fixed.original)===digest(d.original),'DOCUMENT_INVALID','固定文本索引绑定已改变',409);
+  const artifact=(descriptor:DocumentVersion['original'],origin:string)=>{const a=this.c.store.get<Artifact>('artifact',descriptor.artifactId,d.projectId!);ensure(digest(this.descriptor(a))===digest(descriptor)&&a.origin===origin&&!a.taskId&&!a.runId&&!a.wakeupId&&!a.discoveryGrant,'DOCUMENT_INVALID','固定文本产物绑定已改变',409);return {blobPath:a.path,digest:a.digest,size:a.size};};
+  return {source:artifact(fixed.original,'document:user-upload'),indexBlob:artifact(fixed.indexArtifact,'document:text-index'),index:fixed.index};
+ }
+ async importStream(actor:Actor,pid:string,value:DocumentStreamInput,input:AsyncIterable<Uint8Array>,key:string,signal?:AbortSignal) {
+  userOnly(actor);scope(actor,pid);ensure(!actor.sessionId&&!actor.taskId&&!actor.attemptId&&!actor.wakeupId,'DOCUMENT_OWNER_ONLY','流式原件导入仅接受未绑定会话的 owner 请求',403);
+  const epoch=assertProjectWritable(this.c.store,pid).lifecycleEpoch,policy=filePolicy();text(key,'Idempotency-Key',200);
+  const title=text(value.title,'title',200),mediaType=oneOf(value.mediaType,policy.mediaTypes,'mediaType'),license=value.license===undefined?null:text(value.license,'license',1000);
+  const validate=()=>{userOnly(actor);scope(actor,pid);assertProjectWritable(this.c.store,pid,epoch);ensure(!signal?.aborted,'DOCUMENT_UPLOAD_CANCELLED','上传已取消',409);};
+  const prepared=await prepareStreamedText(this.c.store,pid,input,policy.maxFileBytes,validate),request={title,mediaType,license,digest:prepared.blob.digest},op=`document-stream-import:${pid}`;
+  const replay=()=>{const previous=this.c.store.operationResult<Row<DocumentVersion>>(op,key,request);if(!previous.found)return;const current=this.get(actor,pid,previous.value.id);ensure(digest(current)===digest(previous.value),'DOCUMENT_INVALID','原幂等文档记录已改变',409);const fixed=this.textSource(current);ensure(digest(fixed.index)===digest(prepared.index)&&digest(fixed.indexBlob)===digest(prepared.indexBlob)&&digest(fixed.source)===digest(prepared.blob),'DOCUMENT_INVALID','原幂等文档索引已改变',409);verifyStreamedBlob(this.c.store,fixed.source);verifyStreamedBlob(this.c.store,fixed.indexBlob);validate();return current;};
+  try{
+   const previous=this.c.store.transaction(()=>{validate();const prior=replay();if(prior)return prior;this.c.store.create('document-blob-publication',pid,prepared.publication,prepared.publication.stagingId);});
+   if(previous)return previous;
+   await publishStreamedText(this.c.store,prepared.publication,validate);
+   // Keep durable ownership until redundant stage links are gone, including a crash before the final transaction.
+   await prepared.dispose();
+   return this.c.store.transaction(()=>{
+    validate();const prior=replay();
+    const result=prior??this.c.store.operation(op,key,request,()=>{
+    const original=this.evidence.publishPrepared(pid,{title,mediaType,origin:'document:user-upload',path:prepared.blob.blobPath,digest:prepared.blob.digest,size:prepared.blob.size});
+    const indexArtifact=this.evidence.publishPrepared(pid,{title:'UTF-8 fixed text index',mediaType:'application/octet-stream',origin:'document:text-index',path:prepared.indexBlob.blobPath,digest:prepared.indexBlob.digest,size:prepared.indexBlob.size});
+    const d=this.publish(pid,{title,original:this.descriptor(original),source:{kind:'upload',requestedVersion:null,reportedVersion:null,versionAssurance:'user-supplied'},contentKind:'user-text',acquiredAt:new Date().toISOString(),license:{value:license,assurance:license?'user-declared':'unknown'},limitations:['User-supplied content is untrusted data','Acquisition does not verify scientific claims or publication identity','Large-file parsing, model delivery and Run inputs require their own supported paths']});
+    this.c.store.create<DocumentTextSource>('document-text-source',pid,{documentVersionId:d.id,original:d.original,indexArtifact:this.descriptor(indexArtifact),index:prepared.index},d.id);return d;
+    });
+    this.c.store.db.prepare("DELETE FROM records WHERE kind='document-blob-publication' AND id=? AND project_id=?").run(prepared.publication.stagingId,pid);return result;
+   });
+  }finally{await prepared.dispose();}
+ }
+ readText(actor:Actor,pid:string,id:string,input:DocumentTextPageInput) {
+  const d=this.get(actor,pid,id);ensure(input.sourceDigest===d.original.digest,'DOCUMENT_SOURCE_CHANGED','请使用固定原件的 sourceDigest 续读',409);
+  const fixed=this.textSource(d),page=readStreamedText(this.c.store,fixed.source,fixed.indexBlob,fixed.index,input.cursor??0,input.limit??TEXT_PAGE_BYTES);
+  // A page proves delivered blocks only, and is never a whole-document reading receipt.
+  assertProjectReadable(this.c.store,pid,actor);return {documentVersionId:d.id,sourceDigest:d.original.digest,cursorUnit:'utf8-byte' as const,integrityScope:'delivered-blocks' as const,...page};
+ }
  list(actor:Actor,pid:string,input:{cursor?:number;limit?:number}={}) {
   userOnly(actor);scope(actor,pid);assertProjectReadable(this.c.store,pid,actor);const cursor=integer(input.cursor??0,'cursor',0,Number.MAX_SAFE_INTEGER),limit=integer(input.limit??50,'limit',1,100);
   const rows=this.c.store.db.prepare("SELECT rowid,data FROM records WHERE kind='document-version' AND project_id=? AND rowid>? ORDER BY rowid LIMIT ?").all(pid,cursor,limit+1);
@@ -29,6 +73,7 @@ export class DocumentService {
   const encoded=text(value.contentBase64,'contentBase64',Math.ceil(32*1024*1024/3)*4);
   ensure(encoded.length%4===0&&/^[A-Za-z0-9+/]*={0,2}$/.test(encoded),'INVALID_INPUT','需要标准 Base64',400);
   const bytes=Buffer.from(encoded,'base64');ensure(bytes.toString('base64')===encoded,'INVALID_INPUT','需要标准 Base64',400);ensure(bytes.length>0&&bytes.length<=32*1024*1024,'ARTIFACT_TOO_LARGE','文档必须在 1 byte–32 MiB 范围',413);
+  if(mediaType.startsWith('text/'))ensure(bytes.length<=filePolicy().maxFileBytes,'ARTIFACT_TOO_LARGE',`原始文本或数据文件最多 ${filePolicy().maxFileBytes} bytes`,413);
   if(!mediaType.startsWith('text/')){if(mediaType!=='application/pdf')ensure(bytes.length<=NATIVE_ATTACHMENT_BYTES,'ARTIFACT_TOO_LARGE','图片或视频原件最多20 MiB',413);assertUploadedMedia(bytes,mediaType);}
   else{try{new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch{ensure(false,'DOCUMENT_FORMAT_INVALID','文本必须是有效 UTF-8',400);}ensure(!bytes.includes(0),'DOCUMENT_FORMAT_INVALID','文本含无效字符',400);}
   const license=value.license===undefined?null:text(value.license,'license',1000);

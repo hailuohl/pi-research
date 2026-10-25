@@ -11,6 +11,7 @@ import { GitCommand } from '../workspace/git-command.js';
 import { DataPaths, readDataLocation, setDataLocation } from './data-paths.js';
 import { hasEnvironmentSecrets, environmentSecrets, redactEnvironment } from '../runtime/environment.js';
 import { createModelManagementSnapshot, validateModelManagementSnapshot, restoreModelManagementSnapshot } from './model-management-backup.js';
+import { documentPublication } from './document-publication.js';
 const ROOTS = new Set(['projects', 'experiments', 'workspaces', 'sessions', 'snapshots', 'artifacts', 'skill-blobs', 'jobs', 'sandbox-jobs', 'document-jobs', 'publication-jobs', 'git-worktrees', 'git-operations', 'exports', 'integration-staging', 'state.db.text-writes']);
 const EXCLUDED = new Set(['access.token', 'models.json', 'models-store.json', 'ssh-targets.json', 'ssh-targets.json.tmp', 'ssh-private', 'local-runtimes.json', 'local-runtimes.json.tmp', 'state.db-wal', 'state.db-shm', 'state.db-journal']);
 const TERMINAL = new Set(['succeeded', 'failed', 'cancelled', 'timed_out']);
@@ -291,6 +292,14 @@ async function references(db, sourceRoot, dataRoot, entries, legacyRoots = []) {
             ref(r.piSessionPath, 'file', `sessions/${r.id}/pi/`);
         if (kind === 'artifact')
             blob(r);
+        if (kind === 'document-blob-publication') {
+            ensure(r.id === id, 'DOCUMENT_PUBLICATION_INVALID', '原件发布记录标识与数据库不一致', 409);
+            for (const pending of documentPublication(logical, projectId, r).blobs) {
+                const key = logical.key(pending.blobPath);
+                if (index.has(key))
+                    blob({ path: pending.blobPath, digest: pending.digest, size: pending.size });
+            }
+        }
         if (kind === 'publication-template') {
             ensure(projectId === null && Array.isArray(r.files), 'BACKUP_REFERENCE_INVALID', '个人模板归属或文件清单无效', 409);
             for (const file of r.files) {

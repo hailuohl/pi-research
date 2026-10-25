@@ -9,6 +9,7 @@ import {digest} from './store.js';
 import {DataPaths,loadDataPaths,assertPhysicalDataRoot} from './data-paths.js';
 import {stateCheck} from './backup.js';
 import {acquireMaintenance,assertMaintenance,releaseMaintenance,type MaintenancePermit} from './process-coordination.js';
+import {existingPublicationBlobs,settleDocumentPublicationLinks} from './document-publication.js';
 type Entry={key:string;type:'file'|'directory';dev:number;ino:number;size?:number;hash?:string};
 type RecordRow={kind:string;id:string;projectId:string|null;value:Record<string,unknown>};
 interface Plan {format:1;projectId:string;purgeId:string;root:{dev:number;ino:number};records:Array<{kind:string;id:string;hash:string}>;paths:Entry[];retained:Entry[];roots:string[];hash:string;}
@@ -41,7 +42,7 @@ function references(paths:DataPaths,records:RecordRow[]){
   const normalized=(path:string)=>process.platform==='win32'?path.toLowerCase():path,candidate=normalized(resolve(value));
   const managed=[paths.dataDir,...paths.legacyRoots].some(root=>{const base=normalized(root);return candidate===base||candidate.startsWith(base.endsWith(sep)?base:base+sep);});
   ensure(!managed,'PURGE_UNKNOWN_REFERENCE','存在未识别字段的旧受管路径引用');
- };for(const row of records){visit(row.value,'',row.kind);if(row.kind==='skill-package-revision'&&Array.isArray(row.value.files))for(const raw of row.value.files){const file=raw as {digest?:unknown};ensure(typeof file.digest==='string'&&/^[a-f0-9]{64}$/.test(file.digest),'PURGE_OWNER_INVALID','技能资源摘要无效');result.add('skill-blobs/'+file.digest);}}return result;
+ };for(const row of records){if(row.kind==='document-blob-publication'){for(const blob of existingPublicationBlobs(paths,row.projectId,row.value))result.add(paths.key(blob.blobPath));continue;}visit(row.value,'',row.kind);if(row.kind==='skill-package-revision'&&Array.isArray(row.value.files))for(const raw of row.value.files){const file=raw as {digest?:unknown};ensure(typeof file.digest==='string'&&/^[a-f0-9]{64}$/.test(file.digest),'PURGE_OWNER_INVALID','技能资源摘要无效');result.add('skill-blobs/'+file.digest);}}return result;
 }
 function receiptOwnership(db:DatabaseSync){
  for(const op of db.prepare('SELECT scope,response,owner_kind,project_id FROM operations').all()){
@@ -100,6 +101,7 @@ export function runOfflinePurge(dataDir:string,projectId:string,options:{offline
  try{db.exec('PRAGMA busy_timeout=5000');const paths=loadDataPaths(db,root);let request=db.prepare('SELECT * FROM project_purges WHERE project_id=?').get(projectId);ensure(request,'NOT_FOUND','没有永久清理请求',404);const operationId=String(request.id);
   permit=acquireMaintenance(db,root,operationId,options.resume===true,()=>{const current=db.prepare('SELECT * FROM project_purges WHERE project_id=?').get(projectId);ensure(current&&current.id===operationId,'PURGE_STATE_INVALID','清理请求身份已变化');ensure(current.state==='pending'||options.resume===true||current.state==='completed','PURGE_RESUME_REQUIRED','已开始或失败的计划必须显式 --resume');if(current.state!=='completed')ensure(current.name_hash===digest(options.confirmName),'PURGE_NAME_MISMATCH','确认名称不匹配');request=current;databaseShape(db);try{stateCheck(db,true);}catch(error){const e=asError(error);if(['BACKUP_BUSY','BACKUP_RECOVERY_PENDING'].includes(e.code))throw new DomainError('PURGE_BUSY','仍有执行、未知结果或未完成恢复，不能维护');throw error;}});const check=()=>assertMaintenance(db,root,permit!);
   if(request.state==='completed'){checkpoint(db);releaseMaintenance(db,root,permit);permit=undefined;return projectPurgeView(db,root,projectId);}
+  settleDocumentPublicationLinks(db,paths,permit);
   const patch=(state:string,phase:string,fields:{completed?:number;plan?:Plan;error?:string}={})=>{check();const changed=db.prepare("UPDATE project_purges SET state=?,phase=?,completed_paths=COALESCE(?,completed_paths),total_paths=COALESCE(?,total_paths),plan=COALESCE(?,plan),error=?,updated_at=? WHERE id=? AND state<>'completed'").run(state,phase,fields.completed??null,fields.plan?.paths.length??null,fields.plan?JSON.stringify(fields.plan):null,fields.error??null,new Date().toISOString(),operationId);ensure(changed.changes===1,'PURGE_STATE_INVALID','终态清理请求不可倒退');};
   const existing:Plan|undefined=request.plan?JSON.parse(String(request.plan)):undefined;if(existing){validatePlan(existing,paths,projectId,operationId);protection(db,paths,projectId,existing);}
   patch('running','planning');const plan:Plan=existing??buildPlan(db,paths,projectId,operationId);validatePlan(plan,paths,projectId,operationId);if(!existing)patch('running','files',{plan});

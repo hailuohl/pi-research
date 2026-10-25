@@ -21,3 +21,12 @@ export interface LiteratureDocumentAcquireInput {source:SourceId;id:string;forma
 export interface DocumentEvidenceLink {documentVersionId:string;rawDigest:string;parseResultId:string;pageNumber:number;textArtifactDigest:string;}
 /** PMC provider text has a fixed XML source, never a PDF page. */
 export interface ProviderTextEvidenceLink {documentVersionId:string;documentDigest:string;rawDigest:string;textArtifactDigest:string;reportedVersion:string;}
+/** Host-generated immutable range index. Kept separately so legacy DocumentVersion wire contracts remain unchanged. */
+export interface DocumentTextSource {
+ documentVersionId:string;
+ original:DocumentVersion['original'];
+ indexArtifact:DocumentVersion['original'];
+ index:import('../storage/streamed-blob.js').FixedTextIndex;
+}
+export interface DocumentStreamInput {title:string;mediaType:string;license?:string;}
+export interface DocumentTextPageInput {sourceDigest:string;cursor?:number;limit?:number;}

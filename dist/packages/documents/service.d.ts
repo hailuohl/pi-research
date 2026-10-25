@@ -2,7 +2,7 @@ import type { AppContext } from '../domain/context.js';
 import type { Actor, Row } from '../domain/types.js';
 import type { EvidenceService } from '../evidence/service.js';
 import type { ConnectorService } from '../connectors/service.js';
-import type { DocumentVersion, DocumentAcquireInput, LiteratureDocumentAcquireInput } from './types.js';
+import type { DocumentVersion, DocumentAcquireInput, LiteratureDocumentAcquireInput, DocumentStreamInput, DocumentTextPageInput } from './types.js';
 export declare class DocumentService {
     private c;
     private evidence;
@@ -11,6 +11,19 @@ export declare class DocumentService {
     get(actor: Actor, pid: string, id: string): Row<DocumentVersion>;
     inspect(actor: Actor, pid: string, id: string): Row<DocumentVersion>;
     private verify;
+    private textSource;
+    importStream(actor: Actor, pid: string, value: DocumentStreamInput, input: AsyncIterable<Uint8Array>, key: string, signal?: AbortSignal): Promise<Row<DocumentVersion>>;
+    readText(actor: Actor, pid: string, id: string, input: DocumentTextPageInput): {
+        content: string;
+        cursor: number;
+        end: number;
+        totalBytes: number;
+        complete: boolean;
+        documentVersionId: string;
+        sourceDigest: string;
+        cursorUnit: "utf8-byte";
+        integrityScope: "delivered-blocks";
+    };
     list(actor: Actor, pid: string, input?: {
         cursor?: number;
         limit?: number;

@@ -12,6 +12,7 @@ import {GitCommand} from '../workspace/git-command.js';
 import {DataPaths,readDataLocation,setDataLocation} from './data-paths.js';
 import {hasEnvironmentSecrets,environmentSecrets,redactEnvironment} from '../runtime/environment.js';
 import {createModelManagementSnapshot,validateModelManagementSnapshot,restoreModelManagementSnapshot,type ModelManagementSnapshot} from './model-management-backup.js';
+import {documentPublication} from './document-publication.js';
 
 type Entry={path:string;type:'directory';mode:number}|{path:string;type:'file';mode:number;size:number;digest:string};
 interface Manifest {format:'pi-research-backup-v1'|'pi-research-backup-v2';sourceRoot:string;legacyRoots?:string[];platform:string;createdAt:string;schema:number[];entries:Entry[];excluded:string[];modelManagement?:ModelManagementSnapshot;manifestDigest:string;}
@@ -160,6 +161,7 @@ async function references(db:DatabaseSync,sourceRoot:string,dataRoot:string,entr
   if(['project','session','experiment','task-attempt'].includes(kind))ref(r.workspace,'directory');
   if(kind==='session'&&r.piSessionPath)ref(r.piSessionPath,'file',`sessions/${r.id}/pi/`);
   if(kind==='artifact')blob(r);
+  if(kind==='document-blob-publication'){ensure(r.id===id,'DOCUMENT_PUBLICATION_INVALID','原件发布记录标识与数据库不一致',409);for(const pending of documentPublication(logical,projectId,r).blobs){const key=logical.key(pending.blobPath);if(index.has(key))blob({path:pending.blobPath,digest:pending.digest,size:pending.size});}}
   if(kind==='publication-template') {ensure(projectId===null&&Array.isArray(r.files),'BACKUP_REFERENCE_INVALID','个人模板归属或文件清单无效',409);for(const file of r.files){ensure(plain(file)&&typeof file.digest==='string'&&/^[a-f0-9]{64}$/.test(file.digest)&&typeof file.blobPath==='string'&&logical.key(file.blobPath)==='artifacts/'+file.digest,'BACKUP_REFERENCE_INVALID','模板资源引用无效',409);blob({path:file.blobPath,digest:file.digest,size:file.size});}}
   if(kind==='skill-package-revision') {ensure(Array.isArray(r.files),'BACKUP_REFERENCE_INVALID','技能修订缺少文件清单',409);for(const file of r.files){ensure(plain(file)&&typeof file.digest==='string'&&/^[a-f0-9]{64}$/.test(file.digest),'BACKUP_REFERENCE_INVALID','技能正文摘要无效',409);blob({path:join(sourceRoot,'skill-blobs',file.digest),digest:file.digest,size:file.size});}}
   if(['git-source-binding','git-workspace','git-operation','github-upload-job'].includes(kind)) {

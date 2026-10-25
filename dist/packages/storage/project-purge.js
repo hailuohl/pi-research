@@ -8,6 +8,7 @@ import { digest } from './store.js';
 import { loadDataPaths, assertPhysicalDataRoot } from './data-paths.js';
 import { stateCheck } from './backup.js';
 import { acquireMaintenance, assertMaintenance, releaseMaintenance } from './process-coordination.js';
+import { existingPublicationBlobs, settleDocumentPublicationLinks } from './document-publication.js';
 const TABLES = new Set(['schema_migrations', 'records', 'operations', 'events', 'inbox', 'compute_limits', 'compute_contexts', 'compute_queue', 'compute_gpu_claims', 'text_write_receipts', 'text_write_key', 'data_location', 'project_record_epochs', 'normal_process_claims', 'maintenance_gate', 'project_purges']);
 const CAS = ['artifacts', 'snapshots', 'skill-blobs'];
 const FILE_FIELDS = new Set(['path', 'blobPath', 'workspace', 'outputDir', 'controlDir', 'piSessionPath', 'analysisSessionPath', 'snapshotPath', 'previousWorkspace']);
@@ -70,6 +71,11 @@ function references(paths, records) {
         ensure(!managed, 'PURGE_UNKNOWN_REFERENCE', '存在未识别字段的旧受管路径引用');
     };
     for (const row of records) {
+        if (row.kind === 'document-blob-publication') {
+            for (const blob of existingPublicationBlobs(paths, row.projectId, row.value))
+                result.add(paths.key(blob.blobPath));
+            continue;
+        }
         visit(row.value, '', row.kind);
         if (row.kind === 'skill-package-revision' && Array.isArray(row.value.files))
             for (const raw of row.value.files) {
@@ -254,6 +260,7 @@ export function runOfflinePurge(dataDir, projectId, options, hooks = {}) {
             permit = undefined;
             return projectPurgeView(db, root, projectId);
         }
+        settleDocumentPublicationLinks(db, paths, permit);
         const patch = (state, phase, fields = {}) => { check(); const changed = db.prepare("UPDATE project_purges SET state=?,phase=?,completed_paths=COALESCE(?,completed_paths),total_paths=COALESCE(?,total_paths),plan=COALESCE(?,plan),error=?,updated_at=? WHERE id=? AND state<>'completed'").run(state, phase, fields.completed ?? null, fields.plan?.paths.length ?? null, fields.plan ? JSON.stringify(fields.plan) : null, fields.error ?? null, new Date().toISOString(), operationId); ensure(changed.changes === 1, 'PURGE_STATE_INVALID', '终态清理请求不可倒退'); };
         const existing = request.plan ? JSON.parse(String(request.plan)) : undefined;
         if (existing) {
