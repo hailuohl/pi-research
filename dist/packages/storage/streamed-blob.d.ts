@@ -15,7 +15,7 @@ export interface FixedTextIndex {
 }
 /** Full integrity boundary, bounded memory; never use metadata as a hash substitute. */
 export declare function verifyStreamedBlob(store: Pick<Store, 'paths'>, blob: ArtifactBlob, validate?: () => void): void;
-export declare function prepareStreamedText(store: Store, projectId: string, input: AsyncIterable<Uint8Array>, maxBytes: number, validate: () => void): Promise<{
+export declare function prepareStreamedText(store: Store, projectId: string, input: AsyncIterable<Uint8Array>, maxBytes: number, validate: () => void, allowEmpty?: boolean): Promise<{
     publication: {
         format: "document-blob-publication-v1";
         stagingId: `${string}-${string}-${string}-${string}-${string}`;
@@ -60,7 +60,7 @@ export declare function prepareFixedTextIndex(store: Store, projectId: string, a
     dispose: () => Promise<void>;
 }>;
 export declare function publishFixedTextIndex(store: Store, publication: TextIndexPublication, validate: () => void): Promise<void>;
-export declare function publishStreamedText(store: Store, publication: DocumentBlobPublication, validate: () => void): Promise<void>;
+export declare function publishStreamedText(store: Store, publication: DocumentBlobPublication, validate: () => void, checkpoint?: () => void): Promise<void>;
 /** Merkle proofs authenticate only touched block entries, keeping index I/O bounded even for large configured limits. */
 export declare function readStreamedText(store: Store, source: ArtifactBlob, indexBlob: ArtifactBlob, index: FixedTextIndex, cursor: number, limit: number, utf16?: boolean): {
     utf16Start?: number | undefined;

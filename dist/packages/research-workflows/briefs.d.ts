@@ -67,10 +67,12 @@ export declare class ResearchBriefService {
         purpose?: "whole-text" | "dataset-reference" | undefined;
         digest: string;
         path: string;
-        size: number;
-        workspace: string;
+        textSourceId?: string | undefined;
         readId: string;
         readProtocol?: "fixed-text-v1" | undefined;
+        size: number;
+        workspace: string;
+        sourceKind?: "workspace-snapshot" | undefined;
         artifactId?: string;
     }[] | {
         inputs: {
@@ -78,17 +80,30 @@ export declare class ResearchBriefService {
             purpose?: "whole-text" | "dataset-reference" | undefined;
             digest: string;
             path: string;
-            size: number;
-            workspace: string;
+            textSourceId?: string | undefined;
             readId: string;
             readProtocol?: "fixed-text-v1" | undefined;
+            size: number;
+            workspace: string;
+            sourceKind?: "workspace-snapshot" | undefined;
             artifactId?: string;
         }[];
-        attachmentSelections: {
+        attachmentSelections: ({
             documentVersionId: string;
             bindingId: string;
             version: number;
-        }[];
+        } | {
+            workspace: string;
+            path: string;
+            bindingId: string;
+            version: number;
+            purpose: "whole-text" | "dataset-reference";
+            artifactId: string;
+            sourceDigest: string;
+            size: number;
+            textSourceId: string;
+            sourceKind: "workspace-snapshot";
+        })[];
     } | undefined;
     save(actor: Actor, projectId: string, sessionId: string, input: unknown): Row<ResearchBrief>;
     inspect(actor: Actor, projectId: string, sessionId: string, briefId?: string): ResearchBriefInspection;

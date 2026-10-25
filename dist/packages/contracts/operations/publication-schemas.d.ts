@@ -1559,7 +1559,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("cursor" | "content" | "digest" | "complete" | "path" | "mediaType" | "end")[];
+        readonly required: ("cursor" | "content" | "digest" | "complete" | "path" | "end" | "mediaType")[];
         readonly additionalProperties: false;
     };
     readonly publication_status: {
@@ -2338,7 +2338,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             }];
                         };
                     };
-                    readonly required: ("message" | "file" | "code" | "severity" | "line" | "pass")[];
+                    readonly required: ("message" | "code" | "file" | "severity" | "line" | "pass")[];
                     readonly additionalProperties: false;
                 };
             };

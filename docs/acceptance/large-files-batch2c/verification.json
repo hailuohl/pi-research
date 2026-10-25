@@ -1,0 +1,106 @@
+{
+  "baseline": "90aab4ff63f6659350cb35bed216d588d5b30b26",
+  "scope": "project workspace fixed snapshot -> existing artifact bounded pages/SDK ACK -> brief fixed inputs -> reopen",
+  "fullRegression": {
+    "session": 90706,
+    "status": "passed",
+    "log": "batch2c/regression.log",
+    "exitCode": 0,
+    "total": 2718,
+    "pass": 2693,
+    "fail": 0,
+    "skip": 25,
+    "cancelled": 0,
+    "todo": 0,
+    "durationMs": 2258618.6782
+  },
+  "capacity": {
+    "session": 86649,
+    "status": "passed",
+    "log": "batch2c/capacity-accepted.log",
+    "heapMiB": 192,
+    "durationMs": 15344.4554,
+    "workspaceBytes": 536870912,
+    "sdkPageBytes": 16000,
+    "wireBytes": 882302,
+    "peakRssBytes": 237174784,
+    "delivery": "delivered",
+    "reopen": true,
+    "permissionMode": "legacy",
+    "postSaveRetry": false
+  },
+  "initialCapacityFailure": {
+    "session": 9387,
+    "status": "failed",
+    "log": "batch2c/capacity-512.log",
+    "bytes": 536870912,
+    "heapMiB": 192,
+    "error": "ARTIFACT_TEXT_PREPARE_TIMEOUT",
+    "durationMs": 123466.1979
+  },
+  "affectedFinal": {
+    "pass": 85,
+    "fail": 0,
+    "skip": 0,
+    "log": "batch2c/capacity-fix-affected.log"
+  },
+  "cleanBuild": {
+    "session": 22101,
+    "status": "passed",
+    "summary": ".validation/clean-build-xXJzxt/summary.json",
+    "files": 785,
+    "distManifestSha256": "1db7623c4f374c976141a186ff36a1ce6ba3f5c46eda3daadf646626b10e4bab"
+  },
+  "review": {
+    "agent": "/root/large_file_batch2c_review",
+    "requestedModel": "gpt-6-astra",
+    "requestedEffort": "xhigh",
+    "runtimeEcho": false,
+    "status": "original two blockers cleared; no new blocker",
+    "snapshot": "batch2c/review-snapshot.json",
+    "result": "batch2c/review-result.json",
+    "report": "batch2c/REVIEW.md",
+    "blockers": [
+      "workspace prepare exceeds120s for512MiB",
+      "artifact_read catalog incorrectly requires generic prepare rather than workspace ready descriptor"
+    ],
+    "initialHashFileCount": 64,
+    "finalResult": "batch2c/review-capacity-fix-result.json",
+    "finalReport": "batch2c/REVIEW-CAPACITY-FIX.md",
+    "finalSnapshot": "batch2c/capacity-fix-snapshot.json",
+    "finalHashFileCount": 64,
+    "finalBlockingFindings": 0
+  },
+  "reviewedSnapshot": "D:/项目/pi research/tmp/large-file-512mib-20261025/batch2c/capacity-fix-snapshot.json",
+  "rootOnlyDocumentation": "spec local-stage/CAS checkpoint clarification, plan status and acceptance evidence after review; reviewed implementation code/generated unchanged",
+  "repairTiming": {
+    "source": "batch2c/workspace-prepare-profile-comparison.json",
+    "scope": "direct100MiB, not SDK capacity",
+    "beforeMs": 16549.7,
+    "afterMs": 1335.5,
+    "beforeFullCheckCount": 8274,
+    "afterFullCheckCount": 125
+  },
+  "modelConfiguration": {
+    "implementation": {
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "high"
+    },
+    "review": {
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "xhigh"
+    },
+    "runtimeEcho": false
+  },
+  "notRun": [
+    "external provider",
+    "Docker",
+    "browser",
+    "scientific benchmarks"
+  ],
+  "mainCheckoutAndService": "untouched",
+  "limitations": [
+    "512MiB verification is explicit dataset-reference with an actual inspected page; no whole-text model reading claim",
+    "managed draft/write budgets remain independent; Draft/Run/archive/review follow later"
+  ]
+}

@@ -283,7 +283,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("documentVersionId" | "start" | "textArtifactDigest" | "parseResultId" | "end" | "pageNumber" | "rawDigest" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
+                            readonly required: ("documentVersionId" | "start" | "textArtifactDigest" | "end" | "parseResultId" | "pageNumber" | "rawDigest" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
                             readonly additionalProperties: false;
                         };
                         readonly providerText: {
@@ -641,7 +641,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                 readonly type: "string";
                             };
                         };
-                        readonly required: ("documentVersionId" | "start" | "textArtifactDigest" | "parseResultId" | "end" | "pageNumber" | "rawDigest" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
+                        readonly required: ("documentVersionId" | "start" | "textArtifactDigest" | "end" | "parseResultId" | "pageNumber" | "rawDigest" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
                         readonly additionalProperties: false;
                     };
                     readonly providerText: {
@@ -698,7 +698,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("cursor" | "content" | "complete" | "reference" | "mediaType" | "end")[];
+        readonly required: ("cursor" | "content" | "complete" | "reference" | "end" | "mediaType")[];
         readonly additionalProperties: false;
     };
 };

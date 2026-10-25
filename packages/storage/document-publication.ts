@@ -16,7 +16,7 @@ export function documentPublication(paths:DataPaths,projectId:unknown,value:Reco
  ensure(Object.keys(value).every(k=>['id','kind','projectId','version','createdAt','updatedAt','format','stagingId','blobs'].includes(k))&&Array.isArray(value.blobs)&&value.blobs.length===2,'DOCUMENT_PUBLICATION_INVALID','原件发布归属字段无效',409);
  for(let i=0;i<value.blobs.length;i++){
   const b=value.blobs[i] as DocumentBlobPublication['blobs'][number];
-  ensure(b&&Object.keys(b).sort().join(',')==='blobPath,digest,size,stage'&&typeof b.digest==='string'&&/^[a-f0-9]{64}$/.test(b.digest)&&Number.isSafeInteger(b.size)&&b.size>0&&typeof b.blobPath==='string'&&paths.key(b.blobPath)==='artifacts/'+b.digest,'DOCUMENT_PUBLICATION_INVALID','原件发布CAS引用无效',409);
+  ensure(b&&Object.keys(b).sort().join(',')==='blobPath,digest,size,stage'&&typeof b.digest==='string'&&/^[a-f0-9]{64}$/.test(b.digest)&&Number.isSafeInteger(b.size)&&(b.size>0||i===0&&b.size===0&&b.digest==='e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')&&typeof b.blobPath==='string'&&paths.key(b.blobPath)==='artifacts/'+b.digest,'DOCUMENT_PUBLICATION_INVALID','原件发布CAS引用无效',409);
   ensure(b.stage&&Object.keys(b.stage).sort().join(',')==='dev,ino,path'&&Number.isInteger(b.stage.dev)&&b.stage.dev>=0&&Number.isInteger(b.stage.ino)&&b.stage.ino>=0&&typeof b.stage.path==='string'&&paths.key(b.stage.path)===`projects/${projectId}/document-upload-staging/${value.stagingId}/${i===0?'source':'index'}`,'DOCUMENT_PUBLICATION_INVALID','原件发布暂存范围无效',409);
  }
  return value as unknown as DocumentBlobPublication;

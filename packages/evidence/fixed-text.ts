@@ -1,3 +1,4 @@
+import {ordinaryWorkspaceReader} from '../research-workflows/workspace-inputs.js';
 import {ARTIFACT_TEXT_PREPARE_TIMEOUT_MS} from '../contracts/tool-budgets.js';
 import {randomUUID} from 'node:crypto';
 import type {ResearchApp} from '../research-app.js';
@@ -16,7 +17,7 @@ import type {PermissionReference} from '../policy/session-permissions.js';
 export interface ArtifactTextSource {artifactId:string;sourceDigest:string;size:number;indexArtifactId:string;index:FixedTextIndex;}
 export interface ArtifactTextRead {
  artifactId:string;textSourceId:string;sourceDigest:string;actor:ReturnType<typeof readerIdentity>;permission?:PermissionReference;
- callId:string;cursor:number;end:number;utf16Start:number;utf16End:number;contentDigest:string;delivery:'pending'|'delivered'|'owner-read';offered?:boolean;replayed?:boolean;
+ callId:string;cursor:number;end:number;utf16Start:number;utf16End:number;contentDigest:string;delivery:'pending'|'delivered'|'owner-read';offered?:boolean;replayed?:boolean;workspaceInputEligible?:true;
 }
 function readerIdentity(actor:Actor){const {type,projectId,sessionId,role,taskId,attemptId,generation,wakeupId,continuationId,approvalResumeId,workflowContinuationId}=actor;return Object.fromEntries(Object.entries({type,projectId,sessionId,role,taskId,attemptId,generation,wakeupId,continuationId,approvalResumeId,workflowContinuationId}).filter(([,value])=>value!==undefined));}
 const blob=(a:Artifact)=>({blobPath:a.path,digest:a.digest,size:a.size});
@@ -70,7 +71,7 @@ export class ArtifactTextService {
   return {artifactId:a.id,digest:a.digest,sourceDigest:a.digest,title:a.title,mediaType:a.mediaType,textSourceId:input.textSourceId,readProtocol:'fixed-text-v1' as const,cursorUnit:'utf8-byte' as const,integrityScope:'delivered-blocks' as const,...page,utf16Start:page.utf16Start!,utf16End:page.utf16End!};
  }
  record(actor:Actor,pid:string,page:ReturnType<ArtifactTextService['page']>,callId:string){
-  this.authorize(actor,pid,page.artifactId);const read=this.app.store.create<ArtifactTextRead>('artifact-text-read',pid,{artifactId:page.artifactId,textSourceId:page.textSourceId,sourceDigest:page.sourceDigest,actor:readerIdentity(actor),...(actor.type==='agent'?{permission:actor.permission??this.app.sessionPermissions.capture(actor.sessionId!)}:{}),callId,cursor:page.cursor,end:page.end,utf16Start:page.utf16Start,utf16End:page.utf16End,contentDigest:digest(Buffer.from(page.content)),delivery:actor.type==='user'?'owner-read':'pending'},randomUUID());return {artifactReadId:read.id};
+  const artifact=this.authorize(actor,pid,page.artifactId);const read=this.app.store.create<ArtifactTextRead>('artifact-text-read',pid,{...(artifact.origin===`workspace-snapshot:${actor.sessionId}`&&ordinaryWorkspaceReader(actor)?{workspaceInputEligible:true as const}:{}),artifactId:page.artifactId,textSourceId:page.textSourceId,sourceDigest:page.sourceDigest,actor:readerIdentity(actor),...(actor.type==='agent'?{permission:actor.permission??this.app.sessionPermissions.capture(actor.sessionId!)}:{}),callId,cursor:page.cursor,end:page.end,utf16Start:page.utf16Start,utf16End:page.utf16End,contentDigest:digest(Buffer.from(page.content)),delivery:actor.type==='user'?'owner-read':'pending'},randomUUID());return {artifactReadId:read.id};
  }
  markReplay(actor:Actor,pid:string,id:string){const r=this.app.store.get<ArtifactTextRead>('artifact-text-read',id,pid);this.authorize(actor,pid,r.artifactId);if(r.delivery==='pending'&&!r.replayed)this.app.store.update<ArtifactTextRead>('artifact-text-read',r.id,r.version,{replayed:true});}
  offer(actor:Actor,pid:string,id:string,callId:string){const r=this.app.store.get<ArtifactTextRead>('artifact-text-read',id,pid);if(r.delivery!=='pending'||r.offered||r.replayed||r.callId!==callId||digest(r.actor)!==digest(readerIdentity(actor)))return false;this.checkRead(actor,pid,r);this.app.store.update<ArtifactTextRead>('artifact-text-read',r.id,r.version,{offered:true});return true;}

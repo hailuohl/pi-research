@@ -594,6 +594,23 @@ export declare const INPUT_SCHEMAS: {
         readonly required: readonly ["reviewId", "title", "hypothesis"];
         readonly additionalProperties: false;
     };
+    readonly workspace_text_prepare: {
+        readonly type: "object";
+        readonly properties: {
+            readonly path: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly purpose: {
+                readonly enum: readonly ["whole-text", "dataset-reference"];
+            };
+        };
+        readonly required: readonly ["path", "purpose"];
+        readonly additionalProperties: false;
+    };
     readonly artifact_text_prepare: {
         readonly type: "object";
         readonly properties: {

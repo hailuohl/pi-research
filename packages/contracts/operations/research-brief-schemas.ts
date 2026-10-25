@@ -14,7 +14,7 @@ const hypothesis = object({ statement: s.string(2000), evidenceIds: array(id, 30
 const step = object({ title: s.string(200), description: s.string(2000) });
 const draftInput=object({path:s.string(1000),readId:id});
 const draftFile=object({sessionId:id,workspace:s.string(1000),path:s.string(1000),digest:s.string(64,64),size:s.integer(0,Number.MAX_SAFE_INTEGER),readId:id,writeVersion:s.integer(1,Number.MAX_SAFE_INTEGER)});
-export const RESEARCH_SOURCE_INPUT_SCHEMA=object({path:s.string(1000),workspace:s.string(1000),artifactId:id,digest:s.string(64,64),size:s.integer(0,Number.MAX_SAFE_INTEGER),readId:id,readProtocol:{const:'fixed-text-v1'},purpose:s.enum(['whole-text','dataset-reference']),documentVersionId:id},['readProtocol','purpose','documentVersionId']);
+export const RESEARCH_SOURCE_INPUT_SCHEMA=object({path:s.string(1000),workspace:s.string(1000),artifactId:id,digest:s.string(64,64),size:s.integer(0,Number.MAX_SAFE_INTEGER),readId:id,readProtocol:{const:'fixed-text-v1'},purpose:s.enum(['whole-text','dataset-reference']),documentVersionId:id,sourceKind:{const:'workspace-snapshot'},textSourceId:id},['readProtocol','purpose','documentVersionId','sourceKind','textSourceId']);
 export const RESEARCH_BRIEF_REFERENCE_SCHEMA=object({id,digest:s.string(64,64),revision:s.integer(1),rootSessionId:id});
 const brief = row('research-brief', {
     automaticApproval:AUTOMATIC_APPROVAL_REFERENCE_SCHEMA,automaticExecution:AUTOMATIC_EXECUTION_SCHEMA,rootSessionId: id, revision: s.integer(1), previousRevisionId: id, question: s.string(4000), scope: s.string(4000, 0),

@@ -25,6 +25,7 @@ export interface ArtifactTextRead {
     delivery: 'pending' | 'delivered' | 'owner-read';
     offered?: boolean;
     replayed?: boolean;
+    workspaceInputEligible?: true;
 }
 declare function readerIdentity(actor: Actor): {
     [k: string]: string | number | undefined;

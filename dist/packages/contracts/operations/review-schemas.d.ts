@@ -514,8 +514,18 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                             readonly minLength: number;
                             readonly maxLength: number;
                         };
+                        readonly sourceKind: {
+                            readonly const: "workspace-snapshot";
+                        };
+                        readonly textSourceId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
                     };
-                    readonly required: ("artifactId" | "digest" | "path" | "size" | "workspace" | "readId")[];
+                    readonly required: ("artifactId" | "digest" | "path" | "readId" | "size" | "workspace")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1068,8 +1078,18 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                             readonly minLength: number;
                             readonly maxLength: number;
                         };
+                        readonly sourceKind: {
+                            readonly const: "workspace-snapshot";
+                        };
+                        readonly textSourceId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
                     };
-                    readonly required: ("artifactId" | "digest" | "path" | "size" | "workspace" | "readId")[];
+                    readonly required: ("artifactId" | "digest" | "path" | "readId" | "size" | "workspace")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;

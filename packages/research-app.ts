@@ -1,3 +1,4 @@
+import {WorkspaceInputService} from './research-workflows/workspace-inputs.js';
 import {ArtifactTextService} from './evidence/fixed-text.js';
 import {AutomaticApprovalService} from './policy/automatic-approvals.js';
 import {FormalReportReviewService} from './publications/formal-report-reviews.js';
@@ -60,6 +61,7 @@ import { EvidenceService } from './evidence/service.js';
 import { RunService } from './runners/service.js';
 export class ResearchApp {
     readonly artifactTexts=new ArtifactTextService(this);
+    readonly workspaceInputs=new WorkspaceInputService(this);
     readonly workflowContinuations=new WorkflowContinuationService(this);
     readonly automaticApprovals:AutomaticApprovalService;
     readonly researchActions:ResearchActionService;

@@ -216,6 +216,7 @@ export const OUTPUT_SCHEMAS = {
     }),
     reviewed_change_prepare:CORE_OUTPUT_SCHEMAS.change_proposal_prepare,
     workspace_list: array(object({ path: string, size: integer, digest: string }, ['digest'])),
+    workspace_text_prepare:object({artifactId:string,sourceDigest:string,size:integer,textSourceId:string,readProtocol:{const:'fixed-text-v1'},utf16Length:integer,status:{const:'ready'},sourceKind:{const:'workspace-snapshot'},workspace:string,path:string,purpose:{enum:['whole-text','dataset-reference']},workspaceBindingId:string}),
     artifact_text_prepare:object({artifactId:string,sourceDigest:string,size:integer,textSourceId:string,readProtocol:{const:'fixed-text-v1'},utf16Length:integer,status:{const:'ready'}}),
     artifact_read:{anyOf:[object({artifactId:string,digest:string,title:string,mediaType:string,content:string,cursor:integer,complete:boolean,reviewReadId:string},['reviewReadId']),object({artifactId:string,digest:string,sourceDigest:string,title:string,mediaType:string,content:string,cursor:integer,end:integer,totalBytes:integer,complete:boolean,textSourceId:string,readProtocol:{const:'fixed-text-v1'},cursorUnit:{const:'utf8-byte'},integrityScope:{const:'delivered-blocks'},utf16Start:integer,utf16End:integer,artifactReadId:string},['artifactReadId'])]},
     artifact_create: artifact,

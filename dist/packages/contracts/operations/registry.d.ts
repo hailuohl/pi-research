@@ -17,6 +17,7 @@ export interface OperationScope {
 }
 interface OperationContext extends OperationScope {
     preparedTaskModels?: PreparedTaskModels;
+    commitPrepared?: (value: unknown) => void;
     app: ResearchApp;
     actor: Actor;
     session?: Row<Session>;

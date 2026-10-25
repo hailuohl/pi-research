@@ -4623,7 +4623,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("documentVersionId" | "cursor" | "versionAssurance" | "complete" | "quality" | "pageCount" | "end" | "resultId" | "items" | "requestedVersion" | "rawDigest" | "observedVersion")[];
+        readonly required: ("documentVersionId" | "cursor" | "versionAssurance" | "complete" | "quality" | "end" | "pageCount" | "resultId" | "items" | "requestedVersion" | "rawDigest" | "observedVersion")[];
         readonly additionalProperties: false;
     };
     readonly document_page_read: {

@@ -1,3 +1,4 @@
+import { ordinaryWorkspaceReader } from '../research-workflows/workspace-inputs.js';
 import { ARTIFACT_TEXT_PREPARE_TIMEOUT_MS } from '../contracts/tool-budgets.js';
 import { randomUUID } from 'node:crypto';
 import { digest } from '../storage/store.js';
@@ -105,8 +106,8 @@ export class ArtifactTextService {
         return { artifactId: a.id, digest: a.digest, sourceDigest: a.digest, title: a.title, mediaType: a.mediaType, textSourceId: input.textSourceId, readProtocol: 'fixed-text-v1', cursorUnit: 'utf8-byte', integrityScope: 'delivered-blocks', ...page, utf16Start: page.utf16Start, utf16End: page.utf16End };
     }
     record(actor, pid, page, callId) {
-        this.authorize(actor, pid, page.artifactId);
-        const read = this.app.store.create('artifact-text-read', pid, { artifactId: page.artifactId, textSourceId: page.textSourceId, sourceDigest: page.sourceDigest, actor: readerIdentity(actor), ...(actor.type === 'agent' ? { permission: actor.permission ?? this.app.sessionPermissions.capture(actor.sessionId) } : {}), callId, cursor: page.cursor, end: page.end, utf16Start: page.utf16Start, utf16End: page.utf16End, contentDigest: digest(Buffer.from(page.content)), delivery: actor.type === 'user' ? 'owner-read' : 'pending' }, randomUUID());
+        const artifact = this.authorize(actor, pid, page.artifactId);
+        const read = this.app.store.create('artifact-text-read', pid, { ...(artifact.origin === `workspace-snapshot:${actor.sessionId}` && ordinaryWorkspaceReader(actor) ? { workspaceInputEligible: true } : {}), artifactId: page.artifactId, textSourceId: page.textSourceId, sourceDigest: page.sourceDigest, actor: readerIdentity(actor), ...(actor.type === 'agent' ? { permission: actor.permission ?? this.app.sessionPermissions.capture(actor.sessionId) } : {}), callId, cursor: page.cursor, end: page.end, utf16Start: page.utf16Start, utf16End: page.utf16End, contentDigest: digest(Buffer.from(page.content)), delivery: actor.type === 'user' ? 'owner-read' : 'pending' }, randomUUID());
         return { artifactReadId: read.id };
     }
     markReplay(actor, pid, id) { const r = this.app.store.get('artifact-text-read', id, pid); this.authorize(actor, pid, r.artifactId); if (r.delivery === 'pending' && !r.replayed)

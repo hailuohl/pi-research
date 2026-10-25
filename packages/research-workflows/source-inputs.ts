@@ -1,3 +1,4 @@
+import {assertWorkspaceInput,workspaceSelections} from './workspace-inputs.js';
 import {assertAttachmentInput,attachmentInputs,attachmentSelectionFingerprint} from './attachment-inputs.js';
 import {randomUUID} from 'node:crypto';
 import {dirname,basename,relative,resolve,sep} from 'node:path';
@@ -8,7 +9,7 @@ import {digest,type Store} from '../storage/store.js';
 import {safePath} from '../workspace/files.js';
 import {readStableFile} from '../workspace/stable-file.js';
 
-export interface ResearchSourceInput {path:string;workspace:string;artifactId:string;digest:string;size:number;readId:string;readProtocol?:'fixed-text-v1';purpose?:'whole-text'|'dataset-reference';documentVersionId?:string;}
+export interface ResearchSourceInput {path:string;workspace:string;artifactId:string;digest:string;size:number;readId:string;readProtocol?:'fixed-text-v1';purpose?:'whole-text'|'dataset-reference';documentVersionId?:string;sourceKind?:'workspace-snapshot';textSourceId?:string;}
 interface InputRead {sessionId:string;workspace:string;anchorBriefId:string|null;path:string;digest:string;size:number;callId:string;blockedReason?:'BRIEF_SOURCE_PATH_INVALID'|'BRIEF_SOURCE_ENCODING_INVALID';}
 type PendingInput=Omit<ResearchSourceInput,'artifactId'>&{artifactId?:string;bytes?:Buffer};
 const MAX_INPUTS=32,MAX_BYTES=8*1024*1024,MAX_FILE=2*1024*1024;
@@ -19,6 +20,8 @@ export function assertSourceInputs(store:Store,pid:string,sessionId:string,input
     ensure(Array.isArray(inputs)&&inputs.length<=MAX_INPUTS&&new Set(inputs.map(i=>pathKey(i.workspace,i.path))).size===inputs.length,'BRIEF_SOURCE_CORRUPTED','固定研究输入清单无效');
     let total=0;
     for(const input of inputs) {
+        if(input.sourceKind==='workspace-snapshot'){assertWorkspaceInput(store,pid,sessionId,input);continue;}
+        ensure(input.sourceKind===undefined&&input.textSourceId===undefined,'BRIEF_SOURCE_CORRUPTED','旧输入不能伪装固定工作区来源');
         if(input.readProtocol==='fixed-text-v1'){assertAttachmentInput(store,pid,sessionId,input);continue;}
         ensure(input.purpose===undefined&&input.documentVersionId===undefined,'BRIEF_SOURCE_CORRUPTED','旧研究输入不能改写读取模式');
         const read=store.get<InputRead>('research-input-read',input.readId,pid),artifact=store.get<Artifact>('artifact',input.artifactId,pid);
@@ -48,7 +51,9 @@ export class SourceInputService {
         const reads=new Map<string,Row<InputRead>>();
         for(const read of this.app.store.list<InputRead>('research-input-read',session.projectId!))if(read.sessionId===session.id&&read.anchorBriefId===anchorBriefId)reads.set(pathKey(read.workspace,read.path),read);
         const project=this.app.store.get<Project>('project',session.projectId!);
+        const selections=workspaceSelections(this.app.store,session);
         for(const [key,read]of reads) {
+            if(selections.some(s=>pathKey(s.workspace,s.path)===key))continue;
             ensure(!read.blockedReason,'BRIEF_SOURCE_READ_REQUIRED',`研究输入尚未获得完整读取记录，请修复并用规范path、新callId重新workspace_read(source=project)：${read.path} (${read.blockedReason})`);
             ensure(project.workspace===read.workspace,'BRIEF_SOURCE_CHANGED',`项目输入工作区已变化，请重新workspace_read(source=project)：${read.path}`);
             let bytes:Buffer;try{bytes=readStableFile(this.app.store.paths.physical(read.workspace),read.path,MAX_FILE);}catch{throw new DomainError('BRIEF_SOURCE_CHANGED',`研究输入不可读取，请修复后重新workspace_read(source=project)：${read.path}`);}
@@ -57,11 +62,12 @@ export class SourceInputService {
             const old=inputs.get(key);ensure(!old?.readProtocol,'BRIEF_SOURCE_BINDING_CHANGED','旧workspace读取不能覆盖固定附件输入');if(old&&old.digest===read.digest&&old.size===read.size)continue;
             inputs.set(key,{path:read.path,workspace:read.workspace,digest:read.digest,size:read.size,readId:read.id,bytes});
         }
-        for(const input of attachmentInputs(this.app.store,session,inherited.filter(i=>i.readProtocol==='fixed-text-v1').map(i=>i.readId),status)){const key=pathKey(input.workspace,input.path),old=inputs.get(key);ensure(!old||old.readProtocol==='fixed-text-v1'&&old.documentVersionId===input.documentVersionId,'BRIEF_SOURCE_BINDING_CHANGED','固定附件不能覆盖旧workspace输入');inputs.set(key,input);}
+        for(const input of attachmentInputs(this.app.store,session,inherited.filter(i=>i.readProtocol==='fixed-text-v1'&&!i.sourceKind).map(i=>i.readId),status)){const key=pathKey(input.workspace,input.path),old=inputs.get(key);ensure(!old||old.readProtocol==='fixed-text-v1'&&old.documentVersionId===input.documentVersionId,'BRIEF_SOURCE_BINDING_CHANGED','固定附件不能覆盖旧workspace输入');inputs.set(key,input);}
+        for(const input of this.app.workspaceInputs.inputs(session,inherited,status)){const key=pathKey(input.workspace,input.path),old=inputs.get(key);ensure(!old||!old.readProtocol||old.sourceKind==='workspace-snapshot','BRIEF_SOURCE_BINDING_CHANGED','工作区快照不能覆盖固定附件身份');inputs.set(key,input);}
         const result=[...inputs.values()].sort((a,b)=>pathKey(a.workspace,a.path).localeCompare(pathKey(b.workspace,b.path)));
         ensure(result.length<=MAX_INPUTS&&result.reduce((n,i)=>n+(i.readProtocol?0:i.size),0)<=MAX_BYTES,'BRIEF_SOURCE_LIMIT','固定研究输入最多32份、每份2MiB、合计8MiB');return result;
     }
-    selectionFingerprint(session:Row<Session>){return attachmentSelectionFingerprint(this.app.store,session);}
+    selectionFingerprint(session:Row<Session>){const attachments=attachmentSelectionFingerprint(this.app.store,session),workspace=workspaceSelections(this.app.store,session);return workspace.length?[...attachments,...workspace.map(s=>({sourceKind:'workspace-snapshot' as const,...s}))]:attachments;}
     preview(session:Row<Session>,anchorBriefId:string|null,inherited:ResearchSourceInput[],status:'clarifying'|'ready'='ready') {return this.collect(session,anchorBriefId,inherited,status).map(({bytes,...meta})=>meta);}
     previewBytes(session:Row<Session>,anchorBriefId:string|null,inherited:ResearchSourceInput[],bytePaths:string[]) {return this.collect(session,anchorBriefId,inherited).map(input=>{
         if(!bytePaths.includes(input.path))return {...input,bytes:undefined,verifiedReference:true as const};

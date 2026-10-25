@@ -41,6 +41,7 @@ export interface OperationScope {
 }
 interface OperationContext extends OperationScope {
     preparedTaskModels?:PreparedTaskModels;
+    commitPrepared?: (value:unknown)=>void;
     app: ResearchApp;
     actor: Actor;
     session?: Row<Session>;
@@ -79,6 +80,7 @@ function paperReplay(c: OperationContext, x: Record<string, unknown>) {
 
 function authorizeRegistered(c: OperationContext, name: string, x: Record<string, unknown>) {
     c.app.textCorpusGrants.authorizeContent(c.actor,c.projectId,name,x);
+    if(name==='workspace_text_prepare')c.app.workspaceInputs.authorize(c.actor,c.projectId,c.session!.id);
     if(name==='artifact_text_prepare'||(name==='artifact_read'||name==='evidence_register')&&x.readProtocol==='fixed-text-v1')c.app.artifactTexts.authorize(c.actor,c.projectId,x.artifactId as string);
     if(name==='evidence_read'){const e=c.app.store.get<import('../../domain/types.js').Evidence>('evidence',x.evidenceId as string,c.projectId);if(e.fixedText)c.app.artifactTexts.authorize(c.actor,c.projectId,e.artifactId);}
     if (name === 'collaboration_plan_submit' || name === 'agent_delegate') c.app.teams.validatePlan(c.actor,c.session!.id,x);
@@ -368,6 +370,7 @@ const SPECS: OperationSpec[] = [
     make('session_notice_read', {idempotencyPolicy: 'read-only', requiresSession: true, authorize: (c, x) => authorizeRegistered(c, 'session_notice_read', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'session_notice_read', x)}),
     make('project_inspect', {idempotencyPolicy: 'read-only', authorize: (c, x) => {if(x.githubCommit!==undefined&&c.actor.type==='agent')c.app.automaticApprovals.coordinator(c.actor,c.projectId,c.app.operations.authorizeAgent(c.actor,'project_inspect'));else authorizeRegistered(c,'project_inspect',x);}, preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'project_inspect', x)}),
     make('workspace_list', {idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'workspace_list', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'workspace_list', x)}),
+    make('workspace_text_prepare',{idempotencyPolicy:'key-required',asynchronous:true,requiresSession:true,authorize:(c,x)=>authorizeRegistered(c,'workspace_text_prepare',x),preconditions:noPrecondition,execute:(c,x)=>c.app.workspaceInputs.prepare(c.actor,c.projectId,c.session!.id,x as unknown as Parameters<typeof c.app.workspaceInputs.prepare>[3],c.idempotencyKey!,c.validate,c.signal,c.commitPrepared)}),
     make('artifact_text_prepare',{idempotencyPolicy:'key-required',asynchronous:true,authorize:(c,x)=>authorizeRegistered(c,'artifact_text_prepare',x),preconditions:noPrecondition,execute:(c,x)=>c.app.artifactTexts.prepare(c.actor,c.projectId,x as unknown as Parameters<typeof c.app.artifactTexts.prepare>[2],c.validate,c.signal)}),
     make('artifact_read', {idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'artifact_read', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'artifact_read', x)}),
     make('artifact_create', {idempotencyPolicy: 'key-required', authorize: (c, x) => authorizeRegistered(c, 'artifact_create', x), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => executeRegistered(c, 'artifact_create', x)}),
@@ -488,10 +491,10 @@ export class OperationRegistry {
         const cached = !['session_action_resume','session_action_execute','session_action_inspect','research_brief_inspect','research_history_list'].includes(id) && (actor.type === 'agent' || spec.idempotencyPolicy === 'key-required');
         if (cached||spec.idempotencyPolicy==='key-required') ensure(typeof key === 'string' && key.trim() && key.length <= 200, 'OPERATION_ID_REQUIRED', '写操作需要 Idempotency-Key', 400);
         const context: OperationContext = {...options, app: this.app, actor, session, validate: () => {
-            if(session){const current=this.app.sessions.get(actor,session.id);ensure(spec.idempotencyPolicy==='read-only'||id==='artifact_text_prepare'||current.state!=='archived','SESSION_ARCHIVED','会话已归档');}
+            if(session){const current=this.app.sessions.get(actor,session.id);ensure(spec.idempotencyPolicy==='read-only'||['artifact_text_prepare','workspace_text_prepare'].includes(id)||current.state!=='archived','SESSION_ARCHIVED','会话已归档');}
             ensure(!options.signal?.aborted, 'CONNECTOR_CANCELLED', '连接请求已取消或超时', 409);
             if (actor.type === 'agent') this.authorizeAgent(actor, id);
-            if(id==='artifact_text_prepare')ensure(assertProjectReadable(this.app.store,pid,actor).lifecycleEpoch===lifecycleEpoch,'PROJECT_CHANGED','准备期间项目生命周期已改变',409);else assertProjectWritable(this.app.store,pid,lifecycleEpoch);
+            if(['artifact_text_prepare','workspace_text_prepare'].includes(id))ensure(assertProjectReadable(this.app.store,pid,actor).lifecycleEpoch===lifecycleEpoch,'PROJECT_CHANGED','准备期间项目生命周期已改变',409);else assertProjectWritable(this.app.store,pid,lifecycleEpoch);
             if(permission){this.app.sessionPermissions.assert(permission.reference,false);if(permission.actionId&&!permission.consumed)this.app.sessionPermissions.validate(permission.reference,session!.id,id,input,permission.actionId);}
         }};
         if (spec.requiresSession) ensure(session, 'SESSION_REQUIRED', '需要指定项目内的会话', 400);
@@ -582,8 +585,8 @@ export class OperationRegistry {
             return saved;
         };
         const invoke = () => {
-            if(session){const current=this.app.sessions.get(actor,session.id);if(spec.idempotencyPolicy!=='read-only'&&id!=='artifact_text_prepare')ensure(current.state!=='archived','SESSION_ARCHIVED','会话已归档');}
-            if(spec.idempotencyPolicy!=='read-only'&&id!=='artifact_text_prepare')assertProjectWritable(this.app.store,pid,lifecycleEpoch);
+            if(session){const current=this.app.sessions.get(actor,session.id);if(spec.idempotencyPolicy!=='read-only'&&!['artifact_text_prepare','workspace_text_prepare'].includes(id))ensure(current.state!=='archived','SESSION_ARCHIVED','会话已归档');}
+            if(spec.idempotencyPolicy!=='read-only'&&!['artifact_text_prepare','workspace_text_prepare'].includes(id))assertProjectWritable(this.app.store,pid,lifecycleEpoch);
             else assertProjectReadable(this.app.store,pid,actor);
             if (actor.type === 'agent') this.authorizeAgent(actor, id);
             // Supported secret updates share this writer lock, unlike the earlier readback snapshot.
@@ -627,11 +630,13 @@ export class OperationRegistry {
         if (spec.asynchronous) {
             // Owner receipts remain readable after archival; only new effects require a writable project.
             if(actor.type==='agent')context.validate();
-            if(id==='artifact_text_prepare'){
+            if(['artifact_text_prepare','workspace_text_prepare'].includes(id)){
                 // Derived read caches own their publication intent; no unknown external effect may strand a project.
                 const prior=this.app.store.transaction(lookup),hash=digest(request),pendingId=digest({scope:operationScope,key});
+                if(prior&&id==='workspace_text_prepare'){context.validate();return Promise.resolve(output(this.app.workspaceInputs.replay(actor,pid,session!.id,prior.value,context.signal)));}
                 if(prior)return this.app.artifactTexts.prepare(actor,pid,input as unknown as Parameters<ResearchApp['artifactTexts']['prepare']>[2],context.validate,context.signal).then(value=>{context.validate();spec.authorize(context,input);ensure(digest(value)===digest(prior.value),'ARTIFACT_SOURCE_CHANGED','缓存准备绑定已改变',409);return output(prior.value);});
                 const active=this.pending.get(pendingId);if(active){ensure(active.hash===hash,'IDEMPOTENCY_CONFLICT','相同幂等键不能用于不同请求');return active.promise.then(value=>{context.validate();spec.authorize(context,input);return value;});}
+                if(id==='workspace_text_prepare')context.commitPrepared=value=>{context.validate();spec.authorize(context,input);save(value);};
                 const promise=Promise.resolve().then(invoke).then(value=>this.app.store.transaction(()=>{context.validate();spec.authorize(context,input);const previous=lookup();if(previous)ensure(digest(previous.value)===digest(value),'ARTIFACT_SOURCE_CHANGED','并发准备结果不符',409);return previous?output(previous.value):save(value);})).finally(()=>this.pending.delete(pendingId));
                 this.pending.set(pendingId,{hash,promise});return promise;
             }

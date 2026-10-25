@@ -50,16 +50,16 @@ async function hashFile(file:FileHandle,size:number,validate:()=>void) {
  const hash=createHash('sha256');for(let offset=0;offset<size;offset+=IO_BYTES){validate();hash.update(await readAsync(file,Math.min(IO_BYTES,size-offset),offset));}
  ensure((await file.stat()).size===size,'ARTIFACT_CORRUPTED','暂存原件大小改变',409);return hash.digest('hex');
 }
-async function publishFile(store:Store,blob:DocumentBlobPublication['blobs'][number],validate:()=>void) {
- const path=store.paths.physical(blob.stage.path),stage=lstatSync(path),target=validBlob(store,blob);validate();ensure(stage.isFile()&&!stage.isSymbolicLink()&&stage.dev===blob.stage.dev&&stage.ino===blob.stage.ino&&stage.size===blob.size,'DOCUMENT_PUBLICATION_INVALID','待发布暂存原件身份改变',409);await chmod(path,0o444);validate();
+async function publishFile(store:Store,blob:DocumentBlobPublication['blobs'][number],validate:()=>void,checkpoint:()=>void=validate) {
+ const path=store.paths.physical(blob.stage.path),stage=lstatSync(path),target=validBlob(store,blob);checkpoint();ensure(stage.isFile()&&!stage.isSymbolicLink()&&stage.dev===blob.stage.dev&&stage.ino===blob.stage.ino&&stage.size===blob.size,'DOCUMENT_PUBLICATION_INVALID','待发布暂存原件身份改变',409);await chmod(path,0o444);checkpoint();
  try{await link(path,target);}catch(error){if((error as NodeJS.ErrnoException).code!=='EEXIST')throw error;}
- validate();
+ checkpoint();
  // Also hash the selected CAS file on deduplication; a retry must not repair or overwrite old bytes.
  const before=lstatSync(validBlob(store,blob));ensure(before.isFile()&&!before.isSymbolicLink()&&before.size===blob.size,'ARTIFACT_CORRUPTED','产物库类型或大小改变',409);
- const file=await open(validBlob(store,blob),constants.O_RDONLY|(constants.O_NOFOLLOW??0));try{sameFile(before,await file.stat());ensure(await hashFile(file,blob.size,validate)===blob.digest,'ARTIFACT_CORRUPTED','产物库完整摘要校验失败',409);sameFile(before,await file.stat());sameFile(before,lstatSync(validBlob(store,blob)));}finally{await file.close();}
+ const file=await open(validBlob(store,blob),constants.O_RDONLY|(constants.O_NOFOLLOW??0));try{sameFile(before,await file.stat());ensure(await hashFile(file,blob.size,validate)===blob.digest,'ARTIFACT_CORRUPTED','产物库完整摘要校验失败',409);sameFile(before,await file.stat());sameFile(before,lstatSync(validBlob(store,blob)));checkpoint();}finally{await file.close();}
 }
 /** Private project-owned staging only. The caller must persist ownership before publishing CAS files. */
-async function prepareText(store:Store,projectId:string,input:AsyncIterable<Uint8Array>,maxBytes:number,validate:()=>void,fixedSource?:ArtifactBlob) {
+async function prepareText(store:Store,projectId:string,input:AsyncIterable<Uint8Array>,maxBytes:number,validate:()=>void,fixedSource?:ArtifactBlob,allowEmpty=false) {
  const stagingId=randomUUID(),directory=store.paths.physical(join(store.paths.dataDir,'projects',projectId,fixedSource?'text-index-staging':'document-upload-staging',stagingId));await mkdir(directory,{recursive:true,mode:0o700});
  const cas=store.paths.physical(join(store.paths.dataDir,'artifacts'));await mkdir(cas,{recursive:true,mode:0o700});
  const paths=['source','entries','index'].map(name=>join(directory,name));
@@ -80,7 +80,7 @@ async function prepareText(store:Store,projectId:string,input:AsyncIterable<Uint
    }
   }
   validate();try{utf16Length+=decoder.decode().length;}catch{ensure(false,'DOCUMENT_FORMAT_INVALID','文本必须是有效 UTF-8',400);}
-  ensure(size>0||!!fixedSource,'DOCUMENT_FORMAT_INVALID','原件不能为空',400);if(blockSize)await finishBlock();
+  ensure(size>0||!!fixedSource||allowEmpty,'DOCUMENT_FORMAT_INVALID','原件不能为空',400);if(blockSize)await finishBlock();
   const sourceDigest=fullHash.digest('hex');if(source){await source.sync();ensure(await hashFile(source,size,validate)===sourceDigest,'ARTIFACT_CORRUPTED','暂存原件摘要改变',409);}else ensure(fixedSource?.digest===sourceDigest&&fixedSource.size===size,'ARTIFACT_CORRUPTED','固定原件完整摘要改变',409);
   let leafCount=1;while(leafCount<blockCount)leafCount*=2;
   const nodesBytes=(2*leafCount-1)*HASH_BYTES,indexSize=nodesBytes+blockCount*ENTRY_BYTES;index=await open(paths[2],'wx+',0o600);
@@ -98,8 +98,8 @@ async function prepareText(store:Store,projectId:string,input:AsyncIterable<Uint
   if(!prepared)await dispose();
  }
 }
-export async function prepareStreamedText(store:Store,projectId:string,input:AsyncIterable<Uint8Array>,maxBytes:number,validate:()=>void) {
- const prepared=await prepareText(store,projectId,input,maxBytes,validate);
+export async function prepareStreamedText(store:Store,projectId:string,input:AsyncIterable<Uint8Array>,maxBytes:number,validate:()=>void,allowEmpty=false) {
+ const prepared=await prepareText(store,projectId,input,maxBytes,validate,undefined,allowEmpty);
  return {...prepared,publication:{...prepared.publication,format:'document-blob-publication-v1' as const}};
 }
 /** Index an already-owned fixed source: only entries/index are staged, never the source bytes. */
@@ -119,8 +119,8 @@ export async function publishFixedTextIndex(store:Store,publication:TextIndexPub
   validate();verifyStreamedBlob(store,publication.blobs[0],validate);
  }validate();
 }
-export async function publishStreamedText(store:Store,publication:DocumentBlobPublication,validate:()=>void) {
- for(const blob of publication.blobs){validate();await publishFile(store,blob,validate);}validate();
+export async function publishStreamedText(store:Store,publication:DocumentBlobPublication,validate:()=>void,checkpoint:()=>void=validate) {
+ for(const blob of publication.blobs){checkpoint();await publishFile(store,blob,validate,checkpoint);checkpoint();}checkpoint();
 }
 function validateIndex(source:ArtifactBlob,indexBlob:ArtifactBlob,index:FixedTextIndex) {
  ensure(index.format==='utf8-block-tree-v1'&&index.sourceDigest===source.digest&&index.sourceSize===source.size&&index.blockBytes===TEXT_BLOCK_BYTES&&Number.isSafeInteger(index.blockCount)&&index.blockCount===Math.ceil(source.size/TEXT_BLOCK_BYTES)&&index.blockCount>=0,'ARTIFACT_CORRUPTED','文本索引来源绑定失效',409);

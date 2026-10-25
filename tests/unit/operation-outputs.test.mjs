@@ -123,6 +123,9 @@ test('all existing public tools have closed, literal success contracts exercised
   await call('workspace_write',{path:'sample.txt',content:'sample',expectedDigest:null});
   const sampleRead=await call('workspace_read',{path:'sample.txt'});
   const artifact=await call('artifact_create',{title:'text.txt',content:'measured original text'});
+  const snapshotSession=s.app.sessions.create(USER,s.project.id,{title:'Workspace fixed output'});s.app.store.update('session',snapshotSession.id,snapshotSession.version,{state:'running',generation:1,leaseUntil:Date.now()+120000});
+  writeFileSync(join(s.app.store.paths.physical(s.project.workspace),'schema-source.txt'),'workspace snapshot');
+  const workspaceText=await call('workspace_text_prepare',{path:'schema-source.txt',purpose:'dataset-reference'},{...root,sessionId:snapshotSession.id});assert.equal(workspaceText.sourceKind,'workspace-snapshot');assert.equal(workspaceText.status,'ready');assert.ok(workspaceText.workspaceBindingId);
   const preparedText=await call('artifact_text_prepare',{artifactId:artifact.id,sourceDigest:artifact.digest});assert.equal(preparedText.status,'ready');assert.equal(preparedText.readProtocol,'fixed-text-v1');
   const fixedPage=await call('artifact_read',{artifactId:artifact.id,sourceDigest:artifact.digest,textSourceId:preparedText.textSourceId,readProtocol:'fixed-text-v1'});assert.equal(fixedPage.content,'measured original text');assert.equal(fixedPage.sourceDigest,artifact.digest);
   await call('artifact_read',{artifactId:artifact.id});

@@ -1,3 +1,4 @@
+import { assertWorkspaceInput, workspaceSelections } from './workspace-inputs.js';
 import { assertAttachmentInput, attachmentInputs, attachmentSelectionFingerprint } from './attachment-inputs.js';
 import { randomUUID } from 'node:crypto';
 import { dirname, basename, relative, resolve, sep } from 'node:path';
@@ -13,6 +14,11 @@ export function assertSourceInputs(store, pid, sessionId, inputs) {
     ensure(Array.isArray(inputs) && inputs.length <= MAX_INPUTS && new Set(inputs.map(i => pathKey(i.workspace, i.path))).size === inputs.length, 'BRIEF_SOURCE_CORRUPTED', '固定研究输入清单无效');
     let total = 0;
     for (const input of inputs) {
+        if (input.sourceKind === 'workspace-snapshot') {
+            assertWorkspaceInput(store, pid, sessionId, input);
+            continue;
+        }
+        ensure(input.sourceKind === undefined && input.textSourceId === undefined, 'BRIEF_SOURCE_CORRUPTED', '旧输入不能伪装固定工作区来源');
         if (input.readProtocol === 'fixed-text-v1') {
             assertAttachmentInput(store, pid, sessionId, input);
             continue;
@@ -51,7 +57,10 @@ export class SourceInputService {
             if (read.sessionId === session.id && read.anchorBriefId === anchorBriefId)
                 reads.set(pathKey(read.workspace, read.path), read);
         const project = this.app.store.get('project', session.projectId);
+        const selections = workspaceSelections(this.app.store, session);
         for (const [key, read] of reads) {
+            if (selections.some(s => pathKey(s.workspace, s.path) === key))
+                continue;
             ensure(!read.blockedReason, 'BRIEF_SOURCE_READ_REQUIRED', `研究输入尚未获得完整读取记录，请修复并用规范path、新callId重新workspace_read(source=project)：${read.path} (${read.blockedReason})`);
             ensure(project.workspace === read.workspace, 'BRIEF_SOURCE_CHANGED', `项目输入工作区已变化，请重新workspace_read(source=project)：${read.path}`);
             let bytes;
@@ -74,16 +83,21 @@ export class SourceInputService {
                 continue;
             inputs.set(key, { path: read.path, workspace: read.workspace, digest: read.digest, size: read.size, readId: read.id, bytes });
         }
-        for (const input of attachmentInputs(this.app.store, session, inherited.filter(i => i.readProtocol === 'fixed-text-v1').map(i => i.readId), status)) {
+        for (const input of attachmentInputs(this.app.store, session, inherited.filter(i => i.readProtocol === 'fixed-text-v1' && !i.sourceKind).map(i => i.readId), status)) {
             const key = pathKey(input.workspace, input.path), old = inputs.get(key);
             ensure(!old || old.readProtocol === 'fixed-text-v1' && old.documentVersionId === input.documentVersionId, 'BRIEF_SOURCE_BINDING_CHANGED', '固定附件不能覆盖旧workspace输入');
+            inputs.set(key, input);
+        }
+        for (const input of this.app.workspaceInputs.inputs(session, inherited, status)) {
+            const key = pathKey(input.workspace, input.path), old = inputs.get(key);
+            ensure(!old || !old.readProtocol || old.sourceKind === 'workspace-snapshot', 'BRIEF_SOURCE_BINDING_CHANGED', '工作区快照不能覆盖固定附件身份');
             inputs.set(key, input);
         }
         const result = [...inputs.values()].sort((a, b) => pathKey(a.workspace, a.path).localeCompare(pathKey(b.workspace, b.path)));
         ensure(result.length <= MAX_INPUTS && result.reduce((n, i) => n + (i.readProtocol ? 0 : i.size), 0) <= MAX_BYTES, 'BRIEF_SOURCE_LIMIT', '固定研究输入最多32份、每份2MiB、合计8MiB');
         return result;
     }
-    selectionFingerprint(session) { return attachmentSelectionFingerprint(this.app.store, session); }
+    selectionFingerprint(session) { const attachments = attachmentSelectionFingerprint(this.app.store, session), workspace = workspaceSelections(this.app.store, session); return workspace.length ? [...attachments, ...workspace.map(s => ({ sourceKind: 'workspace-snapshot', ...s }))] : attachments; }
     preview(session, anchorBriefId, inherited, status = 'ready') { return this.collect(session, anchorBriefId, inherited, status).map(({ bytes, ...meta }) => meta); }
     previewBytes(session, anchorBriefId, inherited, bytePaths) {
         return this.collect(session, anchorBriefId, inherited).map(input => {
