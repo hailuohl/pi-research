@@ -74,3 +74,5 @@ GPU 安排 11 项，其中 3 项在输入预检阻断，8 项进入路径；**�
 冻结产品干净构建通过；基础回归 2721 项中 2696 通过、25 跳过、0 失败。适配器、交付工作副本均 48/48 通过；语法、评分及队列自检、相关增量独立复核通过。首轮拒绝续跑的 RED 没有完整复现旧循环，已用五次真实旧阻断记录、旧停止分支和真实隔离审批/消息检查补证；此限制写入协议。仍适用的完整基础回归未重复执行，前端布局继续暂停。
 
 密钥、数据库、原生对话、研究输入和大份日志不入 Git；本机原始记录保留。复现方式及版本见 [REPRODUCE.md](REPRODUCE.md)、[PROTOCOL.json](PROTOCOL.json) 和 environment/。Git 同步状态以协议的交付记录和最终提交链接为准。
+
+Git 交付：`fb8b754d2ca046e61b22101c9b43196aa7666cee`，分支 `implementation/pr01-reproducible-baseline`，[代码与证据提交](https://github.com/hailuohl/pi-research/commit/fb8b754d2ca046e61b22101c9b43196aa7666cee)；远端已核验包含该提交。
