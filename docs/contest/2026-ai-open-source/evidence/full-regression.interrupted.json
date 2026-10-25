@@ -1,0 +1,20 @@
+{
+  "status": "interrupted_not_completed",
+  "reason": "Additional full regression intentionally stopped after prolonged unrelated existing method tests; no production changes in this batch. Not a full pass or product-failure diagnosis.",
+  "recordedAt": "2026-10-25T14:29:18.1335977+08:00",
+  "processes": [
+    {
+      "ProcessId": 193516,
+      "ParentProcessId": 191228,
+      "Name": "node.exe",
+      "CreationDate": "2026-10-25T13:49:42.519669+08:00"
+    },
+    {
+      "ProcessId": 223192,
+      "ParentProcessId": 193516,
+      "Name": "node.exe",
+      "CreationDate": "2026-10-25T14:24:15.960752+08:00"
+    }
+  ],
+  "log": "full-regression.log"
+}

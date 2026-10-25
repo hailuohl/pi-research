@@ -1,0 +1,48 @@
+{
+  "status": "no_blockers_for_declared_scope",
+  "requestedModel": "gpt-6-astra",
+  "requestedEffort": "xhigh",
+  "runtimeEcho": null,
+  "baselineHead": "0fee9ec4b064cf58f64ad1fc5e7208e46b34d410",
+  "sourceManifestSha256": "48b236163082099198fa1b597d9f623e29ac16a84740c0a84750acde596fae8b",
+  "artifacts": {
+    "markdown": {
+      "path": "TECHNICAL-REPORT.zh-CN.md",
+      "sha256": "0481073bec7c2b9192875703d199fab853e8d8030e178279a0f2724200669e9a"
+    },
+    "pdf": {
+      "path": "TECHNICAL-REPORT.zh-CN.pdf",
+      "pages": 9,
+      "bytes": 369297,
+      "sha256": "15c6256279ecbdc0de251825fd6a8d39edcf077204082e78501179e29d220112",
+      "visualQA": "all nine final page PNGs inspected; no clipping, overlap, blank pages or unreadable glyphs observed"
+    },
+    "renderer": {
+      "path": "scripts/render-contest-report.py",
+      "sha256": "029ca22619f142a54c5255bbc083a560b185f93af49f0f5f44ae19c6012d4d2f"
+    }
+  },
+  "scope": [
+    "Independent static production-call-chain and script review",
+    "Recomputed E1 classification counts and E3 statistics",
+    "Checked E4 UTF-16 locations, fixed IDs and original-byte hashes",
+    "Matched 4485 source and 767 clean/runtime build hashes",
+    "Verified final nine-page PDF text against Markdown; visual QA performed by primary agent"
+  ],
+  "blocking": [],
+  "nonBlocking": [],
+  "validationGaps": [
+    "Engineering fixtures only; no new empirical machine-learning or LLM result.",
+    "E3 measures synchronous validation only; P95 is of batch means.",
+    "Full regression intentionally interrupted; no full-suite pass claimed.",
+    "E4 does not cover all task-source revocation propagation, browser, PDF parsing or export.",
+    "Independent dataset generalization, E5 live demonstration, E6 retrieval ablation and human team approval remain pending."
+  ],
+  "reviewerDidNotRun": [
+    "services",
+    "build",
+    "benchmark",
+    "PDF visual QA",
+    "complete license audit"
+  ]
+}

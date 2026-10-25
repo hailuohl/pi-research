@@ -1,0 +1,1277 @@
+{
+  "experiments": [
+    "E2",
+    "E4"
+  ],
+  "execution": "Real ResearchApp services and isolated temporary SQLite databases; deterministic service fixtures; zero LLM/model/network/run execution",
+  "scope": "Corpus removal/disable only revokes new retrieval eligibility; historical evidence and report remain current. CAS tampering independently tests integrity rejection. No task-source revocation propagation, browser, PDF parser, Docker or model path is claimed.",
+  "rows": [
+    {
+      "id": "E2-pending-review",
+      "experiment": "E2",
+      "status": "passed",
+      "trace": [
+        {
+          "step": "producer-submitted",
+          "team": {
+            "permission": {
+              "rootSessionId": "6d4536f7-b632-4450-8b26-519f8d39780c",
+              "epoch": 0,
+              "hostEpoch": 0,
+              "mode": "legacy"
+            },
+            "rootSessionId": "6d4536f7-b632-4450-8b26-519f8d39780c",
+            "goal": "E2 deterministic ML engineering fixture",
+            "state": "active",
+            "settings": {
+              "enabled": true,
+              "strategy": "adaptive",
+              "maxActiveAgents": 4,
+              "maxConcurrentAssistants": 3,
+              "maxTasksPerTeam": 24,
+              "maxTaskAttempts": 2,
+              "requirePlanConfirmation": true,
+              "shutdownPolicy": "drain"
+            },
+            "delegationEnabled": true,
+            "planVersion": 1,
+            "directiveVersion": 1,
+            "planDigest": "1b715035806db28e3abe33dea97551514aaaa21f3b700bc399e4dacfb931c4a7",
+            "approvalId": "2a74684f-74d5-4cb9-84d3-bbd092cd66b2",
+            "summarySent": false,
+            "autoSummarize": false,
+            "id": "58962493-df92-4d89-80c7-af0ee2e5a4e6",
+            "kind": "team",
+            "projectId": "cc1de4b4-f99e-40bb-a176-ede334bfd60d",
+            "version": 2,
+            "createdAt": "2026-10-25T05:52:13.213Z",
+            "updatedAt": "2026-10-25T05:52:13.219Z"
+          },
+          "tasks": [
+            {
+              "key": "train",
+              "role": "analyst",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "acceptanceRuleIds": [],
+              "teamId": "58962493-df92-4d89-80c7-af0ee2e5a4e6",
+              "execution": "output_submitted",
+              "acceptance": "pending",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 1,
+              "id": "483eff8c-15fb-489c-b5ff-444592bb2bc0",
+              "kind": "task",
+              "projectId": "cc1de4b4-f99e-40bb-a176-ede334bfd60d",
+              "version": 3,
+              "createdAt": "2026-10-25T05:52:13.214Z",
+              "updatedAt": "2026-10-25T05:52:13.368Z",
+              "attemptId": "10eb3ef1-ef72-4819-88f5-4df0c3019c34",
+              "sessionId": "b6cf5c43-5f1a-4501-816f-7af748e8f21d",
+              "result": {
+                "summary": "Deterministic ML workflow engineering fixture; no LLM or scientific measurement.",
+                "outcome": "completed",
+                "evidenceIds": [],
+                "artifactIds": [],
+                "claims": [],
+                "unresolvedQuestions": []
+              }
+            },
+            {
+              "key": "review_train",
+              "role": "reviewer",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "reviewOf": "train",
+              "acceptanceRuleIds": [],
+              "teamId": "58962493-df92-4d89-80c7-af0ee2e5a4e6",
+              "execution": "pending",
+              "acceptance": "pending",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 0,
+              "generation": 0,
+              "id": "c5bd8d23-32c5-4652-8cba-23e0893b8bda",
+              "kind": "task",
+              "projectId": "cc1de4b4-f99e-40bb-a176-ede334bfd60d",
+              "version": 1,
+              "createdAt": "2026-10-25T05:52:13.215Z",
+              "updatedAt": "2026-10-25T05:52:13.215Z"
+            },
+            {
+              "key": "report",
+              "role": "writer",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [
+                "train"
+              ],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "acceptanceRuleIds": [],
+              "teamId": "58962493-df92-4d89-80c7-af0ee2e5a4e6",
+              "execution": "pending",
+              "acceptance": "pending",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 0,
+              "generation": 0,
+              "id": "2de9f58d-9d74-458f-85dc-3c3b7c8c3914",
+              "kind": "task",
+              "projectId": "cc1de4b4-f99e-40bb-a176-ede334bfd60d",
+              "version": 1,
+              "createdAt": "2026-10-25T05:52:13.215Z",
+              "updatedAt": "2026-10-25T05:52:13.215Z"
+            }
+          ]
+        },
+        {
+          "step": "review-accepted-and-report-completed",
+          "team": {
+            "permission": {
+              "rootSessionId": "6d4536f7-b632-4450-8b26-519f8d39780c",
+              "epoch": 0,
+              "hostEpoch": 0,
+              "mode": "legacy"
+            },
+            "rootSessionId": "6d4536f7-b632-4450-8b26-519f8d39780c",
+            "goal": "E2 deterministic ML engineering fixture",
+            "state": "completed",
+            "settings": {
+              "enabled": true,
+              "strategy": "adaptive",
+              "maxActiveAgents": 4,
+              "maxConcurrentAssistants": 3,
+              "maxTasksPerTeam": 24,
+              "maxTaskAttempts": 2,
+              "requirePlanConfirmation": true,
+              "shutdownPolicy": "drain"
+            },
+            "delegationEnabled": true,
+            "planVersion": 1,
+            "directiveVersion": 1,
+            "planDigest": "1b715035806db28e3abe33dea97551514aaaa21f3b700bc399e4dacfb931c4a7",
+            "approvalId": "2a74684f-74d5-4cb9-84d3-bbd092cd66b2",
+            "summarySent": true,
+            "autoSummarize": false,
+            "id": "58962493-df92-4d89-80c7-af0ee2e5a4e6",
+            "kind": "team",
+            "projectId": "cc1de4b4-f99e-40bb-a176-ede334bfd60d",
+            "version": 4,
+            "createdAt": "2026-10-25T05:52:13.213Z",
+            "updatedAt": "2026-10-25T05:52:13.658Z"
+          },
+          "tasks": [
+            {
+              "key": "train",
+              "role": "analyst",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "acceptanceRuleIds": [],
+              "teamId": "58962493-df92-4d89-80c7-af0ee2e5a4e6",
+              "execution": "output_submitted",
+              "acceptance": "accepted",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 1,
+              "id": "483eff8c-15fb-489c-b5ff-444592bb2bc0",
+              "kind": "task",
+              "projectId": "cc1de4b4-f99e-40bb-a176-ede334bfd60d",
+              "version": 4,
+              "createdAt": "2026-10-25T05:52:13.214Z",
+              "updatedAt": "2026-10-25T05:52:13.518Z",
+              "attemptId": "10eb3ef1-ef72-4819-88f5-4df0c3019c34",
+              "sessionId": "b6cf5c43-5f1a-4501-816f-7af748e8f21d",
+              "result": {
+                "summary": "Deterministic ML workflow engineering fixture; no LLM or scientific measurement.",
+                "outcome": "completed",
+                "evidenceIds": [],
+                "artifactIds": [],
+                "claims": [],
+                "unresolvedQuestions": []
+              }
+            },
+            {
+              "key": "review_train",
+              "role": "reviewer",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "reviewOf": "train",
+              "acceptanceRuleIds": [],
+              "teamId": "58962493-df92-4d89-80c7-af0ee2e5a4e6",
+              "execution": "output_submitted",
+              "acceptance": "accepted",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 1,
+              "id": "c5bd8d23-32c5-4652-8cba-23e0893b8bda",
+              "kind": "task",
+              "projectId": "cc1de4b4-f99e-40bb-a176-ede334bfd60d",
+              "version": 3,
+              "createdAt": "2026-10-25T05:52:13.215Z",
+              "updatedAt": "2026-10-25T05:52:13.517Z",
+              "attemptId": "f51e2d82-fb4e-47f9-bc2a-23aa484595af",
+              "sessionId": "6befd369-ecee-40fc-9511-f9e72954ed76",
+              "result": {
+                "summary": "Deterministic ML workflow engineering fixture; no LLM or scientific measurement.",
+                "outcome": "completed",
+                "evidenceIds": [],
+                "artifactIds": [],
+                "claims": [],
+                "unresolvedQuestions": [],
+                "verdict": "accept"
+              }
+            },
+            {
+              "key": "report",
+              "role": "writer",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [
+                "train"
+              ],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "acceptanceRuleIds": [],
+              "teamId": "58962493-df92-4d89-80c7-af0ee2e5a4e6",
+              "execution": "output_submitted",
+              "acceptance": "accepted",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 1,
+              "id": "2de9f58d-9d74-458f-85dc-3c3b7c8c3914",
+              "kind": "task",
+              "projectId": "cc1de4b4-f99e-40bb-a176-ede334bfd60d",
+              "version": 3,
+              "createdAt": "2026-10-25T05:52:13.215Z",
+              "updatedAt": "2026-10-25T05:52:13.655Z",
+              "attemptId": "36cca218-1505-47b1-9b68-6129fa24ed87",
+              "sessionId": "363338a9-6c7a-42de-8779-00ca4bd04319",
+              "result": {
+                "summary": "Deterministic ML workflow engineering fixture; no LLM or scientific measurement.",
+                "outcome": "completed",
+                "evidenceIds": [],
+                "artifactIds": [],
+                "claims": [],
+                "unresolvedQuestions": []
+              }
+            }
+          ]
+        }
+      ],
+      "modelUsageRecords": 0,
+      "runRecords": 0
+    },
+    {
+      "id": "E2-all-reviews-required",
+      "experiment": "E2",
+      "status": "passed",
+      "trace": [
+        {
+          "step": "one-review-accepted",
+          "team": {
+            "permission": {
+              "rootSessionId": "ecf78ba1-2090-4e85-8dd5-66ad452fe554",
+              "epoch": 0,
+              "hostEpoch": 0,
+              "mode": "legacy"
+            },
+            "rootSessionId": "ecf78ba1-2090-4e85-8dd5-66ad452fe554",
+            "goal": "E2 deterministic ML engineering fixture",
+            "state": "active",
+            "settings": {
+              "enabled": true,
+              "strategy": "adaptive",
+              "maxActiveAgents": 4,
+              "maxConcurrentAssistants": 3,
+              "maxTasksPerTeam": 24,
+              "maxTaskAttempts": 2,
+              "requirePlanConfirmation": true,
+              "shutdownPolicy": "drain"
+            },
+            "delegationEnabled": true,
+            "planVersion": 1,
+            "directiveVersion": 1,
+            "planDigest": "9d074a556c3575d13b9def1001199269a81ffc908c2d21ecc958ea02b4d247b2",
+            "approvalId": "00a16da4-f81c-4b2c-8118-8125979953a7",
+            "summarySent": false,
+            "autoSummarize": false,
+            "id": "afead421-f1d5-400c-9986-d73fead415ce",
+            "kind": "team",
+            "projectId": "b9535707-5ea0-41a9-b7fa-98eccbe9e8a6",
+            "version": 2,
+            "createdAt": "2026-10-25T05:52:13.758Z",
+            "updatedAt": "2026-10-25T05:52:13.764Z"
+          },
+          "tasks": [
+            {
+              "key": "train",
+              "role": "analyst",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "acceptanceRuleIds": [],
+              "teamId": "afead421-f1d5-400c-9986-d73fead415ce",
+              "execution": "output_submitted",
+              "acceptance": "pending",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 1,
+              "id": "a6675a10-4e0a-4e9c-a003-ccf4c51ad867",
+              "kind": "task",
+              "projectId": "b9535707-5ea0-41a9-b7fa-98eccbe9e8a6",
+              "version": 3,
+              "createdAt": "2026-10-25T05:52:13.759Z",
+              "updatedAt": "2026-10-25T05:52:13.902Z",
+              "attemptId": "cde1cc7c-99f3-4fad-b73c-18d8a9a9bd14",
+              "sessionId": "b9d340bd-cb53-471a-b3e6-47f4ab0d168c",
+              "result": {
+                "summary": "Deterministic ML workflow engineering fixture; no LLM or scientific measurement.",
+                "outcome": "completed",
+                "evidenceIds": [],
+                "artifactIds": [],
+                "claims": [],
+                "unresolvedQuestions": []
+              }
+            },
+            {
+              "key": "r1",
+              "role": "reviewer",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "reviewOf": "train",
+              "acceptanceRuleIds": [],
+              "teamId": "afead421-f1d5-400c-9986-d73fead415ce",
+              "execution": "output_submitted",
+              "acceptance": "accepted",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 1,
+              "id": "3e1d4400-8841-4fc6-a226-620c14d15081",
+              "kind": "task",
+              "projectId": "b9535707-5ea0-41a9-b7fa-98eccbe9e8a6",
+              "version": 3,
+              "createdAt": "2026-10-25T05:52:13.759Z",
+              "updatedAt": "2026-10-25T05:52:14.175Z",
+              "attemptId": "3d4d967a-bd62-4929-943a-421bad41f96b",
+              "sessionId": "6d84057e-1cd5-42b8-9adb-aee36fa01773",
+              "result": {
+                "summary": "Deterministic ML workflow engineering fixture; no LLM or scientific measurement.",
+                "outcome": "completed",
+                "evidenceIds": [],
+                "artifactIds": [],
+                "claims": [],
+                "unresolvedQuestions": [],
+                "verdict": "accept"
+              }
+            },
+            {
+              "key": "r2",
+              "role": "reviewer",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "reviewOf": "train",
+              "acceptanceRuleIds": [],
+              "teamId": "afead421-f1d5-400c-9986-d73fead415ce",
+              "execution": "running",
+              "acceptance": "pending",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 1,
+              "id": "185a050e-3de6-4170-9b89-4a3e468ab00b",
+              "kind": "task",
+              "projectId": "b9535707-5ea0-41a9-b7fa-98eccbe9e8a6",
+              "version": 2,
+              "createdAt": "2026-10-25T05:52:13.760Z",
+              "updatedAt": "2026-10-25T05:52:14.172Z",
+              "attemptId": "e5078cc7-0c9e-454c-b235-4b3187f55a4f",
+              "sessionId": "8c86cadd-470e-403b-b467-17734a4b192b"
+            },
+            {
+              "key": "report",
+              "role": "analyst",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [
+                "train"
+              ],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "acceptanceRuleIds": [],
+              "teamId": "afead421-f1d5-400c-9986-d73fead415ce",
+              "execution": "pending",
+              "acceptance": "pending",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 0,
+              "generation": 0,
+              "id": "d0f1c7db-ef2a-4527-a036-1649bd069c0d",
+              "kind": "task",
+              "projectId": "b9535707-5ea0-41a9-b7fa-98eccbe9e8a6",
+              "version": 1,
+              "createdAt": "2026-10-25T05:52:13.760Z",
+              "updatedAt": "2026-10-25T05:52:13.760Z"
+            }
+          ]
+        },
+        {
+          "step": "all-reviews-accepted",
+          "team": {
+            "permission": {
+              "rootSessionId": "ecf78ba1-2090-4e85-8dd5-66ad452fe554",
+              "epoch": 0,
+              "hostEpoch": 0,
+              "mode": "legacy"
+            },
+            "rootSessionId": "ecf78ba1-2090-4e85-8dd5-66ad452fe554",
+            "goal": "E2 deterministic ML engineering fixture",
+            "state": "completed",
+            "settings": {
+              "enabled": true,
+              "strategy": "adaptive",
+              "maxActiveAgents": 4,
+              "maxConcurrentAssistants": 3,
+              "maxTasksPerTeam": 24,
+              "maxTaskAttempts": 2,
+              "requirePlanConfirmation": true,
+              "shutdownPolicy": "drain"
+            },
+            "delegationEnabled": true,
+            "planVersion": 1,
+            "directiveVersion": 1,
+            "planDigest": "9d074a556c3575d13b9def1001199269a81ffc908c2d21ecc958ea02b4d247b2",
+            "approvalId": "00a16da4-f81c-4b2c-8118-8125979953a7",
+            "summarySent": true,
+            "autoSummarize": false,
+            "id": "afead421-f1d5-400c-9986-d73fead415ce",
+            "kind": "team",
+            "projectId": "b9535707-5ea0-41a9-b7fa-98eccbe9e8a6",
+            "version": 4,
+            "createdAt": "2026-10-25T05:52:13.758Z",
+            "updatedAt": "2026-10-25T05:52:14.329Z"
+          },
+          "tasks": [
+            {
+              "key": "train",
+              "role": "analyst",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "acceptanceRuleIds": [],
+              "teamId": "afead421-f1d5-400c-9986-d73fead415ce",
+              "execution": "output_submitted",
+              "acceptance": "accepted",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 1,
+              "id": "a6675a10-4e0a-4e9c-a003-ccf4c51ad867",
+              "kind": "task",
+              "projectId": "b9535707-5ea0-41a9-b7fa-98eccbe9e8a6",
+              "version": 4,
+              "createdAt": "2026-10-25T05:52:13.759Z",
+              "updatedAt": "2026-10-25T05:52:14.180Z",
+              "attemptId": "cde1cc7c-99f3-4fad-b73c-18d8a9a9bd14",
+              "sessionId": "b9d340bd-cb53-471a-b3e6-47f4ab0d168c",
+              "result": {
+                "summary": "Deterministic ML workflow engineering fixture; no LLM or scientific measurement.",
+                "outcome": "completed",
+                "evidenceIds": [],
+                "artifactIds": [],
+                "claims": [],
+                "unresolvedQuestions": []
+              }
+            },
+            {
+              "key": "r1",
+              "role": "reviewer",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "reviewOf": "train",
+              "acceptanceRuleIds": [],
+              "teamId": "afead421-f1d5-400c-9986-d73fead415ce",
+              "execution": "output_submitted",
+              "acceptance": "accepted",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 1,
+              "id": "3e1d4400-8841-4fc6-a226-620c14d15081",
+              "kind": "task",
+              "projectId": "b9535707-5ea0-41a9-b7fa-98eccbe9e8a6",
+              "version": 3,
+              "createdAt": "2026-10-25T05:52:13.759Z",
+              "updatedAt": "2026-10-25T05:52:14.175Z",
+              "attemptId": "3d4d967a-bd62-4929-943a-421bad41f96b",
+              "sessionId": "6d84057e-1cd5-42b8-9adb-aee36fa01773",
+              "result": {
+                "summary": "Deterministic ML workflow engineering fixture; no LLM or scientific measurement.",
+                "outcome": "completed",
+                "evidenceIds": [],
+                "artifactIds": [],
+                "claims": [],
+                "unresolvedQuestions": [],
+                "verdict": "accept"
+              }
+            },
+            {
+              "key": "r2",
+              "role": "reviewer",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "reviewOf": "train",
+              "acceptanceRuleIds": [],
+              "teamId": "afead421-f1d5-400c-9986-d73fead415ce",
+              "execution": "output_submitted",
+              "acceptance": "accepted",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 1,
+              "id": "185a050e-3de6-4170-9b89-4a3e468ab00b",
+              "kind": "task",
+              "projectId": "b9535707-5ea0-41a9-b7fa-98eccbe9e8a6",
+              "version": 3,
+              "createdAt": "2026-10-25T05:52:13.760Z",
+              "updatedAt": "2026-10-25T05:52:14.179Z",
+              "attemptId": "e5078cc7-0c9e-454c-b235-4b3187f55a4f",
+              "sessionId": "8c86cadd-470e-403b-b467-17734a4b192b",
+              "result": {
+                "summary": "Deterministic ML workflow engineering fixture; no LLM or scientific measurement.",
+                "outcome": "completed",
+                "evidenceIds": [],
+                "artifactIds": [],
+                "claims": [],
+                "unresolvedQuestions": [],
+                "verdict": "accept"
+              }
+            },
+            {
+              "key": "report",
+              "role": "analyst",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [
+                "train"
+              ],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "acceptanceRuleIds": [],
+              "teamId": "afead421-f1d5-400c-9986-d73fead415ce",
+              "execution": "output_submitted",
+              "acceptance": "accepted",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 1,
+              "id": "d0f1c7db-ef2a-4527-a036-1649bd069c0d",
+              "kind": "task",
+              "projectId": "b9535707-5ea0-41a9-b7fa-98eccbe9e8a6",
+              "version": 3,
+              "createdAt": "2026-10-25T05:52:13.760Z",
+              "updatedAt": "2026-10-25T05:52:14.326Z",
+              "attemptId": "ca1123f1-6b94-4778-82bd-fff16ae12ac7",
+              "sessionId": "b439b039-0dca-409e-9660-7be932fb5d30",
+              "result": {
+                "summary": "Deterministic ML workflow engineering fixture; no LLM or scientific measurement.",
+                "outcome": "completed",
+                "evidenceIds": [],
+                "artifactIds": [],
+                "claims": [],
+                "unresolvedQuestions": []
+              }
+            }
+          ]
+        }
+      ],
+      "modelUsageRecords": 0,
+      "runRecords": 0
+    },
+    {
+      "id": "E2-conflicting-reviews",
+      "experiment": "E2",
+      "status": "passed",
+      "trace": [
+        {
+          "step": "conflicting-verdicts",
+          "team": {
+            "permission": {
+              "rootSessionId": "437242e1-af59-4e3c-835b-d2de537e968f",
+              "epoch": 0,
+              "hostEpoch": 0,
+              "mode": "legacy"
+            },
+            "rootSessionId": "437242e1-af59-4e3c-835b-d2de537e968f",
+            "goal": "E2 deterministic ML engineering fixture",
+            "state": "partial",
+            "settings": {
+              "enabled": true,
+              "strategy": "adaptive",
+              "maxActiveAgents": 4,
+              "maxConcurrentAssistants": 3,
+              "maxTasksPerTeam": 24,
+              "maxTaskAttempts": 2,
+              "requirePlanConfirmation": true,
+              "shutdownPolicy": "drain"
+            },
+            "delegationEnabled": true,
+            "planVersion": 1,
+            "directiveVersion": 1,
+            "planDigest": "9d074a556c3575d13b9def1001199269a81ffc908c2d21ecc958ea02b4d247b2",
+            "approvalId": "aa567e96-9032-4ff9-ade5-dce207784eac",
+            "summarySent": true,
+            "autoSummarize": false,
+            "id": "b7def684-a285-438c-a05a-1e8935c4041d",
+            "kind": "team",
+            "projectId": "ce17aac4-39f6-4e1a-a9bf-76fae9ae6bd7",
+            "version": 4,
+            "createdAt": "2026-10-25T05:52:14.426Z",
+            "updatedAt": "2026-10-25T05:52:14.863Z"
+          },
+          "tasks": [
+            {
+              "key": "train",
+              "role": "analyst",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "acceptanceRuleIds": [],
+              "teamId": "b7def684-a285-438c-a05a-1e8935c4041d",
+              "execution": "output_submitted",
+              "acceptance": "disputed",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 1,
+              "id": "f96c6856-6b44-45fb-abba-8e80fae64504",
+              "kind": "task",
+              "projectId": "ce17aac4-39f6-4e1a-a9bf-76fae9ae6bd7",
+              "version": 4,
+              "createdAt": "2026-10-25T05:52:14.427Z",
+              "updatedAt": "2026-10-25T05:52:14.860Z",
+              "attemptId": "a4022e0c-2cf2-47b4-ba5f-21f3ab7a2567",
+              "sessionId": "af070ad7-a9f3-4509-8152-7c047937d640",
+              "result": {
+                "summary": "Deterministic ML workflow engineering fixture; no LLM or scientific measurement.",
+                "outcome": "completed",
+                "evidenceIds": [],
+                "artifactIds": [],
+                "claims": [],
+                "unresolvedQuestions": []
+              }
+            },
+            {
+              "key": "r1",
+              "role": "reviewer",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "reviewOf": "train",
+              "acceptanceRuleIds": [],
+              "teamId": "b7def684-a285-438c-a05a-1e8935c4041d",
+              "execution": "output_submitted",
+              "acceptance": "accepted",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 1,
+              "id": "59e29127-8f30-493d-ad4f-6afb119dab0f",
+              "kind": "task",
+              "projectId": "ce17aac4-39f6-4e1a-a9bf-76fae9ae6bd7",
+              "version": 3,
+              "createdAt": "2026-10-25T05:52:14.427Z",
+              "updatedAt": "2026-10-25T05:52:14.855Z",
+              "attemptId": "259155cd-4e56-433d-a019-528d538b2f97",
+              "sessionId": "13d7536d-33e6-4ec7-bd15-ed25078d0b36",
+              "result": {
+                "summary": "Deterministic ML workflow engineering fixture; no LLM or scientific measurement.",
+                "outcome": "completed",
+                "evidenceIds": [],
+                "artifactIds": [],
+                "claims": [],
+                "unresolvedQuestions": [],
+                "verdict": "reject"
+              }
+            },
+            {
+              "key": "r2",
+              "role": "reviewer",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "reviewOf": "train",
+              "acceptanceRuleIds": [],
+              "teamId": "b7def684-a285-438c-a05a-1e8935c4041d",
+              "execution": "output_submitted",
+              "acceptance": "accepted",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 1,
+              "id": "6853a459-36a0-478c-9611-1e0903b9ae7f",
+              "kind": "task",
+              "projectId": "ce17aac4-39f6-4e1a-a9bf-76fae9ae6bd7",
+              "version": 3,
+              "createdAt": "2026-10-25T05:52:14.428Z",
+              "updatedAt": "2026-10-25T05:52:14.858Z",
+              "attemptId": "4ec96b7c-f49d-416a-9113-4b04b301013d",
+              "sessionId": "137fccbd-b50e-435d-8b49-4bb488e0f8a6",
+              "result": {
+                "summary": "Deterministic ML workflow engineering fixture; no LLM or scientific measurement.",
+                "outcome": "completed",
+                "evidenceIds": [],
+                "artifactIds": [],
+                "claims": [],
+                "unresolvedQuestions": [],
+                "verdict": "accept"
+              }
+            },
+            {
+              "key": "report",
+              "role": "analyst",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [
+                "train"
+              ],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "acceptanceRuleIds": [],
+              "teamId": "b7def684-a285-438c-a05a-1e8935c4041d",
+              "execution": "blocked",
+              "acceptance": "pending",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 0,
+              "generation": 0,
+              "id": "62b3cb40-356b-4179-870a-b04c87b76873",
+              "kind": "task",
+              "projectId": "ce17aac4-39f6-4e1a-a9bf-76fae9ae6bd7",
+              "version": 2,
+              "createdAt": "2026-10-25T05:52:14.428Z",
+              "updatedAt": "2026-10-25T05:52:14.861Z",
+              "blockReason": "上游结果不可用"
+            }
+          ]
+        }
+      ],
+      "modelUsageRecords": 0,
+      "runRecords": 0
+    },
+    {
+      "id": "E2-partial-output",
+      "experiment": "E2",
+      "status": "passed",
+      "trace": [
+        {
+          "step": "partial-producer",
+          "team": {
+            "permission": {
+              "rootSessionId": "5e4e5f44-634b-430b-be22-41e2e3fc4d8d",
+              "epoch": 0,
+              "hostEpoch": 0,
+              "mode": "legacy"
+            },
+            "rootSessionId": "5e4e5f44-634b-430b-be22-41e2e3fc4d8d",
+            "goal": "E2 deterministic ML engineering fixture",
+            "state": "partial",
+            "settings": {
+              "enabled": true,
+              "strategy": "adaptive",
+              "maxActiveAgents": 4,
+              "maxConcurrentAssistants": 3,
+              "maxTasksPerTeam": 24,
+              "maxTaskAttempts": 2,
+              "requirePlanConfirmation": true,
+              "shutdownPolicy": "drain"
+            },
+            "delegationEnabled": true,
+            "planVersion": 1,
+            "directiveVersion": 1,
+            "planDigest": "21f4dd52de37346c35f053e78d5450f662fce8bda2f8b94e2e23b9a338809520",
+            "approvalId": "0af34140-7b8f-4159-bdb9-756aeb458ffe",
+            "summarySent": true,
+            "autoSummarize": false,
+            "id": "f196e92d-f13e-43ce-9c83-14e8b34f146d",
+            "kind": "team",
+            "projectId": "44a204b2-1f46-401f-ba16-5654161ca028",
+            "version": 4,
+            "createdAt": "2026-10-25T05:52:14.957Z",
+            "updatedAt": "2026-10-25T05:52:15.109Z"
+          },
+          "tasks": [
+            {
+              "key": "train",
+              "role": "analyst",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "acceptanceRuleIds": [],
+              "teamId": "f196e92d-f13e-43ce-9c83-14e8b34f146d",
+              "execution": "blocked",
+              "acceptance": "pending",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 1,
+              "id": "a38d6f3b-5a68-40f7-9f34-e68cb8bd6829",
+              "kind": "task",
+              "projectId": "44a204b2-1f46-401f-ba16-5654161ca028",
+              "version": 3,
+              "createdAt": "2026-10-25T05:52:14.958Z",
+              "updatedAt": "2026-10-25T05:52:15.105Z",
+              "attemptId": "30d3485e-96c5-4d0e-8659-d005de8ab3be",
+              "sessionId": "fe798636-182f-4622-aecc-17fb3bdc85f5",
+              "result": {
+                "summary": "Deterministic ML workflow engineering fixture; no LLM or scientific measurement.",
+                "outcome": "partial",
+                "evidenceIds": [],
+                "artifactIds": [],
+                "claims": [],
+                "unresolvedQuestions": []
+              },
+              "blockReason": "partial：Deterministic ML workflow engineering fixture; no LLM or scientific measurement."
+            },
+            {
+              "key": "review_train",
+              "role": "reviewer",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "reviewOf": "train",
+              "acceptanceRuleIds": [],
+              "teamId": "f196e92d-f13e-43ce-9c83-14e8b34f146d",
+              "execution": "blocked",
+              "acceptance": "pending",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 0,
+              "generation": 0,
+              "id": "df25f3ba-ebce-4441-8a8a-8d2a2f4e9013",
+              "kind": "task",
+              "projectId": "44a204b2-1f46-401f-ba16-5654161ca028",
+              "version": 2,
+              "createdAt": "2026-10-25T05:52:14.958Z",
+              "updatedAt": "2026-10-25T05:52:15.108Z",
+              "blockReason": "被审查任务没有完整提交"
+            },
+            {
+              "key": "report",
+              "role": "analyst",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [
+                "train"
+              ],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "acceptanceRuleIds": [],
+              "teamId": "f196e92d-f13e-43ce-9c83-14e8b34f146d",
+              "execution": "blocked",
+              "acceptance": "pending",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 0,
+              "generation": 0,
+              "id": "b95d3be1-a02e-494b-8210-96d4e3801e63",
+              "kind": "task",
+              "projectId": "44a204b2-1f46-401f-ba16-5654161ca028",
+              "version": 2,
+              "createdAt": "2026-10-25T05:52:14.959Z",
+              "updatedAt": "2026-10-25T05:52:15.107Z",
+              "blockReason": "上游结果不可用"
+            }
+          ]
+        },
+        {
+          "manualAccept": {
+            "code": "TASK_OUTPUT_INCOMPLETE",
+            "message": "部分完成或缺失输入不能通过人工操作伪装为完整交付"
+          }
+        }
+      ],
+      "modelUsageRecords": 0,
+      "runRecords": 0
+    },
+    {
+      "id": "E2-failed-review-attempt",
+      "experiment": "E2",
+      "status": "passed",
+      "trace": [
+        {
+          "step": "review-attempt-failed",
+          "team": {
+            "permission": {
+              "rootSessionId": "a9f6a632-b3d6-4e2c-91e8-7f8ccda0aa7a",
+              "epoch": 0,
+              "hostEpoch": 0,
+              "mode": "legacy"
+            },
+            "rootSessionId": "a9f6a632-b3d6-4e2c-91e8-7f8ccda0aa7a",
+            "goal": "E2 deterministic ML engineering fixture",
+            "state": "paused",
+            "settings": {
+              "enabled": true,
+              "strategy": "adaptive",
+              "maxActiveAgents": 4,
+              "maxConcurrentAssistants": 3,
+              "maxTasksPerTeam": 24,
+              "maxTaskAttempts": 2,
+              "requirePlanConfirmation": true,
+              "shutdownPolicy": "drain"
+            },
+            "delegationEnabled": true,
+            "planVersion": 1,
+            "directiveVersion": 1,
+            "planDigest": "21f4dd52de37346c35f053e78d5450f662fce8bda2f8b94e2e23b9a338809520",
+            "approvalId": "0479584e-5a53-40e5-a6d7-057540a3c02b",
+            "summarySent": false,
+            "autoSummarize": false,
+            "id": "c1fc46a4-ae6d-4f15-9afd-ca8f6cd44c0b",
+            "kind": "team",
+            "projectId": "d5abf955-7e74-422b-bf49-991303695cb7",
+            "version": 3,
+            "createdAt": "2026-10-25T05:52:15.209Z",
+            "updatedAt": "2026-10-25T05:52:15.544Z",
+            "blockReason": "等待审查恢复：review_train；请重试并显式恢复，或人工裁决"
+          },
+          "tasks": [
+            {
+              "key": "train",
+              "role": "analyst",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "acceptanceRuleIds": [],
+              "teamId": "c1fc46a4-ae6d-4f15-9afd-ca8f6cd44c0b",
+              "execution": "output_submitted",
+              "acceptance": "pending",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 1,
+              "id": "9df6052d-a29f-4d4e-8bfa-0796878346f9",
+              "kind": "task",
+              "projectId": "d5abf955-7e74-422b-bf49-991303695cb7",
+              "version": 3,
+              "createdAt": "2026-10-25T05:52:15.210Z",
+              "updatedAt": "2026-10-25T05:52:15.380Z",
+              "attemptId": "24d44b2d-e5a9-40a5-a7ed-edfe5a89fdf6",
+              "sessionId": "42d1c3bf-d0a8-4108-9dc4-2a3f71a9444c",
+              "result": {
+                "summary": "Deterministic ML workflow engineering fixture; no LLM or scientific measurement.",
+                "outcome": "completed",
+                "evidenceIds": [],
+                "artifactIds": [],
+                "claims": [],
+                "unresolvedQuestions": []
+              }
+            },
+            {
+              "key": "review_train",
+              "role": "reviewer",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "reviewOf": "train",
+              "acceptanceRuleIds": [],
+              "teamId": "c1fc46a4-ae6d-4f15-9afd-ca8f6cd44c0b",
+              "execution": "failed",
+              "acceptance": "pending",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 1,
+              "generation": 2,
+              "id": "628fab6e-ff74-420e-8696-0981103709dc",
+              "kind": "task",
+              "projectId": "d5abf955-7e74-422b-bf49-991303695cb7",
+              "version": 3,
+              "createdAt": "2026-10-25T05:52:15.210Z",
+              "updatedAt": "2026-10-25T05:52:15.543Z",
+              "attemptId": "f572b092-3679-4e31-a928-d86a628b8d94",
+              "sessionId": "96472d9c-bcba-40d9-a6fc-62ed6acc3b35",
+              "blockReason": "Deterministic fixture: review executor failed"
+            },
+            {
+              "key": "report",
+              "role": "analyst",
+              "objective": "Machine-learning engineering fixture; no measured scientific result",
+              "dependencies": [
+                "train"
+              ],
+              "critical": false,
+              "required": true,
+              "inputEvidenceIds": [],
+              "acceptanceRuleIds": [],
+              "teamId": "c1fc46a4-ae6d-4f15-9afd-ca8f6cd44c0b",
+              "execution": "pending",
+              "acceptance": "pending",
+              "planVersion": 1,
+              "directiveVersion": 1,
+              "attemptCount": 0,
+              "generation": 0,
+              "id": "20b14c3b-31c4-4910-a53a-db6dfd54fc29",
+              "kind": "task",
+              "projectId": "d5abf955-7e74-422b-bf49-991303695cb7",
+              "version": 1,
+              "createdAt": "2026-10-25T05:52:15.211Z",
+              "updatedAt": "2026-10-25T05:52:15.211Z"
+            }
+          ]
+        }
+      ],
+      "modelUsageRecords": 0,
+      "runRecords": 0
+    },
+    {
+      "id": "E4-original-citation-version-and-reopen",
+      "experiment": "E4",
+      "status": "passed",
+      "trace": [
+        {
+          "step": "same-title-new-version",
+          "original": {
+            "id": "75f36f94-633d-48df-a0dd-23bee363869f",
+            "digest": "0a972060af383863593a19549beebb015cb22132e866569b083b9106f4214ae7",
+            "bytesBase64": "TUwgcHJvdG9jb2wgZW5naW5lZXJpbmcgZml4dHVyZSDwn5iADQoNClZhbGlkYXRpb24gdXNlcyBhIGhlbGQtb3V0IHBhcnRpdGlvbjsgbm8gbW9kZWwgYWNjdXJhY3kgaXMgbWVhc3VyZWQgaGVyZS4NClRoZSBzZWVkIGlzIGZpeGVkIGZvciB0aGlzIHNvZnR3YXJlIHRlc3Qu"
+          },
+          "replacement": {
+            "id": "7d60d775-ec6c-4bc3-a75e-8ba0460082b1",
+            "digest": "5a6ccc5405a236069dc05523dd2b602af688119371e850cc16472ffecbe70503",
+            "bytesBase64": "TUwgcHJvdG9jb2wgZW5naW5lZXJpbmcgZml4dHVyZSB2ZXJzaW9uIHR3by4gVmFsaWRhdGlvbiB1c2VzIGEgY2hhbmdlZCBwYXJ0aXRpb247IHRoaXMgaXMgbm90IGFuIGVtcGlyaWNhbCBNTCByZXN1bHQu"
+          },
+          "firstSearch": {
+            "query": "validation",
+            "limit": 5,
+            "mmrLambda": 1,
+            "deduplicateExact": true,
+            "artifactIds": [
+              "75f36f94-633d-48df-a0dd-23bee363869f"
+            ],
+            "documents": [],
+            "corpusId": "e966150774f97721001b3ee408496e119c5df1575cbe5c79776137f7d87c14f4",
+            "configurationVersion": 1,
+            "method": "local-tfidf-exact-dedup-mmr-v1",
+            "status": "matches",
+            "hits": [
+              {
+                "chunkId": "8f9993080b0bbaf61668428dee5505991fec217cea3e68960ecc3ec5b99a0e82",
+                "artifactId": "75f36f94-633d-48df-a0dd-23bee363869f",
+                "digest": "0a972060af383863593a19549beebb015cb22132e866569b083b9106f4214ae7",
+                "title": "ml-protocol.txt",
+                "locator": {
+                  "start": 38,
+                  "end": 154
+                },
+                "quote": "Validation uses a held-out partition; no model accuracy is measured here.\r\nThe seed is fixed for this software test.",
+                "lineStart": 3,
+                "lineEnd": 4,
+                "sourceKind": "user_imported_text",
+                "page": null,
+                "document": null,
+                "score": 0.26726124191242445,
+                "evidenceId": "7e3a2a17-d678-41e6-a6ab-9527dfce6b93",
+                "alternativeSources": [],
+                "offsetUnit": "utf16-code-unit"
+              }
+            ],
+            "coverage": {
+              "sourceCount": 1,
+              "totalChunks": 2,
+              "matchingChunks": 1,
+              "exactDuplicatesGrouped": 0,
+              "uniqueChunks": 2,
+              "candidatesConsidered": 1,
+              "candidateLimitReached": false,
+              "resultsTruncated": false
+            },
+            "usage": {
+              "modelCalls": 0,
+              "networkCalls": 0
+            },
+            "limitations": [
+              "仅对显式选定的用户文本和固定 PDF 页文本进行词项检索，不是语义检索或自动回答。",
+              "未匹配不证明文献中没有答案；相关性分数不是正确性或独立证据评分。",
+              "PDF 使用已批准解析结果中的原页文本，不执行 OCR；存在相反结果时应逐条读原文。"
+            ],
+            "id": "9ceed225e4bda576ff57797aa6ea049bc7cfec5318a68ec310476358bd66bb7e",
+            "kind": "text-evidence-search",
+            "projectId": "e2b70919-3612-48f0-aab6-24c0da825605",
+            "version": 1,
+            "createdAt": "2026-10-25T05:52:15.653Z",
+            "updatedAt": "2026-10-25T05:52:15.653Z"
+          },
+          "newSearch": {
+            "query": "validation",
+            "limit": 5,
+            "mmrLambda": 1,
+            "deduplicateExact": true,
+            "artifactIds": [
+              "7d60d775-ec6c-4bc3-a75e-8ba0460082b1"
+            ],
+            "documents": [],
+            "corpusId": "eea2ca6f52c94676525b66fc2367a6330e1ad839f13889c9529690d0756fac28",
+            "configurationVersion": 2,
+            "method": "local-tfidf-exact-dedup-mmr-v1",
+            "status": "matches",
+            "hits": [
+              {
+                "chunkId": "83d7c77bf5d6de1fa5c3e6cbee6cd8b6584879f4301022411ae8581dab64273d",
+                "artifactId": "7d60d775-ec6c-4bc3-a75e-8ba0460082b1",
+                "digest": "5a6ccc5405a236069dc05523dd2b602af688119371e850cc16472ffecbe70503",
+                "title": "ml-protocol.txt",
+                "locator": {
+                  "start": 0,
+                  "end": 117
+                },
+                "quote": "ML protocol engineering fixture version two. Validation uses a changed partition; this is not an empirical ML result.",
+                "lineStart": 1,
+                "lineEnd": 1,
+                "sourceKind": "user_imported_text",
+                "page": null,
+                "document": null,
+                "score": 0.25935344382933867,
+                "evidenceId": "92998a34-84fb-4901-9f05-d106c99c821f",
+                "alternativeSources": [],
+                "offsetUnit": "utf16-code-unit"
+              }
+            ],
+            "coverage": {
+              "sourceCount": 1,
+              "totalChunks": 1,
+              "matchingChunks": 1,
+              "exactDuplicatesGrouped": 0,
+              "uniqueChunks": 1,
+              "candidatesConsidered": 1,
+              "candidateLimitReached": false,
+              "resultsTruncated": false
+            },
+            "usage": {
+              "modelCalls": 0,
+              "networkCalls": 0
+            },
+            "limitations": [
+              "仅对显式选定的用户文本和固定 PDF 页文本进行词项检索，不是语义检索或自动回答。",
+              "未匹配不证明文献中没有答案；相关性分数不是正确性或独立证据评分。",
+              "PDF 使用已批准解析结果中的原页文本，不执行 OCR；存在相反结果时应逐条读原文。"
+            ],
+            "id": "2e0c1e036679b558dd17039552f8a2fdf0fdaef457cedf7d6abdd229ed74f0d9",
+            "kind": "text-evidence-search",
+            "projectId": "e2b70919-3612-48f0-aab6-24c0da825605",
+            "version": 1,
+            "createdAt": "2026-10-25T05:52:15.699Z",
+            "updatedAt": "2026-10-25T05:52:15.699Z"
+          },
+          "evidenceId": "7e3a2a17-d678-41e6-a6ab-9527dfce6b93",
+          "reportId": "f7a4afac-a310-4d78-b0a2-ea01a5ee1dc3",
+          "reportArtifactId": "17535581-45d5-4ef9-bdd9-96f2e3ed9d37",
+          "referenceId": "107fe3f3f56e75b64ac72c217e1c545db08384d52f4cded4f3c9ee34912c051f",
+          "referenceContent": "{\n  \"evidenceId\": \"7e3a2a17-d678-41e6-a6ab-9527dfce6b93\",\n  \"artifactId\": \"75f36f94-633d-48df-a0dd-23bee363869f\",\n  \"digest\": \"0a972060af383863593a19549beebb015cb22132e866569b083b9106f4214ae7\",\n  \"locator\": {\n    \"start\": 38,\n    \"end\": 154\n  },\n  \"quote\": \"Validation uses a held-out partition; no model accuracy is measured here.\\r\\nThe seed is fixed for this software test.\",\n  \"description\": \"用户导入文本原文：ml-protocol.txt，行 3–4；literal-paragraph-utf16-v1\",\n  \"type\": \"artifact\"\n}",
+          "reportDigest": "66d1c3152bce7934760ae308b107455695d24cf8f355a483fb0d02197833a26d"
+        },
+        {
+          "step": "old-source-removed-from-corpus",
+          "newSearch": {
+            "code": "TEXT_SOURCE_NOT_APPROVED",
+            "message": "文档未在当前用户批准的集合内"
+          }
+        },
+        {
+          "step": "corpus-disabled",
+          "newSearch": {
+            "code": "TEXT_EVIDENCE_DISABLED",
+            "message": "本地原文检索默认关闭，请用户选择文本并明确启用"
+          }
+        },
+        {
+          "step": "database-reopened",
+          "originalArtifactId": "75f36f94-633d-48df-a0dd-23bee363869f",
+          "originalDigest": "0a972060af383863593a19549beebb015cb22132e866569b083b9106f4214ae7",
+          "historicalSearchId": "9ceed225e4bda576ff57797aa6ea049bc7cfec5318a68ec310476358bd66bb7e",
+          "evidenceId": "7e3a2a17-d678-41e6-a6ab-9527dfce6b93",
+          "quote": "Validation uses a held-out partition; no model accuracy is measured here.\r\nThe seed is fixed for this software test.",
+          "reportId": "f7a4afac-a310-4d78-b0a2-ea01a5ee1dc3",
+          "reportDigest": "66d1c3152bce7934760ae308b107455695d24cf8f355a483fb0d02197833a26d",
+          "referenceId": "107fe3f3f56e75b64ac72c217e1c545db08384d52f4cded4f3c9ee34912c051f",
+          "reportValidity": "current"
+        }
+      ],
+      "modelUsageRecords": 0,
+      "runRecords": 0
+    },
+    {
+      "id": "E4-tampered-bytes-reject-new-use",
+      "experiment": "E4",
+      "status": "passed",
+      "trace": [
+        {
+          "step": "CAS-tampering",
+          "artifactId": "6d41df8a-1f1c-4fd0-842d-69e69a12a842",
+          "expectedDigest": "b846daf54a3fe7028915d315390213701795c4429ed4cf470f139d7154e47e77",
+          "tamperedDigest": "50c9a97edde0c06ac9dd6772bb202072296bdf27b72837902338a073ffcc1f23",
+          "search": {
+            "code": "ARTIFACT_CORRUPTED",
+            "message": "产物内容校验失败"
+          },
+          "newClaim": {
+            "code": "ARTIFACT_CORRUPTED",
+            "message": "产物内容校验失败"
+          },
+          "historicalStoredQuote": "Validation engineering fixture: source bytes must remain unchanged."
+        }
+      ],
+      "modelUsageRecords": 0,
+      "runRecords": 0
+    }
+  ],
+  "passed": true
+}

@@ -1,0 +1,125 @@
+{
+  "note": "Path aliases are portable exports; original manifests remain in the local raw evidence directory.",
+  "phases": [
+    {
+      "formatVersion": 1,
+      "startedAt": "2026-10-25T05:52:12.690Z",
+      "root": "$FROZEN_RUNTIME_ROOT",
+      "out": "$RAW_EVIDENCE/formal-graph",
+      "phase": "graph",
+      "node": "v24.19.0",
+      "platform": "win32",
+      "arch": "x64",
+      "hardware": {
+        "osRelease": "10.0.26200",
+        "cpuModel": "AMD EPYC 9654 96-Core Processor                ",
+        "logicalCpus": 64,
+        "availableParallelism": 64,
+        "totalMemoryBytes": 1649015787520
+      },
+      "gitHead": "0fee9ec4b064cf58f64ad1fc5e7208e46b34d410",
+      "status": "passed",
+      "inputHashes": {
+        "dist/packages/collaboration/graph.js": "f5e0a5eb2418db4151d55f9cb1081d5f82e9ae0b6394484d7bfcaefc66a64e76",
+        "dist/packages/collaboration/team-service.js": "9b29f24d2edad9cc2b963da76c13cce66dfd607dcfc87d240e5be324bff04ef2",
+        "dist/packages/evidence/service.js": "7d2529fdd9d6ade146a65c4230f7beef787eedbca6941aa9c272da3ac14b2aa1",
+        "dist/packages/text-evidence/service.js": "6be9000504caaf8bb424ba6e1b3cbfcbb7a4157347cbd2c7b7ce6c18976285f2",
+        "dist/packages/publications/reports.js": "cdf7c76bd3850f0ff93f9c0a55eace5eea63c746999eeb061a20f590b275ecb0",
+        "tests/support/research.mjs": "edde41db38723bfdceae0e65cbe459b97f7a76f6b0aac66085c42083d4ad2fd4"
+      },
+      "runnerHashes": {
+        "run.mjs": "28f96e84b962c4d71d32fc56df681ff75c20380c075c7c00abd6d2f9ca97b7ef",
+        "graph.mjs": "92b6dc86c4d8a8635b05398ef087a5a5c4ef1e628396b19f340207de0fd65391",
+        "service.mjs": "4a9cbb63f86bdfbb857eab3901d5cade89fbcae878fc7ba9d3151fab299ef73a",
+        "selftest.mjs": "0b70c4428d067d99e8dee5c8d23429cebb17d7e4c99689b892c385ac9226e156"
+      },
+      "limitations": [
+        "No LLM invocation or empirical ML measurement.",
+        "No browser, Docker, Pi model or PDF parser execution.",
+        "E3 graph-validator timing does not establish overall scheduler acceleration."
+      ],
+      "finishedAt": "2026-10-25T05:52:12.745Z",
+      "originalManifestSha256": "85762cd961f2614ce663bc0c6934e7f875e002fdd71e6445571abaf3e6c1a052"
+    },
+    {
+      "formatVersion": 1,
+      "startedAt": "2026-10-25T05:52:12.881Z",
+      "root": "$FROZEN_RUNTIME_ROOT",
+      "out": "$RAW_EVIDENCE/formal-service",
+      "phase": "service",
+      "node": "v24.19.0",
+      "platform": "win32",
+      "arch": "x64",
+      "hardware": {
+        "osRelease": "10.0.26200",
+        "cpuModel": "AMD EPYC 9654 96-Core Processor                ",
+        "logicalCpus": 64,
+        "availableParallelism": 64,
+        "totalMemoryBytes": 1649015787520
+      },
+      "gitHead": "0fee9ec4b064cf58f64ad1fc5e7208e46b34d410",
+      "status": "passed",
+      "inputHashes": {
+        "dist/packages/collaboration/graph.js": "f5e0a5eb2418db4151d55f9cb1081d5f82e9ae0b6394484d7bfcaefc66a64e76",
+        "dist/packages/collaboration/team-service.js": "9b29f24d2edad9cc2b963da76c13cce66dfd607dcfc87d240e5be324bff04ef2",
+        "dist/packages/evidence/service.js": "7d2529fdd9d6ade146a65c4230f7beef787eedbca6941aa9c272da3ac14b2aa1",
+        "dist/packages/text-evidence/service.js": "6be9000504caaf8bb424ba6e1b3cbfcbb7a4157347cbd2c7b7ce6c18976285f2",
+        "dist/packages/publications/reports.js": "cdf7c76bd3850f0ff93f9c0a55eace5eea63c746999eeb061a20f590b275ecb0",
+        "tests/support/research.mjs": "edde41db38723bfdceae0e65cbe459b97f7a76f6b0aac66085c42083d4ad2fd4"
+      },
+      "runnerHashes": {
+        "run.mjs": "28f96e84b962c4d71d32fc56df681ff75c20380c075c7c00abd6d2f9ca97b7ef",
+        "graph.mjs": "92b6dc86c4d8a8635b05398ef087a5a5c4ef1e628396b19f340207de0fd65391",
+        "service.mjs": "4a9cbb63f86bdfbb857eab3901d5cade89fbcae878fc7ba9d3151fab299ef73a",
+        "selftest.mjs": "0b70c4428d067d99e8dee5c8d23429cebb17d7e4c99689b892c385ac9226e156"
+      },
+      "limitations": [
+        "No LLM invocation or empirical ML measurement.",
+        "No browser, Docker, Pi model or PDF parser execution.",
+        "E3 graph-validator timing does not establish overall scheduler acceleration."
+      ],
+      "finishedAt": "2026-10-25T05:52:15.871Z",
+      "originalManifestSha256": "4034a964ba7ff397746f7bc0ff1241128bf6efa34fbf6d1ccf4c70777ef93ed1"
+    },
+    {
+      "formatVersion": 1,
+      "startedAt": "2026-10-25T06:30:47.551Z",
+      "root": "$FROZEN_RUNTIME_ROOT",
+      "out": "$RAW_EVIDENCE/formal-benchmark",
+      "phase": "benchmark",
+      "node": "v24.19.0",
+      "platform": "win32",
+      "arch": "x64",
+      "hardware": {
+        "osRelease": "10.0.26200",
+        "cpuModel": "AMD EPYC 9654 96-Core Processor                ",
+        "logicalCpus": 64,
+        "availableParallelism": 64,
+        "totalMemoryBytes": 1649015787520
+      },
+      "gitHead": "0fee9ec4b064cf58f64ad1fc5e7208e46b34d410",
+      "status": "passed",
+      "inputHashes": {
+        "dist/packages/collaboration/graph.js": "f5e0a5eb2418db4151d55f9cb1081d5f82e9ae0b6394484d7bfcaefc66a64e76",
+        "dist/packages/collaboration/team-service.js": "9b29f24d2edad9cc2b963da76c13cce66dfd607dcfc87d240e5be324bff04ef2",
+        "dist/packages/evidence/service.js": "7d2529fdd9d6ade146a65c4230f7beef787eedbca6941aa9c272da3ac14b2aa1",
+        "dist/packages/text-evidence/service.js": "6be9000504caaf8bb424ba6e1b3cbfcbb7a4157347cbd2c7b7ce6c18976285f2",
+        "dist/packages/publications/reports.js": "cdf7c76bd3850f0ff93f9c0a55eace5eea63c746999eeb061a20f590b275ecb0",
+        "tests/support/research.mjs": "edde41db38723bfdceae0e65cbe459b97f7a76f6b0aac66085c42083d4ad2fd4"
+      },
+      "runnerHashes": {
+        "run.mjs": "28f96e84b962c4d71d32fc56df681ff75c20380c075c7c00abd6d2f9ca97b7ef",
+        "graph.mjs": "92b6dc86c4d8a8635b05398ef087a5a5c4ef1e628396b19f340207de0fd65391",
+        "service.mjs": "4a9cbb63f86bdfbb857eab3901d5cade89fbcae878fc7ba9d3151fab299ef73a",
+        "selftest.mjs": "0b70c4428d067d99e8dee5c8d23429cebb17d7e4c99689b892c385ac9226e156"
+      },
+      "limitations": [
+        "No LLM invocation or empirical ML measurement.",
+        "No browser, Docker, Pi model or PDF parser execution.",
+        "E3 graph-validator timing does not establish overall scheduler acceleration."
+      ],
+      "finishedAt": "2026-10-25T06:30:51.825Z",
+      "originalManifestSha256": "e98ea5fdba42c498c65e49496b9d54139ba0b07f964436429d15bd7517b39bdd"
+    }
+  ]
+}

@@ -1,0 +1,294 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-25T06:32:01.101Z",
+  "source": {
+    "head": "0fee9ec4b064cf58f64ad1fc5e7208e46b34d410",
+    "branch": "implementation/pr01-reproducible-baseline",
+    "snapshotKind": "current working tree with pre-existing changes",
+    "sourceManifest": "source-manifest.json",
+    "sourceManifestSha256": "48b236163082099198fa1b597d9f623e29ac16a84740c0a84750acde596fae8b",
+    "remoteReproducibility": "HEAD alone cannot recreate the tested dirty snapshot; complete local snapshot retained, pre-existing unrelated changes excluded from this delivery commit"
+  },
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "win32",
+    "arch": "x64",
+    "hardware": {
+      "osRelease": "10.0.26200",
+      "cpuModel": "AMD EPYC 9654 96-Core Processor                ",
+      "logicalCpus": 64,
+      "availableParallelism": 64,
+      "totalMemoryBytes": 1649015787520
+    },
+    "benchmarkStartedAt": "2026-10-25T06:30:47.551Z"
+  },
+  "results": {
+    "E1": {
+      "caseCount": 325,
+      "confusion": {
+        "production": {
+          "trueLegal": 82,
+          "falseRejectLegal": 0,
+          "trueRejectInvalid": 243,
+          "falseAcceptInvalid": 0,
+          "reviewDeadlocks": 81,
+          "missedReviewDeadlocks": 0
+        },
+        "task_only_baseline": {
+          "trueLegal": 82,
+          "falseRejectLegal": 0,
+          "trueRejectInvalid": 162,
+          "falseAcceptInvalid": 81,
+          "reviewDeadlocks": 81,
+          "missedReviewDeadlocks": 81
+        }
+      },
+      "evidence": "E1-graph.json"
+    },
+    "E2": {
+      "cases": [
+        {
+          "id": "E2-pending-review",
+          "status": "passed"
+        },
+        {
+          "id": "E2-all-reviews-required",
+          "status": "passed"
+        },
+        {
+          "id": "E2-conflicting-reviews",
+          "status": "passed"
+        },
+        {
+          "id": "E2-partial-output",
+          "status": "passed"
+        },
+        {
+          "id": "E2-failed-review-attempt",
+          "status": "passed"
+        }
+      ],
+      "evidence": "E2-E4-service.json"
+    },
+    "E3": {
+      "unit": "microseconds per call; samples are batch averages",
+      "sizes": [
+        {
+          "tasks": 4,
+          "batches": 30,
+          "callsPerBatch": 1024,
+          "medianMicroseconds": 7.29140625,
+          "p95BatchMeanMicroseconds": 10.82041015625
+        },
+        {
+          "tasks": 8,
+          "batches": 30,
+          "callsPerBatch": 1024,
+          "medianMicroseconds": 14.534619140625,
+          "p95BatchMeanMicroseconds": 14.97939453125
+        },
+        {
+          "tasks": 16,
+          "batches": 30,
+          "callsPerBatch": 1024,
+          "medianMicroseconds": 36.18369140625,
+          "p95BatchMeanMicroseconds": 36.82177734375
+        },
+        {
+          "tasks": 24,
+          "batches": 30,
+          "callsPerBatch": 1024,
+          "medianMicroseconds": 69.070361328125,
+          "p95BatchMeanMicroseconds": 74.63916015625
+        }
+      ],
+      "evidence": "E3-benchmark.json"
+    },
+    "E4": {
+      "cases": [
+        {
+          "id": "E4-original-citation-version-and-reopen",
+          "status": "passed"
+        },
+        {
+          "id": "E4-tampered-bytes-reject-new-use",
+          "status": "passed"
+        }
+      ],
+      "scope": "Corpus removal/disable only revokes new retrieval eligibility; historical evidence and report remain current. CAS tampering independently tests integrity rejection. No task-source revocation propagation, browser, PDF parser, Docker or model path is claimed.",
+      "evidence": "E2-E4-service.json"
+    }
+  },
+  "checks": {
+    "build": {
+      "status": "passed",
+      "command": "node scripts/build.mjs",
+      "exitCode": 0
+    },
+    "cleanBuild": {
+      "status": "passed",
+      "command": "npm run verify:build",
+      "exitCode": 0,
+      "files": 767,
+      "distManifestSha256": "12a2dabe449fdf6a79fa47e21bb9a3886d367a65fd67e5500db54aeee6ffb11f",
+      "lockSha256": "6e9f0697e89d076700ff2c80a174ba6b141ef6d625f56c600b1b4b58aac2c719",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ]
+    },
+    "relatedRegression": {
+      "status": "passed",
+      "command": "node --test --test-concurrency=1 tests/unit/text-evidence.test.mjs tests/unit/workflow-progress.test.mjs tests/unit/report-provenance.test.mjs",
+      "exitCode": 0,
+      "tests": 52,
+      "suites": 0,
+      "pass": 52,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 28791.9584,
+      "logSha256": "2e7b714957b687314a74980159f3a9d2771ac244004b7b29dcb66aec355c8cf2",
+      "observedTestLines": [
+        "✔ nested JSON TeX escapes do not fabricate UNC paths while host markers and duplicate keys remain blocked (835.5331ms)",
+        "✔ fixed Run references expose manifest-frozen threads for legacy contracts without changing the contract (295.2948ms)",
+        "✔ reports freeze typed Run, source and metric references and export only immutable bytes (355.2591ms)",
+        "✔ typed report references deny other projects, agents, injected URLs and invalid ranges (244.9674ms)",
+        "✔ source review withdrawal keeps report and historical references readable while marking provenance stale (2314.8252ms)",
+        "✔ valid changed descendants cite ancestor tests without claiming those tests cover the new source (2677.6829ms)",
+        "✔ actual test source drift cannot be represented as an exact valid report binding (1903.0491ms)",
+        "✔ accepted claim reports become stale after premise withdrawal without rewriting their original text (326.0659ms)",
+        "✔ legacy reports retain their original artifact but never invent historical source bindings (113.1992ms)",
+        "✔ export rejects credentials, corrupted archives and oversized payloads without modifying originals (1188.7019ms)",
+        "✔ binary artifacts cannot be read as report text and failure reports do not invent metrics (405.321ms)",
+        "✔ real failure archival retains execution.json but refuses host paths in both collection and export (387.7164ms)",
+        "✔ export catches escaped host paths and explicit host markers while retaining ordinary container paths (1762.0549ms)",
+        "✔ fixed octet-stream CSV and TSV preview as bounded UTF-8 text without changing archived metadata (330.596ms)",
+        "✔ retrieval is disabled by default and does not create corpus on read (117.5689ms)",
+        "✔ only the user can enable retrieval or extend the approved corpus (97.3115ms)",
+        "✔ search preserves UTF16 offsets, line numbers, emoji, Chinese and original quotes (113.1163ms)",
+        "✔ no lexical overlap is explicit and does not fabricate an answer or evidence (101.5006ms)",
+        "✔ repeat requests reuse stable chunk evidence and preserve model budget (107.3803ms)",
+        "✔ retrieval works when network calls throw (106.5315ms)",
+        "✔ corpus configuration rejects another projects artifact (95.5325ms)",
+        "✔ generated summaries and run outputs cannot be silently declared original papers (94.0713ms)",
+        "✔ binary or PDF-labeled inputs are rejected, not assigned fabricated pages (93.4253ms)",
+        "✔ an explicitly selected exact PDF pair keeps blank pages and returns page-five UTF16 evidence (524.6018ms)",
+        "✔ PDF selection rejects crossed parse pairs and refuses cache replay after its approval becomes stale (236.0095ms)",
+        "✔ disabling a PDF corpus refuses cached replay while its old evidence remains readable (213.6551ms)",
+        "✔ disabling or removing a corpus source blocks even repeated queries (120.4651ms)",
+        "✔ tampered source content fails before returning any cached quote (113.6085ms)",
+        "✔ concurrent edits to corpus settings are rejected with expectedVersion (97.5784ms)",
+        "✔ search is project-scoped and a helper cannot query an unassigned document (401.3069ms)",
+        "✔ archived projects cannot generate new retrieval records (114.0196ms)",
+        "✔ reopening the database preserves corpus and exact stable evidence identities (133.9202ms)",
+        "✔ bounded parsing rejects overlarge corpora rather than silently omitting documents (109.8502ms)",
+        "✔ MMR module diversifies ranked duplicates, lambda=1 preserves top-k (0.8969ms)",
+        "✔ long-line chunks never split a surrogate pair and all offsets round-trip (0.8157ms)",
+        "✔ a repeated Pi tool query is refused after source removal before cached replay (324.467ms)",
+        "✔ literal instruction-looking source does not perform operations or become a claim (131.2553ms)",
+        "✔ exact duplicate grouping preserves alternative sources while allowing contrary text to surface (141.2647ms)",
+        "✔ UTF8 BOM remains part of original offset space and registered evidence matches hit (120.607ms)",
+        "✔ existing PDF grant cannot search or read newly saved PMC owner text (652.1564ms)",
+        "✔ a PDF-only grant remains usable in a mixed owner PMC and PDF corpus (794.222ms)",
+        "✔ TextCorpusGrant Registry lifecycle preserves exact PDF evidence, quota, receipts and reopened history (1341.5699ms)",
+        "✔ TextCorpusGrant rejects identities, mixed sources and PDF generic-tool bypass before bytes (778.5007ms)",
+        "✔ TextCorpusGrant expiry, disable, changed settings and model fence exact cached tool receipts (2583.6182ms)",
+        "✔ TextCorpusGrant transaction rollback leaves no count, evidence, search or receipt (753.98ms)",
+        "✔ TextCorpusGrant checks cached replay again under the writer lock after revocation (624.236ms)",
+        "✔ TextCorpusGrant two controllers atomically share the last new-search slot (1065.6249ms)",
+        "✔ session retirement closes active and unbound draft text grants while keeping prior evidence readable (1204.8813ms)",
+        "✔ partial output blocks explicitly and does not keep an unschedulable reviewer active forever (281.3246ms)",
+        "✔ user can retry a partial task as a bounded fresh attempt with old result retained only in history (390.9092ms)",
+        "✔ an incompatible legacy review graph pauses without dispatching or spending budget (97.6306ms)",
+        "✔ a legacy autoaccepted target is re-gated before downstream can be dispatched (379.8217ms)"
+      ]
+    },
+    "fullRegression": {
+      "status": "interrupted_not_completed",
+      "command": "npm run test:core",
+      "exitCode": -1,
+      "reason": "Additional full regression intentionally stopped after prolonged unrelated existing method tests; no production changes in this batch. Not a full pass or product-failure diagnosis.",
+      "notSuiteTotal": true,
+      "completedTopLevelLinesObserved": 1175,
+      "logSha256": "82c0081ee3d25efe6a95a1c5ec9dc0b4734767e4ac722587056d5a935b278e52",
+      "record": "full-regression.interrupted.json"
+    },
+    "runnerSelfCheck": {
+      "status": "passed",
+      "command": "node scripts/contest-e1-e4/selftest.mjs",
+      "negativeControl": "accept-all validator must produce E1 failure, exit 1 and failed manifest"
+    },
+    "snapshotGuards": {
+      "passed": true,
+      "existingManifestUnchanged": true,
+      "rows": [
+        {
+          "args": [],
+          "exit": 1
+        },
+        {
+          "args": [
+            "outside-snapshot"
+          ],
+          "exit": 1
+        },
+        {
+          "args": [
+            ".validation/contest-e1-e4-20261025/runtime-v2"
+          ],
+          "exit": 1
+        }
+      ]
+    }
+  },
+  "review": {
+    "status": "completed_no_blockers_for_declared_scope",
+    "implementer": {
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high",
+      "runtimeEcho": null
+    },
+    "reviewer": {
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "xhigh",
+      "runtimeEcho": null
+    },
+    "evidence": "review.json"
+  },
+  "limitations": [
+    "Engineering fixtures only; no new empirical machine-learning or LLM result.",
+    "E3 measures synchronous validation only; P95 is of batch means.",
+    "Full regression intentionally interrupted; no full-suite pass claimed.",
+    "E4 does not cover all task-source revocation propagation, browser, PDF parsing or export.",
+    "Independent dataset generalization, E5 live demonstration, E6 retrieval ablation and human team approval remain pending."
+  ],
+  "artifacts": {
+    "markdown": {
+      "path": "TECHNICAL-REPORT.zh-CN.md",
+      "sha256": "0481073bec7c2b9192875703d199fab853e8d8030e178279a0f2724200669e9a"
+    },
+    "pdf": {
+      "path": "TECHNICAL-REPORT.zh-CN.pdf",
+      "pages": 9,
+      "bytes": 369297,
+      "sha256": "15c6256279ecbdc0de251825fd6a8d39edcf077204082e78501179e29d220112",
+      "visualQA": "all nine final page PNGs inspected; no clipping, overlap, blank pages or unreadable glyphs observed"
+    },
+    "renderer": {
+      "path": "scripts/render-contest-report.py",
+      "sha256": "029ca22619f142a54c5255bbc083a560b185f93af49f0f5f44ae19c6012d4d2f"
+    }
+  }
+}
