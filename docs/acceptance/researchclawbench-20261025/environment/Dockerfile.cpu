@@ -1,0 +1,2 @@
+FROM pi-v2g-research:20261011
+RUN pip install --no-cache-dir openpyxl pypdf h5py anndata sympy networkx pillow rdkit && pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && pip freeze > /usr/local/share/rcb-requirements.txt

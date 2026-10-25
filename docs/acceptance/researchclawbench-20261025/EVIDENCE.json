@@ -1,0 +1,1840 @@
+{
+  "schemaVersion": 1,
+  "status": "finished_with_limits",
+  "allTasksHaveTerminalOutcome": true,
+  "observedAt": "2026-10-25T13:56:45.019Z",
+  "scope": 40,
+  "benchmarkCommit": "7627954d0ff3fe5496cbc0675f6afbe9b6cd40f9",
+  "projectSourceHead": "c7e1dfaa92ef576cad307e8d6d2513fab84f7870",
+  "projectSourceReceiptSha256": "c7d592444ac57ba77e5cdec61ca788cdb6996cbf96ab6ae38ac5f5588ef6abd3",
+  "acceptedSnapshotHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+  "scorerSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+  "counts": {
+    "completed": 18,
+    "failed": 18,
+    "timeout": 4
+  },
+  "completedTasks": 18,
+  "scoredReports": 22,
+  "scoredCompletedTasks": 18,
+  "meanOnScoredReportsOnly": 21.82409090909091,
+  "full40Score": null,
+  "full40ScoreReason": "Only validated report scores are counted; missing/blocked/pending tasks are not imputed as zero",
+  "providerEffortEchoVerified": false,
+  "excludedHighPilot": true,
+  "rawCredentialsNativeSessionsAndLogsIncluded": false,
+  "tasks": [
+    {
+      "task": "Astronomy_000",
+      "attempt": "runs-max/Astronomy_000/attempt-2026-10-25T07-17-38-276Z-PXVdSm",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "36bc7f2fe4be9ca405f270c60c73c40fe3a3f006c20676e4b28a1666005ffc89",
+      "latestHarnessSha256": "36bc7f2fe4be9ca405f270c60c73c40fe3a3f006c20676e4b28a1666005ffc89",
+      "sessionId": "31def7d5-02dc-417a-bf4a-80819b0ae7a8",
+      "reportSha256": "200686b1c5ae026f2a9a8a54b82fda42ef3d91c9dec07dd66ead2e9733e07eaf",
+      "reportBytes": 32475,
+      "partialReport": false,
+      "validScore": true,
+      "score": 24,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2d3b3126c3ff6cbf4380b80183577719bd829940544b333374075894aebdacf9",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "succeeded": 1,
+        "failed": 1
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "b63df3faefce884888d369e5715bfd778a9b2e4bb0d3d6d640bfcb9651ca1196"
+      ],
+      "sourceExportRecords": 3,
+      "exportRecords": 15,
+      "limitations": [],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 1
+    },
+    {
+      "task": "Astronomy_001",
+      "attempt": "runs-max/Astronomy_001/attempt-2026-10-25T07-44-03-697Z-FtohHS",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "36bc7f2fe4be9ca405f270c60c73c40fe3a3f006c20676e4b28a1666005ffc89",
+      "latestHarnessSha256": "36bc7f2fe4be9ca405f270c60c73c40fe3a3f006c20676e4b28a1666005ffc89",
+      "sessionId": "cc748524-4d14-4fa5-a7aa-e6744ed34a0a",
+      "reportSha256": "45721a42e46d880d0a1d1a10f64878a7742d2dd9d0a8be2d6cb9b38bcca45bc6",
+      "reportBytes": 23664,
+      "partialReport": false,
+      "validScore": true,
+      "score": 22.4,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2d3b3126c3ff6cbf4380b80183577719bd829940544b333374075894aebdacf9",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "succeeded": 1
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "5ca8cd2474494ce08f318939149c87f47a5005a7ac71961c1e8c4ab8ef4c839e"
+      ],
+      "sourceExportRecords": 3,
+      "exportRecords": 9,
+      "limitations": [],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 1
+    },
+    {
+      "task": "Astronomy_002",
+      "attempt": "runs-max/Astronomy_002/attempt-2026-10-25T07-59-27-644Z-KAobkR",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "7348de96a820a029da3e1e366c2319c53205adbb5929341e6cc56017e3018c56",
+      "latestHarnessSha256": "cdfea4b0fc81a055aa4b95e1aeb07efdc7deae48447d4be157b0d0414a0d44d4",
+      "sessionId": "a58f9f02-ff5e-4715-9a9b-2cb9d2ca2f57",
+      "reportSha256": "79e95d22f8c94befb07311fd64ad74581f23cd9fbfee0b8270327b37f078a16a",
+      "reportBytes": 34401,
+      "partialReport": false,
+      "validScore": true,
+      "score": 18.4,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2d3b3126c3ff6cbf4380b80183577719bd829940544b333374075894aebdacf9",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "failed": 2,
+        "succeeded": 2
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "dc8869e45988aff60ea5b664aafe7639fb0316ab6a157b1ee7313a5a01b4623f",
+        "f4ce2624abb7df37fdbf44404165b76e4459c38c4d594101e8afc7442ef83108"
+      ],
+      "sourceExportRecords": 10,
+      "exportRecords": 15,
+      "limitations": [],
+      "recoveryStrategies": [
+        "exact_retry"
+      ],
+      "recoveryWindows": [
+        {
+          "reason": "credit_recovery",
+          "windowStartedAt": "2026-10-25T10:48:16.885Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 457348,
+          "measurement": "controller wall-clock span; not active compute time"
+        }
+      ],
+      "attemptCount": 1
+    },
+    {
+      "task": "Astronomy_003",
+      "attempt": "runs-max/Astronomy_003/attempt-2026-10-25T08-21-09-684Z-yklxm0",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "3dbdd6df0b6c643ce65bbf79ae4a6a6d10d1528bf61f4ae86cf79ed6760d2985",
+      "latestHarnessSha256": "3dbdd6df0b6c643ce65bbf79ae4a6a6d10d1528bf61f4ae86cf79ed6760d2985",
+      "sessionId": "830e93fb-549a-4fbd-ae0f-38be0b89efb7",
+      "reportSha256": "0d5e187eaca354889da7bd14a86bd3d6b9a03e655d86123eb9a1bb5b81fed835",
+      "reportBytes": 48724,
+      "partialReport": false,
+      "validScore": true,
+      "score": 57.3,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2d3b3126c3ff6cbf4380b80183577719bd829940544b333374075894aebdacf9",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "succeeded": 5,
+        "failed": 1
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "021b93bd23845003957c264a4d85de7022d8884a2b34e72b504f9972773798b2",
+        "83befe3b23b1511c03634f91c27d5834c2c395132c8fcd7a7bc0bacd2e1d2844",
+        "60bab8571a2996511e2f48f1a1073379e13932294679d8401ecce422279e1dc5",
+        "6588dc79cba5bbc2c97da5428d85ac2a288fb34c4c64f641ed1723a9c62c3a25",
+        "74300ffecc57e65b6e485ea16d5fc5ce3e4c52046cbdc221e1311ec2ba098943"
+      ],
+      "sourceExportRecords": 12,
+      "exportRecords": 13,
+      "limitations": [],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 2
+    },
+    {
+      "task": "Chemistry_000",
+      "attempt": "runs-max/Chemistry_000/attempt-2026-10-25T07-51-13-855Z-41IXzK",
+      "status": "failed",
+      "stopReason": "gpu_run_missing",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "3dbdd6df0b6c643ce65bbf79ae4a6a6d10d1528bf61f4ae86cf79ed6760d2985",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "9be616bd-2122-4544-8a60-7a510ad89ec4",
+      "reportSha256": "0aa49cd33329c7627d0cbcf843e1309326505d8f3cf92b4ca09fb22aad441018",
+      "reportBytes": 19801,
+      "partialReport": false,
+      "validScore": true,
+      "score": 7.05,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "failed": 2,
+        "succeeded": 3
+      },
+      "formalRuns": {
+        "failed": 1
+      },
+      "gpuRequired": true,
+      "gpuProbeRecorded": true,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "38d34097de46125d3c5ea67bfa7935fc6573e14e05eb1b3d58574999de85d686",
+        "af725e7b0228a0259b71f50e731f3a629578f1b9e7f5b02c6fcb58e2a1966499",
+        "6e6c9bdfc5936c943070aa04a410d72c4a97766b8d06df583d976d4447af4e48"
+      ],
+      "sourceExportRecords": 29,
+      "exportRecords": 33,
+      "limitations": [
+        {
+          "code": "ACTION_NOT_AUTHORIZED",
+          "operation": "change_proposal_prepare"
+        }
+      ],
+      "recoveryStrategies": [
+        "exact_retry",
+        "exact_retry",
+        "adapter_rejection_followup"
+      ],
+      "recoveryWindows": [
+        {
+          "reason": "credit_recovery",
+          "windowStartedAt": "2026-10-25T10:48:17.010Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 1129510,
+          "measurement": "controller wall-clock span; not active compute time"
+        },
+        {
+          "reason": "credit_recovery",
+          "windowStartedAt": "2026-10-25T11:24:52.086Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 106125,
+          "measurement": "controller wall-clock span; not active compute time"
+        },
+        {
+          "reason": "adapter_rejection_followup",
+          "windowStartedAt": "2026-10-25T12:21:46.699Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 93052,
+          "measurement": "controller wall-clock span; not active compute time"
+        }
+      ],
+      "attemptCount": 1
+    },
+    {
+      "task": "Chemistry_001",
+      "attempt": "runs-max/Chemistry_001/attempt-2026-10-25T12-24-08-271Z-D3ijuK",
+      "status": "failed",
+      "stopReason": "policy_blocked",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "9822d10e-256e-4357-a10f-a221ffeb66fd",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {},
+      "formalRuns": {},
+      "gpuRequired": true,
+      "gpuProbeRecorded": true,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [],
+      "sourceExportRecords": 0,
+      "exportRecords": 0,
+      "limitations": [
+        {
+          "code": "GPU_CONTRACT_SCOPE_DENIED",
+          "operation": "experiment_plan_submit"
+        }
+      ],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 2
+    },
+    {
+      "task": "Chemistry_002",
+      "attempt": "runs-max/Chemistry_002/attempt-2026-10-25T08-12-09-512Z-X6YXbp",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "7348de96a820a029da3e1e366c2319c53205adbb5929341e6cc56017e3018c56",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "34810767-9a86-4b53-957b-023ced27e457",
+      "reportSha256": "10dd87160c30aa19860db94e8c3a06e7aa9ec15cf96437ea16f57dc3c970a2db",
+      "reportBytes": 5266,
+      "partialReport": false,
+      "validScore": true,
+      "score": 3.6,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {},
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [],
+      "sourceExportRecords": 0,
+      "exportRecords": 0,
+      "limitations": [
+        {
+          "code": "ACTION_NOT_AUTHORIZED",
+          "operation": "workspace_history_commit"
+        }
+      ],
+      "recoveryStrategies": [
+        "exact_retry"
+      ],
+      "recoveryWindows": [
+        {
+          "reason": "credit_recovery",
+          "windowStartedAt": "2026-10-25T12:24:08.635Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 816986,
+          "measurement": "controller wall-clock span; not active compute time"
+        }
+      ],
+      "attemptCount": 1
+    },
+    {
+      "task": "Chemistry_003",
+      "attempt": "runs-max/Chemistry_003/attempt-2026-10-25T12-26-29-373Z-ocJBZK",
+      "status": "timeout",
+      "stopReason": "timeout",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "ed85f417-451c-4a11-ad71-9c44adc98bfb",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "succeeded": 3,
+        "failed": 2
+      },
+      "formalRuns": {},
+      "gpuRequired": true,
+      "gpuProbeRecorded": true,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "be8dc65bb03360e28f6975faf8a70450a923f545367c2c6267e45788636b4893",
+        "4bee2cb3c4f57ca24954a496aa5164f56f2d1a3ebd8ec02a9c9b5b5b7906a2d3",
+        "4229acf106ec63595fab01955280c68d92a663103ed82d236a026c032757b581"
+      ],
+      "sourceExportRecords": 12,
+      "exportRecords": 27,
+      "limitations": [],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 2
+    },
+    {
+      "task": "Earth_000",
+      "attempt": "runs-max/Earth_000/attempt-2026-10-25T10-58-23-345Z-YQvdvj",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "cdfea4b0fc81a055aa4b95e1aeb07efdc7deae48447d4be157b0d0414a0d44d4",
+      "latestHarnessSha256": "ac87192d2cf10306fb957d5eb77ad02ecc234a1a760e8a6e3bae0c81a068547e",
+      "sessionId": "dbfb03fa-8796-429c-922d-853896ce0434",
+      "reportSha256": "8deefd5cf540152ecf903e7be978b1515068e30aa96d686fb7cf6f41d345cc0a",
+      "reportBytes": 43535,
+      "partialReport": false,
+      "validScore": true,
+      "score": 27.5,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "failed": 2,
+        "succeeded": 10
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "62c767c9db2dc3809d6af99fd426b82292246e12116a497e9f7407853f79ba1e",
+        "eb64299cab64ee01e8d57866c9fe5ffc3f37be6a51f17f4ca9bd2508caec1833",
+        "197786f641571a30f0df1ce6b994b3d45caf4599c48dfed02dd150e5719e8998",
+        "700f8406e5a2b0b252bf125c74ccf350bf47d9b47e0f87634e1dc8941a8b847c",
+        "f95a2db0098481d38f061d038259029cdd94308316a7f90d35649effe69a057e",
+        "79a5711fe84e70295e839b66972e76c7165759185b8af7c83052ceb15604cbd3"
+      ],
+      "sourceExportRecords": 115,
+      "exportRecords": 40,
+      "limitations": [
+        {
+          "code": "INPUT_BATCH_REQUIRED"
+        }
+      ],
+      "recoveryStrategies": [
+        "existing_receipt"
+      ],
+      "recoveryWindows": [
+        {
+          "reason": "credit_recovery",
+          "windowStartedAt": "2026-10-25T11:42:57.532Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 1175815,
+          "measurement": "controller wall-clock span; not active compute time"
+        }
+      ],
+      "attemptCount": 2
+    },
+    {
+      "task": "Earth_001",
+      "attempt": "runs-max/Earth_001/attempt-2026-10-25T07-15-55-781Z-RVWHab",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "36bc7f2fe4be9ca405f270c60c73c40fe3a3f006c20676e4b28a1666005ffc89",
+      "latestHarnessSha256": "36bc7f2fe4be9ca405f270c60c73c40fe3a3f006c20676e4b28a1666005ffc89",
+      "sessionId": "ac86e699-3cda-4440-afaa-a12f15da4a18",
+      "reportSha256": "7b315dc247f9d03cc2a65bdd0fd303b655c3f6e256fcaf72650dd957905a5739",
+      "reportBytes": 30316,
+      "partialReport": false,
+      "validScore": true,
+      "score": 35.63,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2d3b3126c3ff6cbf4380b80183577719bd829940544b333374075894aebdacf9",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "failed": 2,
+        "succeeded": 2
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "2ddff4a4ed343eb098998c8c2cc682bf446c1c693177da23f3cba971852223e4",
+        "c509b170d4a3a06dd049fc4db0611d08f53124fa6462e27bbbc73f0ac8d32dad"
+      ],
+      "sourceExportRecords": 5,
+      "exportRecords": 31,
+      "limitations": [],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 1
+    },
+    {
+      "task": "Earth_002",
+      "attempt": "runs-max/Earth_002/attempt-2026-10-25T08-12-35-657Z-NqxCyu",
+      "status": "failed",
+      "stopReason": "input_limit",
+      "startedProjectApp": false,
+      "initialHarnessSha256": "7348de96a820a029da3e1e366c2319c53205adbb5929341e6cc56017e3018c56",
+      "latestHarnessSha256": "7348de96a820a029da3e1e366c2319c53205adbb5929341e6cc56017e3018c56",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": false,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {},
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [],
+      "sourceExportRecords": 0,
+      "exportRecords": 0,
+      "limitations": [
+        {
+          "code": "INPUT_OVER_32_MIB"
+        },
+        {
+          "code": "INPUT_OVER_32_MIB"
+        },
+        {
+          "code": "INPUT_OVER_32_MIB"
+        },
+        {
+          "code": "INPUT_BATCH_REQUIRED"
+        }
+      ],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 1
+    },
+    {
+      "task": "Earth_003",
+      "attempt": "runs-max/Earth_003/attempt-2026-10-25T08-12-45-006Z-MByYSu",
+      "status": "failed",
+      "stopReason": "input_limit",
+      "startedProjectApp": false,
+      "initialHarnessSha256": "3dbdd6df0b6c643ce65bbf79ae4a6a6d10d1528bf61f4ae86cf79ed6760d2985",
+      "latestHarnessSha256": "3dbdd6df0b6c643ce65bbf79ae4a6a6d10d1528bf61f4ae86cf79ed6760d2985",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": false,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {},
+      "formalRuns": {},
+      "gpuRequired": true,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [],
+      "sourceExportRecords": 0,
+      "exportRecords": 0,
+      "limitations": [
+        {
+          "code": "INPUT_OVER_32_MIB"
+        }
+      ],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 1
+    },
+    {
+      "task": "Energy_000",
+      "attempt": "runs-max/Energy_000/attempt-2026-10-25T08-12-43-631Z-iVYSmD",
+      "status": "failed",
+      "stopReason": "input_limit",
+      "startedProjectApp": false,
+      "initialHarnessSha256": "7348de96a820a029da3e1e366c2319c53205adbb5929341e6cc56017e3018c56",
+      "latestHarnessSha256": "7348de96a820a029da3e1e366c2319c53205adbb5929341e6cc56017e3018c56",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": false,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {},
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [],
+      "sourceExportRecords": 0,
+      "exportRecords": 0,
+      "limitations": [
+        {
+          "code": "INPUT_BATCH_REQUIRED"
+        }
+      ],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 1
+    },
+    {
+      "task": "Energy_001",
+      "attempt": "runs-max/Energy_001/attempt-2026-10-25T11-05-51-445Z-voE4qN",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "cdfea4b0fc81a055aa4b95e1aeb07efdc7deae48447d4be157b0d0414a0d44d4",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "f933ca90-33cd-46eb-9924-57097c5d1912",
+      "reportSha256": "2b791545124100e7b498e45a07a7677ec88e22b733f4d85fd29cec9c9e814cd8",
+      "reportBytes": 43958,
+      "partialReport": false,
+      "validScore": true,
+      "score": 44.8,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "failed": 1,
+        "succeeded": 10
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "54d285369db5158caf80d047e47ad6ca32ff5d6534502e1517b1ca5004172020",
+        "baee7a742c8ab7c97ccf3ca0e80cfb8dd58c0825689450834be388436eac9ca5",
+        "8ad96388f0b08b1ab788f4b2ad103becbcf1428ebb6870e3b25447da7c8d428e",
+        "e63a2f4050e4322dabbdacea0a58dffa3cfa72d5cbca27a5fbbfcbdb724cf621",
+        "748b71359cefa679bca204bdad2703ef54ea8900446548659a727512829a5150",
+        "a2534ba6b42c84cf296881498b65eb3484a4378eb530f193a7c88c60c63ddeea",
+        "c55843c4b8a1f06fb8db0c32d026371ffb8a2dcd9074933485ad8c56226aac00",
+        "68603004cad6885db32486517943697162d1a30df12c67d7571991131bc67915",
+        "9fdc7eca801f6272e286ff49c6835c581fc27ebbac01ac1f25c2fb9e6f64f9d4"
+      ],
+      "sourceExportRecords": 48,
+      "exportRecords": 186,
+      "limitations": [
+        {
+          "code": "ACTION_NOT_AUTHORIZED",
+          "operation": "literature_search"
+        }
+      ],
+      "recoveryStrategies": [
+        "exact_retry",
+        "adapter_rejection_followup"
+      ],
+      "recoveryWindows": [
+        {
+          "reason": "credit_recovery",
+          "windowStartedAt": "2026-10-25T11:48:11.260Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 666679,
+          "measurement": "controller wall-clock span; not active compute time"
+        },
+        {
+          "reason": "adapter_rejection_followup",
+          "windowStartedAt": "2026-10-25T12:24:08.370Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 1119914,
+          "measurement": "controller wall-clock span; not active compute time"
+        }
+      ],
+      "attemptCount": 2
+    },
+    {
+      "task": "Energy_002",
+      "attempt": "runs-max/Energy_002/attempt-2026-10-25T11-06-42-269Z-kJNE56",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "cdfea4b0fc81a055aa4b95e1aeb07efdc7deae48447d4be157b0d0414a0d44d4",
+      "latestHarnessSha256": "ac87192d2cf10306fb957d5eb77ad02ecc234a1a760e8a6e3bae0c81a068547e",
+      "sessionId": "9c416a4d-ae75-479e-bc2d-4c2efd5c602d",
+      "reportSha256": "a18f6c2a7c583e5430fbce5d4ac1cff2f7c9426ee8185e0ca5a717693cdea311",
+      "reportBytes": 36327,
+      "partialReport": false,
+      "validScore": true,
+      "score": 22.95,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "succeeded": 6,
+        "failed": 3
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "3ed9ac8f2a55281c448c7824eaec3bf051977ebc39903b7a7f2b372fbd85372c",
+        "368cd8b55d05d81c3abfbdf077063c6c4e08fe1b7d5b4cc69a56287872587b7a",
+        "19cb2f85f0297a3a1327d1b0372ae94ce2d541c71c1573cb999962b11d7ada13",
+        "7494af5e08df3e3b8958051a64f36be7240608ded6c707ceb0df1db7edaf5459",
+        "bd58e672289ceefccbf8ccc188ce4e1929d0c98e551fc0f1b59dc56706b56ba2"
+      ],
+      "sourceExportRecords": 34,
+      "exportRecords": 102,
+      "limitations": [
+        {
+          "code": "INPUT_BATCH_REQUIRED"
+        }
+      ],
+      "recoveryStrategies": [
+        "exact_retry"
+      ],
+      "recoveryWindows": [
+        {
+          "reason": "credit_recovery",
+          "windowStartedAt": "2026-10-25T11:48:11.316Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 1798278,
+          "measurement": "controller wall-clock span; not active compute time"
+        }
+      ],
+      "attemptCount": 2
+    },
+    {
+      "task": "Energy_003",
+      "attempt": "runs-max/Energy_003/attempt-2026-10-25T11-06-42-234Z-rsPSVj",
+      "status": "failed",
+      "stopReason": "policy_blocked",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "cdfea4b0fc81a055aa4b95e1aeb07efdc7deae48447d4be157b0d0414a0d44d4",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "c6b71309-0ca0-4b81-a15a-e0cb6372da77",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "succeeded": 3,
+        "failed": 1
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "2893169b8584e268435706bb46f7432e7b8689333df9ca1ae4a6f2ade914ceab",
+        "bd52ed35a503640b39ea4f275f94edf4c744fcdaeef4f997466b48256733fd09",
+        "d4babbd08b26a5052a0521f7cd1e1b964696f12a468ca792be10928fde03bf5b"
+      ],
+      "sourceExportRecords": 38,
+      "exportRecords": 21,
+      "limitations": [
+        {
+          "code": "INPUT_BATCH_REQUIRED"
+        },
+        {
+          "code": "DEVELOPMENT_SCOPE_DENIED",
+          "operation": "development_prepare"
+        }
+      ],
+      "recoveryStrategies": [
+        "exact_retry"
+      ],
+      "recoveryWindows": [
+        {
+          "reason": "credit_recovery",
+          "windowStartedAt": "2026-10-25T12:24:08.362Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 515993,
+          "measurement": "controller wall-clock span; not active compute time"
+        }
+      ],
+      "attemptCount": 2
+    },
+    {
+      "task": "Information_000",
+      "attempt": "runs-max/Information_000/attempt-2026-10-25T12-56-40-938Z-d82AKE",
+      "status": "failed",
+      "stopReason": "policy_blocked",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "1a80aeca-59d0-4f3d-9c36-ef535732bf31",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {},
+      "formalRuns": {},
+      "gpuRequired": true,
+      "gpuProbeRecorded": true,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [],
+      "sourceExportRecords": 0,
+      "exportRecords": 0,
+      "limitations": [
+        {
+          "code": "GPU_CONTRACT_SCOPE_DENIED",
+          "operation": "experiment_plan_submit"
+        }
+      ],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 2
+    },
+    {
+      "task": "Information_001",
+      "attempt": "runs-max/Information_001/attempt-2026-10-25T12-59-11-220Z-fLN8JZ",
+      "status": "failed",
+      "stopReason": "policy_blocked",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "b78a3d7c-4576-47fe-aa06-509033f4f64b",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {},
+      "formalRuns": {},
+      "gpuRequired": true,
+      "gpuProbeRecorded": true,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [],
+      "sourceExportRecords": 0,
+      "exportRecords": 0,
+      "limitations": [
+        {
+          "code": "GPU_CONTRACT_SCOPE_DENIED",
+          "operation": "experiment_plan_submit"
+        }
+      ],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 2
+    },
+    {
+      "task": "Information_002",
+      "attempt": "runs-max/Information_002/attempt-2026-10-25T11-06-51-073Z-gBWxvc",
+      "status": "failed",
+      "stopReason": "policy_blocked",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "cdfea4b0fc81a055aa4b95e1aeb07efdc7deae48447d4be157b0d0414a0d44d4",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "f996e53e-79ad-45d8-8593-eb7b31d92429",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {},
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [],
+      "sourceExportRecords": 0,
+      "exportRecords": 0,
+      "limitations": [
+        {
+          "code": "INPUT_BATCH_REQUIRED"
+        },
+        {
+          "code": "NOT_FOUND",
+          "operation": "development_prepare"
+        }
+      ],
+      "recoveryStrategies": [
+        "exact_retry"
+      ],
+      "recoveryWindows": [
+        {
+          "reason": "credit_recovery",
+          "windowStartedAt": "2026-10-25T12:24:08.595Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 85041,
+          "measurement": "controller wall-clock span; not active compute time"
+        }
+      ],
+      "attemptCount": 2
+    },
+    {
+      "task": "Information_003",
+      "attempt": "runs-max/Information_003/attempt-2026-10-25T08-13-23-670Z-4f9Kd3",
+      "status": "failed",
+      "stopReason": "input_limit",
+      "startedProjectApp": false,
+      "initialHarnessSha256": "3dbdd6df0b6c643ce65bbf79ae4a6a6d10d1528bf61f4ae86cf79ed6760d2985",
+      "latestHarnessSha256": "3dbdd6df0b6c643ce65bbf79ae4a6a6d10d1528bf61f4ae86cf79ed6760d2985",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": false,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {},
+      "formalRuns": {},
+      "gpuRequired": true,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [],
+      "sourceExportRecords": 0,
+      "exportRecords": 0,
+      "limitations": [],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 1
+    },
+    {
+      "task": "Life_000",
+      "attempt": "runs-max/Life_000/attempt-2026-10-25T12-25-44-012Z-idVcp3",
+      "status": "timeout",
+      "stopReason": "timeout",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "3a1a4fc3-7472-4468-9f59-57e11150e932",
+      "reportSha256": "ac3af55fe305846eef5e66a4af596f3140fb1debf458159301fba1c80a512114",
+      "reportBytes": 40513,
+      "partialReport": true,
+      "validScore": true,
+      "score": 11.8,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "succeeded": 10,
+        "failed": 2
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "2788a15104667c67a7f9c5385e61cf2903e42629bc88f05bb0d9b6b97c837ce0",
+        "58aca4ddc0fa0457f1bafa2e6f132d15ab92d22faaf4f867dc8e95abb4ea61a5",
+        "b76f201ec5bf6290191772d102bf9d0e7bafabf42e5fc98a788841199e9d5794",
+        "4ceb2cf5dd086c4e4e2a843f635da80f5060e0f897f01fdf3e10cd62c235ace0",
+        "002d080cb697643839484f08c34ddb4d059ea1d4da0ae470c94f937d7aa7be5f",
+        "c7cbbc1569c5fe1ba535873e37c94382fc10ed34ce06b336c41d308fde3effc7",
+        "f900b4a1f4280743cd538b25d3a24df416490e63247aaf6733c6ada7ea8ca2f5",
+        "741d376ed0f6131afa1e89f082ff86fad23e801922bc285f87d2b49571c64226",
+        "2812f2958fd2825cef5d0374e03e0b8694013305aa394849fd464b4d58a0394e"
+      ],
+      "sourceExportRecords": 65,
+      "exportRecords": 42,
+      "limitations": [
+        {
+          "code": "ACTION_NOT_AUTHORIZED",
+          "operation": "development_cancel"
+        }
+      ],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 2
+    },
+    {
+      "task": "Life_001",
+      "attempt": "runs-max/Life_001/attempt-2026-10-25T12-32-54-530Z-mLBtrd",
+      "status": "failed",
+      "stopReason": "policy_blocked",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "fa0c4e02-5b4c-4985-8f1e-3ebc648e1e44",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "failed": 2,
+        "succeeded": 2
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "0a1ddb5200a7f5cfc027c8c6117bb5aa53d5a7c0e6e19523dac901952d498b94",
+        "c098b2f857bc33666eceab7cf995cec36109cb7daf67b2c88024bf4005fcd923"
+      ],
+      "sourceExportRecords": 6,
+      "exportRecords": 15,
+      "limitations": [
+        {
+          "code": "INPUT_BATCH_REQUIRED"
+        },
+        {
+          "code": "DEVELOPMENT_SCOPE_DENIED",
+          "operation": "development_prepare"
+        }
+      ],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 2
+    },
+    {
+      "task": "Life_002",
+      "attempt": "runs-max/Life_002/attempt-2026-10-25T12-38-01-451Z-i1nWxG",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "47a94287-4e81-434e-a170-e4025c1f8c86",
+      "reportSha256": "b3ae33e64a9d18d8ccd730e1cbcb90b998989a18d5dde492b32d30b057e7c723",
+      "reportBytes": 19670,
+      "partialReport": false,
+      "validScore": true,
+      "score": 9.6,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "failed": 1,
+        "succeeded": 2
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "ecac7ca45e3a7d3324769d613fb2a6f8f9a9ed49210bf89ca05568a2deba4103",
+        "b25e7d55f0e10d1a0136eb3456e2638490ec4447e6059f98d1bc3d43449d0674"
+      ],
+      "sourceExportRecords": 54,
+      "exportRecords": 49,
+      "limitations": [],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 2
+    },
+    {
+      "task": "Life_003",
+      "attempt": "runs-max/Life_003/attempt-2026-10-25T12-43-20-063Z-3yEQUF",
+      "status": "timeout",
+      "stopReason": "timeout",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "2d8e8e9b-73a0-40f9-b178-ebd241b5446f",
+      "reportSha256": "987d581bbb25abc8924c0b49d557881d7d3b34a3eaf92229da43b74c171a3bea",
+      "reportBytes": 54451,
+      "partialReport": true,
+      "validScore": true,
+      "score": 39.7,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "succeeded": 4,
+        "failed": 2
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "e1f88eada12fd3bda77c1554eadffb262af0007dbf9f614e85ab15cf7821c494",
+        "c4af859c7ed631b30231ada9737a759b921d75c647a6b83784df98b1735bd54b",
+        "04c92f20476f53478be03b4ca09bfdea76cc2d9d9d077ef218e7fa31cf320fe9",
+        "4391c9c8b67efba2a04e96835d18055dc19f2b4dae8ad734e757d77dbf957e76"
+      ],
+      "sourceExportRecords": 8,
+      "exportRecords": 49,
+      "limitations": [
+        {
+          "code": "INPUT_BATCH_REQUIRED"
+        }
+      ],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 2
+    },
+    {
+      "task": "Material_000",
+      "attempt": "runs-max/Material_000/attempt-2026-10-25T13-01-32-379Z-YzzNYg",
+      "status": "failed",
+      "stopReason": "policy_blocked",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "083c6f88-90b0-406d-b075-394d1ed58ead",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {},
+      "formalRuns": {},
+      "gpuRequired": true,
+      "gpuProbeRecorded": true,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [],
+      "sourceExportRecords": 0,
+      "exportRecords": 0,
+      "limitations": [
+        {
+          "code": "GPU_CONTRACT_SCOPE_DENIED",
+          "operation": "experiment_plan_submit"
+        }
+      ],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 2
+    },
+    {
+      "task": "Material_001",
+      "attempt": "runs-max/Material_001/attempt-2026-10-25T08-52-30-014Z-3OppXk",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "7348de96a820a029da3e1e366c2319c53205adbb5929341e6cc56017e3018c56",
+      "latestHarnessSha256": "498d7e4612fd227f99141c9147d7d5e9fe825b629cdcfef955522cd6afef2895",
+      "sessionId": "c9bae1e0-6c0e-44a9-bebe-fcc59b8e1d6c",
+      "reportSha256": "0e9736b526778b292628128e378863af0157c1aa9dd9f58d5bf0e6e25a6b6926",
+      "reportBytes": 20065,
+      "partialReport": false,
+      "validScore": true,
+      "score": 5.8,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "succeeded": 2,
+        "failed": 5
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "2bce85ae2316b1d68a2863a8b5027c9c5434dd70112ba39dfd05f8b821e17bf6",
+        "ff6b025de7c7e3ff06b132cf236abed64df150e7fe8b5d9ba0ab18da3f057bab"
+      ],
+      "sourceExportRecords": 25,
+      "exportRecords": 13,
+      "limitations": [],
+      "recoveryStrategies": [
+        "dead_host_followup"
+      ],
+      "recoveryWindows": [
+        {
+          "reason": "dead_host_recovery",
+          "windowStartedAt": "2026-10-25T11:20:29.912Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 1384982,
+          "measurement": "observed wall-clock spans excluding known unobserved gaps; not active runtime or compute time"
+        }
+      ],
+      "attemptCount": 1
+    },
+    {
+      "task": "Material_002",
+      "attempt": "runs-max/Material_002/attempt-2026-10-25T13-04-20-548Z-ppO2da",
+      "status": "failed",
+      "stopReason": "policy_blocked",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "f86b6790-7566-4242-ac52-d91ca1cdd9d6",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {},
+      "formalRuns": {},
+      "gpuRequired": true,
+      "gpuProbeRecorded": true,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [],
+      "sourceExportRecords": 0,
+      "exportRecords": 0,
+      "limitations": [
+        {
+          "code": "GPU_CONTRACT_SCOPE_DENIED",
+          "operation": "experiment_plan_submit"
+        }
+      ],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 2
+    },
+    {
+      "task": "Material_003",
+      "attempt": "runs-max/Material_003/attempt-2026-10-25T08-52-29-871Z-Qd0YXh",
+      "status": "timeout",
+      "stopReason": "timeout",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "7348de96a820a029da3e1e366c2319c53205adbb5929341e6cc56017e3018c56",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "5d8d6666-b0ab-4d66-9a7e-12a7bd7309ad",
+      "reportSha256": "9cd83cbf4d7efec3b66679cd8c9463c2535e45bc29a0a1d7370f5fba5e459c3d",
+      "reportBytes": 31224,
+      "partialReport": true,
+      "validScore": true,
+      "score": 12.15,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "succeeded": 8,
+        "cancelled": 1,
+        "failed": 6,
+        "timed_out": 1
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "2b7b1c756ee97caa9e7a6f076a509999d40dd36c8a326084a0c087fb54f1ef42",
+        "2ea7399bb88df3a9c5755d71842a0b5c9b1cb284d5204666029fa3da7c4727e6",
+        "9e127ce748c423f79c18606b3b46b863e5a0baa3f95b7b5f880058755b7cefa6",
+        "5f852e5535358829a4fbb3631ecd767f45ed2884777bb278a3fbf667a0f97de8",
+        "8c5111d527111e3b290aef8763182c2dbfec90d20759ca0e56deeedeffc96551",
+        "78accf2a9e52cf116b23baf6284c9d3f6d0a1655dcd9076deeb06dd79fb35fdb",
+        "b553ce8032beccae70bf79d33b94abf2235162ca69aca609d98214c01ac9297f",
+        "d2cb97ea07542d595a58c7aa3d58f307aa62bb940f77c9cf9b7d0fc73755819c"
+      ],
+      "sourceExportRecords": 167,
+      "exportRecords": 13,
+      "limitations": [
+        {
+          "code": "ACTION_NOT_AUTHORIZED",
+          "operation": "development_cancel"
+        }
+      ],
+      "recoveryStrategies": [
+        "dead_host_followup",
+        "adapter_rejection_followup"
+      ],
+      "recoveryWindows": [
+        {
+          "reason": "dead_host_recovery",
+          "windowStartedAt": "2026-10-25T11:20:32.463Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 555014,
+          "measurement": "observed wall-clock spans excluding known unobserved gaps; not active runtime or compute time"
+        },
+        {
+          "reason": "adapter_rejection_followup",
+          "windowStartedAt": "2026-10-25T12:43:35.734Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 1800294,
+          "measurement": "observed wall-clock spans excluding known unobserved gaps; not active runtime or compute time"
+        }
+      ],
+      "attemptCount": 1
+    },
+    {
+      "task": "Math_000",
+      "attempt": "runs-max/Math_000/attempt-2026-10-25T08-52-30-060Z-p3d3C0",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "7348de96a820a029da3e1e366c2319c53205adbb5929341e6cc56017e3018c56",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "a5d816e3-44e7-47b4-a77f-1f3810edba1e",
+      "reportSha256": "906fb488b7b64133a8bc29e4ed0a124044a82fd7df2f9799cd1931177a7481f2",
+      "reportBytes": 40888,
+      "partialReport": false,
+      "validScore": true,
+      "score": 29.05,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "succeeded": 2,
+        "failed": 2
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "dd70710ab517f2de45f5860b373a756015c6e5ce0c7fdeba115692b344bafa7d",
+        "42fa81db77461e2d269134bb6caa8d170c50a340aed9826bd180a085109d882f"
+      ],
+      "sourceExportRecords": 6,
+      "exportRecords": 17,
+      "limitations": [
+        {
+          "code": "ACTION_NOT_AUTHORIZED",
+          "operation": "evidence_register"
+        }
+      ],
+      "recoveryStrategies": [
+        "dead_host_followup",
+        "adapter_rejection_followup"
+      ],
+      "recoveryWindows": [
+        {
+          "reason": "dead_host_recovery",
+          "windowStartedAt": "2026-10-25T11:20:30.659Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 872168,
+          "measurement": "observed wall-clock spans excluding known unobserved gaps; not active runtime or compute time"
+        },
+        {
+          "reason": "adapter_rejection_followup",
+          "windowStartedAt": "2026-10-25T12:54:04.770Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 166840,
+          "measurement": "observed wall-clock spans excluding known unobserved gaps; not active runtime or compute time"
+        }
+      ],
+      "attemptCount": 1
+    },
+    {
+      "task": "Math_001",
+      "attempt": "runs-max/Math_001/attempt-2026-10-25T10-48-17-017Z-Nx1o8i",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "cdfea4b0fc81a055aa4b95e1aeb07efdc7deae48447d4be157b0d0414a0d44d4",
+      "latestHarnessSha256": "498d7e4612fd227f99141c9147d7d5e9fe825b629cdcfef955522cd6afef2895",
+      "sessionId": "eae982ad-2535-4c87-b6b6-8495f98e12ea",
+      "reportSha256": "ee9e1ba54cf638b103c5aabbef1977487ca7eee9ebd1a7fc76fd9470d3cc0124",
+      "reportBytes": 34250,
+      "partialReport": false,
+      "validScore": true,
+      "score": 25.9,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "succeeded": 3
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "5644750b3eca6a1967a3046d3f0fd7ec2f193e0984bf30a00ddd9f9ed7a7aae6",
+        "c4208246859247e3be7c5f54bcbc2936abaed09806dc5b274ec8fd3e283b52e7",
+        "9e424fe915d3e1846de1050add7e7b283269c0e2a428232ba7cedc76e5be3661"
+      ],
+      "sourceExportRecords": 16,
+      "exportRecords": 56,
+      "limitations": [],
+      "recoveryStrategies": [
+        "exact_retry"
+      ],
+      "recoveryWindows": [
+        {
+          "reason": "credit_recovery",
+          "windowStartedAt": "2026-10-25T11:20:30.149Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 14454,
+          "measurement": "controller wall-clock span; not active compute time"
+        }
+      ],
+      "attemptCount": 1
+    },
+    {
+      "task": "Math_002",
+      "attempt": "runs-max/Math_002/attempt-2026-10-25T12-56-07-788Z-63uUcO",
+      "status": "failed",
+      "stopReason": "input_limit",
+      "startedProjectApp": false,
+      "initialHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": false,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {},
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [],
+      "sourceExportRecords": 0,
+      "exportRecords": 0,
+      "limitations": [
+        {
+          "code": "INPUT_BATCH_REQUIRED"
+        }
+      ],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 1
+    },
+    {
+      "task": "Math_003",
+      "attempt": "runs-max/Math_003/attempt-2026-10-25T10-48-17-764Z-6oF1q6",
+      "status": "failed",
+      "stopReason": "policy_blocked",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "cdfea4b0fc81a055aa4b95e1aeb07efdc7deae48447d4be157b0d0414a0d44d4",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "c36520e2-777c-48de-9fc1-63d7094f1fcb",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "failed": 2,
+        "cancelled": 2,
+        "succeeded": 5
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "22558ce7219d3def57e97d28b76d734d2a04994e32d231252147173fa66923f4",
+        "a1b04224687d3f70a37ba9c681ca7ed321f82ee7444c027581582bf3398eeb36",
+        "7c530d42d35a38cf6defb012a084ed4499f4b77423a88bb1b197472488d865eb",
+        "bb44757b7847f1a7c4bda74ad687d07f69c592db430ec85416f4431c4bcc7636",
+        "29ea2b97b02ee058246c3eb904f58afda6810da70838888b48655881ce0fc69d"
+      ],
+      "sourceExportRecords": 24,
+      "exportRecords": 9,
+      "limitations": [
+        {
+          "code": "ACTION_NOT_AUTHORIZED",
+          "operation": "literature_search"
+        },
+        {
+          "code": "DEVELOPMENT_SCOPE_DENIED",
+          "operation": "development_prepare"
+        }
+      ],
+      "recoveryStrategies": [
+        "adapter_rejection_followup"
+      ],
+      "recoveryWindows": [
+        {
+          "reason": "adapter_rejection_followup",
+          "windowStartedAt": "2026-10-25T12:56:25.886Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 300145,
+          "measurement": "controller wall-clock span; not active compute time"
+        }
+      ],
+      "attemptCount": 1
+    },
+    {
+      "task": "Neuroscience_000",
+      "attempt": "runs-max/Neuroscience_000/attempt-2026-10-25T10-48-16-825Z-qe8oze",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "cdfea4b0fc81a055aa4b95e1aeb07efdc7deae48447d4be157b0d0414a0d44d4",
+      "latestHarnessSha256": "ac87192d2cf10306fb957d5eb77ad02ecc234a1a760e8a6e3bae0c81a068547e",
+      "sessionId": "9d821df9-0c9f-427a-8f67-7cfaa193d741",
+      "reportSha256": "3261307dd8d59c0620b7c32b194ff57e9e2a078c5e85f456db99d7a9b5ff3f7f",
+      "reportBytes": 41640,
+      "partialReport": false,
+      "validScore": true,
+      "score": 10,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "succeeded": 4,
+        "failed": 3
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "4a4af2312898b5576241e068361ac5ea9b0e443feacbb24cdf86f621b2df8725",
+        "3795ccfa67f5f0ecba00df26070ca58edc168cf55c38910845921e08442c8c47",
+        "b6e7711897378acf41137fee8a6869d20e0bcc9a4b18f0cdfd070b2cbbd00cbf",
+        "0d788b441e7e84c9f0ee5fd03fe713fffea4854fcdc2d863052bd43c280865c6"
+      ],
+      "sourceExportRecords": 12,
+      "exportRecords": 34,
+      "limitations": [],
+      "recoveryStrategies": [
+        "expired_notice_followup"
+      ],
+      "recoveryWindows": [
+        {
+          "reason": "credit_recovery",
+          "windowStartedAt": "2026-10-25T11:42:57.641Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 394244,
+          "measurement": "controller wall-clock span; not active compute time"
+        }
+      ],
+      "attemptCount": 1
+    },
+    {
+      "task": "Neuroscience_001",
+      "attempt": "runs-max/Neuroscience_001/attempt-2026-10-25T13-07-12-645Z-Nw5s8o",
+      "status": "failed",
+      "stopReason": "policy_blocked",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "1ede1271-cf18-4876-bcec-158e9613122b",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {},
+      "formalRuns": {},
+      "gpuRequired": true,
+      "gpuProbeRecorded": true,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [],
+      "sourceExportRecords": 0,
+      "exportRecords": 0,
+      "limitations": [
+        {
+          "code": "INPUT_BATCH_REQUIRED"
+        },
+        {
+          "code": "GPU_CONTRACT_SCOPE_DENIED",
+          "operation": "experiment_plan_submit"
+        }
+      ],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 2
+    },
+    {
+      "task": "Neuroscience_002",
+      "attempt": "runs-max/Neuroscience_002/attempt-2026-10-25T08-14-17-866Z-xrpjFT",
+      "status": "failed",
+      "stopReason": "input_limit",
+      "startedProjectApp": false,
+      "initialHarnessSha256": "3dbdd6df0b6c643ce65bbf79ae4a6a6d10d1528bf61f4ae86cf79ed6760d2985",
+      "latestHarnessSha256": "3dbdd6df0b6c643ce65bbf79ae4a6a6d10d1528bf61f4ae86cf79ed6760d2985",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": false,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {},
+      "formalRuns": {},
+      "gpuRequired": true,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [],
+      "sourceExportRecords": 0,
+      "exportRecords": 0,
+      "limitations": [
+        {
+          "code": "INPUT_OVER_32_MIB"
+        }
+      ],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 1
+    },
+    {
+      "task": "Neuroscience_003",
+      "attempt": "runs-max/Neuroscience_003/attempt-2026-10-25T12-57-28-515Z-LnMlGu",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "c0448a9f-0489-4b68-954a-70cd61ff1bb1",
+      "reportSha256": "3f36bd4d6e26386b2d48bf764e6db74924f4161b0acff0b336ba194549fb5e4f",
+      "reportBytes": 19268,
+      "partialReport": false,
+      "validScore": true,
+      "score": 10.95,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "succeeded": 1
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "34dd6df0092e838cfb6b31b1b71d279a71fb0ae0649ec4e87da1b5f9a0519bd3"
+      ],
+      "sourceExportRecords": 10,
+      "exportRecords": 13,
+      "limitations": [],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 1
+    },
+    {
+      "task": "Physics_000",
+      "attempt": "runs-max/Physics_000/attempt-2026-10-25T10-56-28-776Z-afz8Lf",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "cdfea4b0fc81a055aa4b95e1aeb07efdc7deae48447d4be157b0d0414a0d44d4",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "dff686ea-eb19-491a-b44b-06c5d219cfce",
+      "reportSha256": "d56ce14c44086fc6db207c7e293ec4b0af903581645a0286ebc6e4ea9c935a7a",
+      "reportBytes": 45562,
+      "partialReport": false,
+      "validScore": true,
+      "score": 17.3,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {},
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [],
+      "sourceExportRecords": 0,
+      "exportRecords": 0,
+      "limitations": [
+        {
+          "code": "ACTION_NOT_AUTHORIZED",
+          "operation": "literature_search"
+        }
+      ],
+      "recoveryStrategies": [
+        "adapter_rejection_followup"
+      ],
+      "recoveryWindows": [
+        {
+          "reason": "adapter_rejection_followup",
+          "windowStartedAt": "2026-10-25T13:01:35.589Z",
+          "windowSeconds": 1800,
+          "windowElapsedMs": 424746,
+          "measurement": "controller wall-clock span; not active compute time"
+        }
+      ],
+      "attemptCount": 1
+    },
+    {
+      "task": "Physics_001",
+      "attempt": "runs-max/Physics_001/attempt-2026-10-25T13-09-09-724Z-7Rod3o",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "475dc572-909b-4525-923b-95a6db42127c",
+      "reportSha256": "0bb7bc2d88b7c84f7efbcd2df7e1912d671b688c3a0d777df751bb41ddc6e3dd",
+      "reportBytes": 26275,
+      "partialReport": false,
+      "validScore": true,
+      "score": 18.15,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "failed": 2,
+        "succeeded": 1
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "4737fba6171a2e7587fd1cc476dac47aaccfa259c535cd8f1cc28bc654c6f46d"
+      ],
+      "sourceExportRecords": 9,
+      "exportRecords": 18,
+      "limitations": [],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 1
+    },
+    {
+      "task": "Physics_002",
+      "attempt": "runs-max/Physics_002/attempt-2026-10-25T13-13-52-174Z-894cjp",
+      "status": "failed",
+      "stopReason": "policy_blocked",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "94fe6094-c00f-4fc7-897b-2fd6b1740f23",
+      "reportSha256": null,
+      "reportBytes": null,
+      "partialReport": false,
+      "validScore": false,
+      "score": null,
+      "judgeStatus": "not_run",
+      "judgeAdapterSha256": null,
+      "maxJudgeRequestsVerified": false,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "failed": 1,
+        "succeeded": 7
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "7f8b11258df03fa77add5ce2ece757cd4a9135717815b8c3a1064407265b5ecb",
+        "d1a910684b47c0cfa7d85b1929e25bc0071200b0d11b1558a683168c0aec46c9"
+      ],
+      "sourceExportRecords": 19,
+      "exportRecords": 20,
+      "limitations": [
+        {
+          "code": "INPUT_BATCH_REQUIRED"
+        },
+        {
+          "code": "ACTION_NOT_AUTHORIZED",
+          "operation": "literature_discover"
+        },
+        {
+          "code": "ACTION_NOT_AUTHORIZED",
+          "operation": "literature_discover"
+        },
+        {
+          "code": "DEVELOPMENT_SCOPE_DENIED",
+          "operation": "development_prepare"
+        }
+      ],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 1
+    },
+    {
+      "task": "Physics_003",
+      "attempt": "runs-max/Physics_003/attempt-2026-10-25T13-14-13-365Z-ePupxq",
+      "status": "completed",
+      "stopReason": "completed",
+      "startedProjectApp": true,
+      "initialHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "latestHarnessSha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "sessionId": "d2841468-6261-43de-9ee2-5bb84b3a7c85",
+      "reportSha256": "a950f437aa6f89348f39110346f58d70fe6394182aea36be675a542d7e7c06f5",
+      "reportBytes": 24217,
+      "partialReport": false,
+      "validScore": true,
+      "score": 26.1,
+      "judgeStatus": "completed",
+      "judgeAdapterSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "maxJudgeRequestsVerified": true,
+      "projectSessionMaxVerified": true,
+      "providerEffortEchoVerified": false,
+      "developmentJobs": {
+        "succeeded": 3,
+        "failed": 4
+      },
+      "formalRuns": {},
+      "gpuRequired": false,
+      "gpuProbeRecorded": false,
+      "gpuCompleted": false,
+      "successfulSourceDigests": [
+        "3e31ee9c63cd6247cf1d24c530f10b637ebfe06d734ef2c350adb5fcb3736857",
+        "788ea35c6a888f59e62e101d92c53f03acc94172a2d4bed7723e4ac0637f7684",
+        "40b4c8a43cb63d786f1544ec3dca374f9e171b28c8900423628be872dfc1ba46"
+      ],
+      "sourceExportRecords": 25,
+      "exportRecords": 18,
+      "limitations": [],
+      "recoveryStrategies": [],
+      "recoveryWindows": [],
+      "attemptCount": 1
+    }
+  ]
+}

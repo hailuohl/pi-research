@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 1,
+  "status": "finished_with_limits",
+  "date": "2026-10-25",
+  "scope": {
+    "benchmark": "InternScience/ResearchClawBench",
+    "commit": "7627954d0ff3fe5496cbc0675f6afbe9b6cd40f9",
+    "tasks": 40,
+    "domains": 10,
+    "extraHuggingFaceTasksIncluded": false
+  },
+  "project": {
+    "sourceHead": "c7e1dfaa92ef576cad307e8d6d2513fab84f7870",
+    "branch": "implementation/pr01-reproducible-baseline",
+    "workingTreeDiffSha256": "07de5ff14b5eeb14dc1cd5055df945d77b04c0551a78651dde3ce6f53024fbeb",
+    "sourceSnapshotManifest": "D:\\项目\\pi research\\tmp\\researchclawbench-20261025\\project-snapshot.json",
+    "runtimeRoot": "D:\\项目\\pi research\\tmp\\researchclawbench-20261025\\project-snapshot",
+    "productSourceModifiedForBenchmark": false,
+    "sourceReceiptSha256": "c7d592444ac57ba77e5cdec61ca788cdb6996cbf96ab6ae38ac5f5588ef6abd3",
+    "npmLockSha256": "6e9f0697e89d076700ff2c80a174ba6b141ef6d625f56c600b1b4b58aac2c719"
+  },
+  "authorization": {
+    "full40Tasks": true,
+    "agentAndJudgeDeepSeekFlash": true,
+    "allInferenceMax": true,
+    "threeGpuVisibility": true,
+    "preserveExistingGpuProcesses": true,
+    "globalMainSessionConfigurationChanged": false
+  },
+  "inference": {
+    "agent": {
+      "provider": "deepseek",
+      "model": "deepseek-flash",
+      "thinking": "max",
+      "requestParameters": {
+        "thinking": {
+          "type": "enabled"
+        },
+        "reasoning_effort": "max"
+      }
+    },
+    "reviewer": {
+      "provider": "deepseek",
+      "model": "deepseek-flash",
+      "thinking": "max"
+    },
+    "judge": {
+      "model": "deepseek-flash",
+      "reasoning_effort": "max",
+      "max_tokens": 32768,
+      "time_limit_seconds": 300,
+      "officialRubricWeightsAndAggregationUnchanged": true,
+      "adapter": "Scoped max request parameters and final-content-only parsing; official rubric, weights, images and aggregation retained",
+      "responseReasoningExcluded": true,
+      "v3Sha256": "2d3b3126c3ff6cbf4380b80183577719bd829940544b333374075894aebdacf9",
+      "v3_1MetadataOnlySha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "deliveryLfSha256": "3a6663f0ec2c6935eee53d93e0d615436cfedfea00639ab3285870770e4c882d",
+      "runtimeSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "deliveryAstIdentical": true,
+      "officialEffortDocumentation": "https://api-docs.deepseek.com/guides/thinking_mode/",
+      "temperatureNote": "Official scorer parameter retained; DeepSeek thinking mode ignores temperature, so repeated grades can vary."
+    }
+  },
+  "resources": {
+    "taskWallSeconds": 1800,
+    "cpuImage": "pi-research-rcb@sha256:3656195d887157a9135ba265a03dfeda4a0da1876215db56625cad39f79110db",
+    "gpuImage": "pi-research-rcb-gpu@sha256:c7d8f2389cd9d3e58f6051d8593481b01b28359f0c8a976b7cdf3f9ac6e8663b",
+    "gpuIds": [
+      "GPU-f07d86e9-eefa-0b63-a535-5df14fed0067",
+      "GPU-58dc30ef-abe7-0221-812a-eb2e6c49e2ae",
+      "GPU-17faea42-44e2-e404-ce4a-8d30b3e89fbc"
+    ],
+    "gpuTasksSerial": true,
+    "networkPolicy": "none for computation",
+    "hostAccessEnabled": false,
+    "cpuTaskConcurrency": 4,
+    "recoveryWindowSeconds": 1800,
+    "recoveryTiming": "Additional audited window; old elapsed retained; deadhost spans are observations, not active runtime",
+    "executionBudgetNote": "Custom bounded offline Pi adapter; interrupted tasks may have additional separately audited 1800-second windows. Not a uniform single-window official leaderboard run."
+  },
+  "acceptance": [
+    "Pin official benchmark and actual dirty project snapshot with hashes.",
+    "Use actual ResearchApp/AgentHost and model-authored outputs; withhold grader material.",
+    "Score independently with official criteria/weights; preserve missing/failed scoring.",
+    "Keep per-attempt databases, exact approvals, fixed source and history.",
+    "Deliver reproducible commands, source/figure/report provenance and explicit limits."
+  ],
+  "history": {
+    "oldHighAttemptExcluded": true,
+    "maxOutputRoot": "D:\\项目\\pi research\\tmp\\researchclawbench-20261025\\runs-max",
+    "rawNativeSessionsAndCredentialsExcludedFromGit": true,
+    "unsupportedOperations": "Remain rejected; only ACTION_NOT_AUTHORIZED now queues an ordinary mechanical followup without extending the live deadline. Other scope/hash/GPU guards still stop.",
+    "legacyMaxVerification": "legacy-max-verification.json",
+    "finalControl": "supervisor-main-state.json",
+    "controllersEndedNaturally": true,
+    "rawHistoryRetained": true
+  },
+  "delegation": [
+    {
+      "task": "entry investigation and bounded harness implementation",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedReasoning": "high",
+      "runtimeEcho": "not available"
+    },
+    {
+      "task": "existing GPU route analysis",
+      "requestedModel": "gpt-6-astra",
+      "requestedReasoning": "high",
+      "runtimeEcho": "not available"
+    },
+    {
+      "task": "independent permissions/data retention review",
+      "requestedModel": "gpt-6-astra",
+      "requestedReasoning": "max",
+      "runtimeEcho": "not available"
+    },
+    {
+      "task": "bounded dead-host adapter continuation",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedReasoning": "xhigh",
+      "runtimeEcho": "not available"
+    },
+    {
+      "task": "critical dead-host and queue review",
+      "requestedModel": "gpt-6-astra",
+      "requestedReasoning": "max",
+      "runtimeEcho": "not available"
+    },
+    {
+      "task": "independent scorer review",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedReasoning": "high",
+      "runtimeEcho": "not available"
+    }
+  ],
+  "updatedAt": "2026-10-25T13:56:45.019Z",
+  "hardwareCalibration": {
+    "projectFormalRunId": "0c72a7d7-908e-46c1-9f7b-f147f4ed5a65",
+    "state": "succeeded",
+    "integrity": "complete",
+    "cuda": "12.8",
+    "torch": "2.11.0+cu128",
+    "tensorSum": 120,
+    "reopenedExactHistory": true,
+    "scientificBenchmarkTask": false
+  },
+  "independentReview": {
+    "requestedModel": "gpt-6-astra",
+    "requestedReasoning": "max",
+    "runtimeEcho": "not available",
+    "status": "passed",
+    "remainingBlockingFindings": 0,
+    "scope": "Only necessary changed portions; previous accepted checks reused",
+    "liveRejectionRedLimitation": "First RED used a missing helper export, not old-loop end-to-end reproduction; five actual legacy policy_blocked records, old stopping branch and real isolated approval/message tests provide alternative evidence"
+  },
+  "validation": {
+    "cleanBuild": "passed on frozen product source",
+    "frozenProductCore": {
+      "tests": 2721,
+      "pass": 2696,
+      "skipped": 25,
+      "fail": 0
+    },
+    "adapter": {
+      "tests": 48,
+      "pass": 48,
+      "fail": 0,
+      "sha256": "8d57220c65fd8792b0ca3573fb6acdc7078f86fe5aae66eb4cf47a5819c3b9dc",
+      "testSha256": "8232f6bb2aa725ba43932a4defae383fe5fe077621ae865cf08c5106f9bd1f64",
+      "syntax": "passed",
+      "rootIndependentRun": "passed"
+    },
+    "scorer": {
+      "sha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "selfCheck": "passed",
+      "syntheticRegression": "passed",
+      "independentReview": "passed",
+      "runtimeSha256": "2ba98c256bfd2415cb19da863b2a6ce7ac741b8240ea5fcec9c2393afba515cd",
+      "deliveryLfSha256": "3a6663f0ec2c6935eee53d93e0d615436cfedfea00639ab3285870770e4c882d",
+      "deliveryAstIdentical": true,
+      "lfSelfCheck": "passed",
+      "independentFormatReview": "passed"
+    },
+    "batch": {
+      "sha256": "23659a6c81fa9faa184963c40b4ffd24f8b581e2e74c339173c7398c4c082286",
+      "selfCheck": "passed",
+      "independentReview": "passed"
+    },
+    "deliveryWorktreeAdapter": {
+      "tests": 48,
+      "pass": 48,
+      "fail": 0
+    },
+    "finalArtifacts": {
+      "reports": 22,
+      "reportAndScoreHashesUnchanged": true,
+      "missingImageReferences": 13,
+      "ownedRunningContainers": 0,
+      "liveBenchmarkNodeProcesses": 0
+    }
+  },
+  "statistics": {
+    "attempted": 40,
+    "enteredProjectApp": 34,
+    "completedWorkflows": 18,
+    "scoredReports": 22,
+    "scoreCoverage": 0.55,
+    "workflowCompletionRate": 0.45,
+    "meanOnScoredReportsOnly": 21.82409090909091,
+    "full40Score": null,
+    "outcomes": {
+      "completed": 18,
+      "inputBlocked": 6,
+      "contractOrScopeBlocked": 11,
+      "timeout": 4,
+      "gpuRunMissing": 1
+    }
+  },
+  "delivery": {
+    "status": "local changes prepared; remote synchronization not yet confirmed",
+    "branch": "implementation/pr01-reproducible-baseline",
+    "privateRepository": "hailuohl/pi-research",
+    "rawCredentialsNativeSessionsDataAndLogsIncluded": false
+  },
+  "gpuOutcome": {
+    "assigned": 11,
+    "pathsEntered": 8,
+    "blockedBeforeAppByInput": 3,
+    "successfulScientificFormalRuns": 0,
+    "actualComputationNotInferredFromContract": true,
+    "contractVisibleSetMismatchCases": 6,
+    "hardwareCalibrationExcludedFromScientificTasks": true
+  },
+  "finalResultsReview": {
+    "status": "passed",
+    "requestedModel": "gpt-6.1-sol",
+    "requestedReasoning": "high",
+    "runtimeEcho": "not available",
+    "readOnly": true,
+    "blockingFindings": 0,
+    "nonBlockingFindings": 0,
+    "checked": {
+      "latestTerminalTasks": 40,
+      "validScoredReports": 22,
+      "maxJudgeRequests": 86,
+      "scoreSum": 480.13,
+      "sourceFileDigests": 755,
+      "exportFileDigests": 858,
+      "oldInputManifestFiles": 44,
+      "missingImageReferences": 13
+    },
+    "scope": "Final result/evidence reconciliation only; no model, compute or scientific rerun",
+    "reviewedResultsSha256": "e5088e033058b00d727acadccd7f7413afc4115eee2f84beb07e4ee366d54a4b",
+    "reviewedProtocolSha256": "ec1cdeef2dddfc0441cb55b6e7095910e1825b9a69a1957468f42ea5710f0f5b"
+  }
+}

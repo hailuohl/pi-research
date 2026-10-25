@@ -1,0 +1,91 @@
+{
+  "observedAt": "2026-10-25T13:09:33.096Z",
+  "scope": "Supplementary read-only verification for older adapters whose runtimeThinkingVerified remained false; no evaluation/native/database rewritten",
+  "containsConversationOrReasoningContent": false,
+  "proof": [
+    {
+      "task": "Astronomy_000",
+      "attempt": "runs-max/Astronomy_000/attempt-2026-10-25T07-17-38-276Z-PXVdSm",
+      "sessionId": "31def7d5-02dc-417a-bf4a-80819b0ae7a8",
+      "reportSha256": "200686b1c5ae026f2a9a8a54b82fda42ef3d91c9dec07dd66ead2e9733e07eaf",
+      "evaluationAtVerificationSha256": "9b7eb05c3e24b3964d8250c59b4e976b02a89e1245f50bcbb4e6bc90b85a3ddf",
+      "nativeSha256": "e4aeba9dcc5fa0d0bb8678b03e20d28b78433012e38467caedcf3972f6335d74",
+      "sessionModel": {
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "thinking": "max"
+      },
+      "nativeModelEvents": [
+        {
+          "type": "model_change",
+          "provider": "deepseek",
+          "modelId": "deepseek-flash",
+          "timestamp": "2026-10-25T07:17:41.432Z"
+        },
+        {
+          "type": "thinking_level_change",
+          "thinkingLevel": "max",
+          "timestamp": "2026-10-25T07:17:41.432Z"
+        }
+      ],
+      "maxSelectedAndNativeLevelVerified": true,
+      "providerEffortEchoVerified": false
+    },
+    {
+      "task": "Astronomy_001",
+      "attempt": "runs-max/Astronomy_001/attempt-2026-10-25T07-44-03-697Z-FtohHS",
+      "sessionId": "cc748524-4d14-4fa5-a7aa-e6744ed34a0a",
+      "reportSha256": "45721a42e46d880d0a1d1a10f64878a7742d2dd9d0a8be2d6cb9b38bcca45bc6",
+      "evaluationAtVerificationSha256": "aa4c1ee2eb6dd711ee8fe583aea4590725c28291e895697e7477fbe2ba4d5f9d",
+      "nativeSha256": "93a1fe652768d493cc45e6f37b3847bb2f4619d12e9fabb0bbc7cd22bd209d56",
+      "sessionModel": {
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "thinking": "max"
+      },
+      "nativeModelEvents": [
+        {
+          "type": "model_change",
+          "provider": "deepseek",
+          "modelId": "deepseek-flash",
+          "timestamp": "2026-10-25T07:44:06.724Z"
+        },
+        {
+          "type": "thinking_level_change",
+          "thinkingLevel": "max",
+          "timestamp": "2026-10-25T07:44:06.725Z"
+        }
+      ],
+      "maxSelectedAndNativeLevelVerified": true,
+      "providerEffortEchoVerified": false
+    },
+    {
+      "task": "Earth_001",
+      "attempt": "runs-max/Earth_001/attempt-2026-10-25T07-15-55-781Z-RVWHab",
+      "sessionId": "ac86e699-3cda-4440-afaa-a12f15da4a18",
+      "reportSha256": "7b315dc247f9d03cc2a65bdd0fd303b655c3f6e256fcaf72650dd957905a5739",
+      "evaluationAtVerificationSha256": "beac5a1dc33779814d2305e3b471144bf69103789a0ba56731fecf79ab473d69",
+      "nativeSha256": "e7bafe1db716b434b24c147d95235956f06fe0fb11cb6756e8601fc6bb0119c2",
+      "sessionModel": {
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "thinking": "max"
+      },
+      "nativeModelEvents": [
+        {
+          "type": "model_change",
+          "provider": "deepseek",
+          "modelId": "deepseek-flash",
+          "timestamp": "2026-10-25T07:15:58.996Z"
+        },
+        {
+          "type": "thinking_level_change",
+          "thinkingLevel": "max",
+          "timestamp": "2026-10-25T07:15:58.996Z"
+        }
+      ],
+      "maxSelectedAndNativeLevelVerified": true,
+      "providerEffortEchoVerified": false
+    }
+  ]
+}

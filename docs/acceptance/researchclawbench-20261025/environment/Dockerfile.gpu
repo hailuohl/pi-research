@@ -1,0 +1,2 @@
+FROM pi-research-rcb:20261025
+RUN pip install --no-cache-dir --upgrade torch torchvision --index-url https://download.pytorch.org/whl/cu128 && pip freeze > /usr/local/share/rcb-requirements.txt

@@ -1,0 +1,354 @@
+{
+  "observedAt": "2026-10-25T14:07:10.314Z",
+  "terminalTasks": 40,
+  "validatedScoredReports": 22,
+  "ownedRunningContainers": 0,
+  "allReportHashesUnchanged": true,
+  "nativeAndCredentialContentIncluded": false,
+  "gpuAssignedTasks": 11,
+  "gpuPathsEntered": 8,
+  "successfulScientificFormalGpuRuns": 0,
+  "reports": [
+    {
+      "task": "Astronomy_000",
+      "reportSha256": "200686b1c5ae026f2a9a8a54b82fda42ef3d91c9dec07dd66ead2e9733e07eaf",
+      "imageReferences": 9,
+      "resolved": 9,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 9,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Astronomy_001",
+      "reportSha256": "45721a42e46d880d0a1d1a10f64878a7742d2dd9d0a8be2d6cb9b38bcca45bc6",
+      "imageReferences": 7,
+      "resolved": 7,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 7,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Astronomy_002",
+      "reportSha256": "79e95d22f8c94befb07311fd64ad74581f23cd9fbfee0b8270327b37f078a16a",
+      "imageReferences": 9,
+      "resolved": 9,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 9,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Astronomy_003",
+      "reportSha256": "0d5e187eaca354889da7bd14a86bd3d6b9a03e655d86123eb9a1bb5b81fed835",
+      "imageReferences": 7,
+      "resolved": 7,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 7,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Chemistry_000",
+      "reportSha256": "0aa49cd33329c7627d0cbcf843e1309326505d8f3cf92b4ca09fb22aad441018",
+      "imageReferences": 0,
+      "resolved": 0,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 18,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Chemistry_002",
+      "reportSha256": "10dd87160c30aa19860db94e8c3a06e7aa9ec15cf96437ea16f57dc3c970a2db",
+      "imageReferences": 0,
+      "resolved": 0,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 0,
+      "generatedImageExtensions": [],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Earth_000",
+      "reportSha256": "8deefd5cf540152ecf903e7be978b1515068e30aa96d686fb7cf6f41d345cc0a",
+      "imageReferences": 5,
+      "resolved": 5,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 12,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Earth_001",
+      "reportSha256": "7b315dc247f9d03cc2a65bdd0fd303b655c3f6e256fcaf72650dd957905a5739",
+      "imageReferences": 8,
+      "resolved": 8,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 9,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Energy_001",
+      "reportSha256": "2b791545124100e7b498e45a07a7677ec88e22b733f4d85fd29cec9c9e814cd8",
+      "imageReferences": 9,
+      "resolved": 9,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 29,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Energy_002",
+      "reportSha256": "a18f6c2a7c583e5430fbce5d4ac1cff2f7c9426ee8185e0ca5a717693cdea311",
+      "imageReferences": 13,
+      "resolved": 13,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 63,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Life_000",
+      "reportSha256": "ac3af55fe305846eef5e66a4af596f3140fb1debf458159301fba1c80a512114",
+      "imageReferences": 7,
+      "resolved": 7,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 14,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Life_002",
+      "reportSha256": "b3ae33e64a9d18d8ccd730e1cbcb90b998989a18d5dde492b32d30b057e7c723",
+      "imageReferences": 7,
+      "resolved": 7,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 14,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Life_003",
+      "reportSha256": "987d581bbb25abc8924c0b49d557881d7d3b34a3eaf92229da43b74c171a3bea",
+      "imageReferences": 7,
+      "resolved": 0,
+      "missing": 7,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [
+        "report/images/fig1_data_overview.png",
+        "report/images/fig2_substitution_profiles.png",
+        "report/images/fig3_context_and_fit.png",
+        "report/images/fig4_substitution_resolvability.png",
+        "report/images/fig5_alignment_performance.png",
+        "report/images/fig6_m6a_detection.png",
+        "report/images/fig7_m6a_operating_points.png"
+      ],
+      "generatedImageCount": 28,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Material_001",
+      "reportSha256": "0e9736b526778b292628128e378863af0157c1aa9dd9f58d5bf0e6e25a6b6926",
+      "imageReferences": 6,
+      "resolved": 6,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 6,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Material_003",
+      "reportSha256": "9cd83cbf4d7efec3b66679cd8c9463c2535e45bc29a0a1d7370f5fba5e459c3d",
+      "imageReferences": 5,
+      "resolved": 5,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 5,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Math_000",
+      "reportSha256": "906fb488b7b64133a8bc29e4ed0a124044a82fd7df2f9799cd1931177a7481f2",
+      "imageReferences": 8,
+      "resolved": 8,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 9,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Math_001",
+      "reportSha256": "ee9e1ba54cf638b103c5aabbef1977487ca7eee9ebd1a7fc76fd9470d3cc0124",
+      "imageReferences": 8,
+      "resolved": 8,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 50,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Neuroscience_000",
+      "reportSha256": "3261307dd8d59c0620b7c32b194ff57e9e2a078c5e85f456db99d7a9b5ff3f7f",
+      "imageReferences": 17,
+      "resolved": 17,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 18,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Neuroscience_003",
+      "reportSha256": "3f36bd4d6e26386b2d48bf764e6db74924f4161b0acff0b336ba194549fb5e4f",
+      "imageReferences": 6,
+      "resolved": 6,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 6,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Physics_000",
+      "reportSha256": "d56ce14c44086fc6db207c7e293ec4b0af903581645a0286ebc6e4ea9c935a7a",
+      "imageReferences": 6,
+      "resolved": 0,
+      "missing": 6,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [
+        "report/images/fig01_data_overview.svg",
+        "report/images/fig02_magic_radius.svg",
+        "report/images/fig03_contact_windows.svg",
+        "report/images/fig06_element_mismatch.svg",
+        "report/images/fig04_growth_paths.svg",
+        "report/images/fig05_validation.svg"
+      ],
+      "generatedImageCount": 0,
+      "generatedImageExtensions": [],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Physics_001",
+      "reportSha256": "0bb7bc2d88b7c84f7efbcd2df7e1912d671b688c3a0d777df751bb41ddc6e3dd",
+      "imageReferences": 6,
+      "resolved": 6,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 6,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    },
+    {
+      "task": "Physics_003",
+      "reportSha256": "a950f437aa6f89348f39110346f58d70fe6394182aea36be675a542d7e7c06f5",
+      "imageReferences": 5,
+      "resolved": 5,
+      "missing": 0,
+      "external": 0,
+      "outside": 0,
+      "missingPaths": [],
+      "generatedImageCount": 5,
+      "generatedImageExtensions": [
+        ".png"
+      ],
+      "reportUnchanged": true
+    }
+  ]
+}
