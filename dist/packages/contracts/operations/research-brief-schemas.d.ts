@@ -42,6 +42,19 @@ export declare const RESEARCH_SOURCE_INPUT_SCHEMA: {
             readonly minLength: number;
             readonly maxLength: number;
         };
+        readonly readProtocol: {
+            readonly const: "fixed-text-v1";
+        };
+        readonly purpose: {
+            readonly enum: readonly ["whole-text", "dataset-reference"];
+        };
+        readonly documentVersionId: {
+            readonly pattern?: string | undefined;
+            readonly type: "string";
+            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+            readonly minLength: number;
+            readonly maxLength: number;
+        };
     };
     readonly required: ("digest" | "artifactId" | "path" | "size" | "workspace" | "readId")[];
     readonly additionalProperties: false;
@@ -613,6 +626,19 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly minLength: number;
                             readonly maxLength: number;
                         };
+                        readonly readProtocol: {
+                            readonly const: "fixed-text-v1";
+                        };
+                        readonly purpose: {
+                            readonly enum: readonly ["whole-text", "dataset-reference"];
+                        };
+                        readonly documentVersionId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
                     };
                     readonly required: ("digest" | "artifactId" | "path" | "size" | "workspace" | "readId")[];
                     readonly additionalProperties: false;
@@ -679,7 +705,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "id" | "createdAt" | "projectId" | "rootSessionId" | "status" | "revision" | "digest" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
+        readonly required: ("version" | "id" | "createdAt" | "projectId" | "rootSessionId" | "status" | "revision" | "digest" | "kind" | "updatedAt" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary")[];
         readonly additionalProperties: false;
     };
     readonly research_brief_inspect: {
@@ -974,6 +1000,19 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                                         readonly minLength: number;
                                         readonly maxLength: number;
                                     };
+                                    readonly readProtocol: {
+                                        readonly const: "fixed-text-v1";
+                                    };
+                                    readonly purpose: {
+                                        readonly enum: readonly ["whole-text", "dataset-reference"];
+                                    };
+                                    readonly documentVersionId: {
+                                        readonly pattern?: string | undefined;
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
                                 };
                                 readonly required: ("digest" | "artifactId" | "path" | "size" | "workspace" | "readId")[];
                                 readonly additionalProperties: false;
@@ -1040,7 +1079,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("version" | "id" | "createdAt" | "projectId" | "rootSessionId" | "status" | "revision" | "digest" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
+                    readonly required: ("version" | "id" | "createdAt" | "projectId" | "rootSessionId" | "status" | "revision" | "digest" | "kind" | "updatedAt" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary")[];
                     readonly additionalProperties: false;
                 }, {
                     readonly type: "null";
@@ -1419,6 +1458,19 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly minLength: number;
                             readonly maxLength: number;
                         };
+                        readonly readProtocol: {
+                            readonly const: "fixed-text-v1";
+                        };
+                        readonly purpose: {
+                            readonly enum: readonly ["whole-text", "dataset-reference"];
+                        };
+                        readonly documentVersionId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
                     };
                     readonly required: ("digest" | "artifactId" | "path" | "size" | "workspace" | "readId")[];
                     readonly additionalProperties: false;
@@ -1485,7 +1537,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "id" | "createdAt" | "projectId" | "rootSessionId" | "status" | "revision" | "digest" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
+        readonly required: ("version" | "id" | "createdAt" | "projectId" | "rootSessionId" | "status" | "revision" | "digest" | "kind" | "updatedAt" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary")[];
         readonly additionalProperties: false;
     };
 };

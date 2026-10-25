@@ -1,9 +1,19 @@
+import type { PermissionReference } from '../policy/session-permissions.js';
 import { fork, type ChildProcess } from 'node:child_process';
 import type { ResearchApp } from '../research-app.js';
 import type { Actor, Session, Row, ModelConfig } from '../domain/types.js';
 import { ToolDispatcher } from '../research-tools/dispatcher.js';
 import { type ToolDiagnostic } from '../pi-adapter/tool-diagnostic.js';
 interface Active {
+    readResponses?: Map<string, {
+        id: string;
+        tool: string;
+        resultDigest: string;
+        actor: Actor;
+        readId: string;
+        permission: PermissionReference;
+        epoch: number;
+    }>;
     catalogFingerprint: string;
     admissionId: string;
     child: ChildProcess;
@@ -89,6 +99,8 @@ export declare class AgentHost {
     private claimSession;
     private launch;
     private exited;
+    private readResponse;
+    private completeReadDelivery;
     private valid;
     private pendingSessionAction;
     private advertisedTools;

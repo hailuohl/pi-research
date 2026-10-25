@@ -1,3 +1,4 @@
+import {recordAttachmentRead} from '../../research-workflows/attachment-inputs.js';
 import {prepareTaskModels,inspectThinkingPolicy,type PreparedTaskModels} from '../../pi-adapter/thinking-policy.js';
 import {readCatalog,readSkill,inspectSessionSkills,selectSessionSkills} from '../../skills/runtime.js';
 import {attachmentScope,readAttachment} from '../../pi-adapter/attachments.js';
@@ -561,6 +562,7 @@ export class OperationRegistry {
         const preparedAfter=Number(this.app.store.db.prepare('SELECT COALESCE(MAX(rowid),0) n FROM records').get()!.n);
         const save = (value: unknown,fresh=true) => {
             let result = output(fresh?this.app.automaticApprovals.postPrepare(actor,id,input,value,preparedAfter):value);
+            if(fresh&&id==='session_attachment_read'&&actor.type==='agent'){context.validate();const extra=recordAttachmentRead(this.app.store,actor,session!,result as Parameters<typeof recordAttachmentRead>[3],key!,input.attachmentBindingId as string|undefined);if(extra)result=output({...result as object,...extra});}
             if(fresh&&id==='research_skill_read'&&actor.type==='agent'){context.validate();this.app.methodContracts.recordSkillRead(actor,session,result);}
             if(fresh&&actor.type==='agent'&&['workspace_read','artifact_read','development_review_source_read','run_source_read','formal_report_review_source_read'].includes(id)) {
                 context.validate();
@@ -677,6 +679,7 @@ export class OperationRegistry {
             if(['publication_citation_check','text_evidence_search','artifact_read','evidence_register','evidence_read','run_submit','session_attachment_read'].includes(id))spec.authorize(context,input);
             const previous = lookup();
             if (previous) {
+                if(id==='session_attachment_read'&&input.readProtocol==='fixed-text-v1'){context.validate();const fresh=spec.execute(context,input);const {attachmentReadId,attachmentBindingId,sourceInputPath,...original}=previous.value as Record<string,unknown>;ensure(digest(fresh)===digest(original),'ATTACHMENT_INVALID','缓存固定页来源已变化');return output(previous.value);}
                 if(id==='publication_citation_check'){context.validate();return output(this.app.publicationBuilds.replayCitationCheck(actor,pid,input,previous.value as ReturnType<ResearchApp['publicationBuilds']['citationCheck']>));}
                 ensure(!options.approvedActionId,'SESSION_ACTION_NOT_APPROVED','固定批准已被其它调用消费，请回查结果，不重复执行',409);
                 if(id==='workspace_prepare_from_revision') {

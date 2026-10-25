@@ -16,6 +16,29 @@ export declare function nativeInputFiles(store: Store, session: Row<Session>, me
 export declare function attachmentReferences(store: Store, session: Row<Session>, value: unknown, parsed?: boolean, resolveParsed?: ParsedResolver): MessageAttachment[];
 export declare function attachmentScope(store: Store, actor: Actor, session: Row<Session>, value: unknown, resolveParsed?: ParsedResolver): MessageAttachment;
 export declare function readAttachment(store: Store, actor: Actor, session: Row<Session>, value: unknown, resolveParsed?: ParsedResolver): {
+    total: number;
+    readProtocol: "fixed-text-v1";
+    sourceDigest: string;
+    purpose: "whole-text" | "dataset-reference";
+    cursorUnit: "utf8-byte";
+    status: "text";
+    integrityScope: "delivered-blocks";
+    content: string;
+    cursor: number;
+    end: number;
+    complete: boolean;
+    messageId: unknown;
+    inputMode?: "native";
+    parseResultId?: string;
+    resultDigest?: string;
+    pageCount?: number;
+    documentVersionId: string;
+    artifactId: string;
+    digest: string;
+    title: string;
+    mediaType: string;
+    size: number;
+} | {
     messageId: unknown;
     content: string;
     cursor: number;

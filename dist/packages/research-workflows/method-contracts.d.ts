@@ -161,7 +161,8 @@ export interface FrozenMethodContract {
     }>;
 }
 type Source = Pick<ResearchSourceInput, 'path' | 'digest' | 'size'> & {
-    bytes: Buffer;
+    bytes?: Buffer;
+    verifiedReference?: true;
 };
 export type Archived = {
     id: string;

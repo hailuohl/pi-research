@@ -62,14 +62,34 @@ export declare class ResearchBriefService {
     /** Host-only: validate admission evidence without granting access to brief contents. */
     assertAdmission(projectId: string, ref: ResearchBriefRef, phase?: 'formal'): void;
     validateReadyDrafts(actor: Actor, projectId: string, sessionId: string, input: unknown): void;
-    sourceInputFingerprint(sessionId: string, expectedRevisionId: string | null): {
+    sourceInputFingerprint(sessionId: string, expectedRevisionId: string | null, status?: 'clarifying' | 'ready'): {
+        purpose?: "whole-text" | "dataset-reference" | undefined;
         digest: string;
         path: string;
         size: number;
         workspace: string;
         readId: string;
+        documentVersionId?: string | undefined;
+        readProtocol?: "fixed-text-v1" | undefined;
         artifactId?: string;
-    }[] | undefined;
+    }[] | {
+        inputs: {
+            purpose?: "whole-text" | "dataset-reference" | undefined;
+            digest: string;
+            path: string;
+            size: number;
+            workspace: string;
+            readId: string;
+            documentVersionId?: string | undefined;
+            readProtocol?: "fixed-text-v1" | undefined;
+            artifactId?: string;
+        }[];
+        attachmentSelections: {
+            documentVersionId: string;
+            bindingId: string;
+            version: number;
+        }[];
+    } | undefined;
     save(actor: Actor, projectId: string, sessionId: string, input: unknown): Row<ResearchBrief>;
     inspect(actor: Actor, projectId: string, sessionId: string, briefId?: string): ResearchBriefInspection;
     confirmAutomatic(actor: Actor, ref: import('../policy/automatic-approvals.js').AutomaticApprovalReference, pid: string, sessionId: string, input: {

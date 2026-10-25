@@ -118,6 +118,26 @@ export declare const SESSION_HISTORY_INPUT_SCHEMAS: {
                 readonly minLength: number;
                 readonly maxLength: number;
             };
+            readonly attachmentBindingId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly readProtocol: {
+                readonly const: "fixed-text-v1";
+            };
+            readonly sourceDigest: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly purpose: {
+                readonly enum: readonly ["whole-text", "dataset-reference"];
+            };
             readonly cursor: {
                 readonly type: "integer";
                 readonly minimum: number;

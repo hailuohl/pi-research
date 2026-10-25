@@ -42,6 +42,12 @@ The primary agent records this batch's commit/push SHA and verified remote branc
 
 ## Batch 2: controlled reading -> fixed inputs
 
+Resumed after the benchmark chat's explicit completion and delivery at `55187dc`. Batch 2A is specified in `docs/superpowers/specs/2026-10-25-large-files-batch2.md`: attached fixed text -> exact SDK delivery -> explicit source/dataset-reference freeze. Batch 2B migrates the remaining workspace/artifact/draft readers after this user flow is accepted. The main checkout remains untouched; do not mix its unrelated uncommitted changes into this branch.
+
+- [x] Batch 2A delivered attachment input flow: fixed byte pages, exact SDK ACK, explicit purposes, immutable history/current selection, matching approval fingerprint and normal post-save failure recovery. Actual validation and remaining scope: `docs/acceptance/large-files-batch2a/RESULT.md`.
+- [ ] Batch 2B: authorized artifact preparation/read -> receipt-bound exact quote -> verified readback/reopen, preserving legacy authorization and locators.
+- [ ] Batch 2C: remaining workspace/draft reader migration and full-coverage fixed source integration.
+
 - [ ] Add regression tests for creation character/byte mismatch, workspace page coverage, large artifact exact quotes and failed delivery.
 - [ ] Replace whole-string reader contracts with source/range contracts where required; extend existing exact SDK ACK to relevant read receipts.
 - [ ] Integrate workspace, attachment, artifact, draft and source-input consumers; retain old cursor semantics and bind new records to fixed source/version.

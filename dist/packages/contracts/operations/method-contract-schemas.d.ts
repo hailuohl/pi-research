@@ -1695,7 +1695,7 @@ export declare const METHOD_OUTPUT_SCHEMAS: {
                         readonly additionalProperties: false;
                     };
                 };
-                readonly required: ("fields" | "recordsPointer" | "format" | "partitions")[];
+                readonly required: ("format" | "fields" | "recordsPointer" | "partitions")[];
                 readonly additionalProperties: false;
             };
         };

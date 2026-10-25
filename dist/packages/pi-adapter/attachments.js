@@ -1,3 +1,7 @@
+import { fixedDocumentTextSource } from '../documents/fixed-text-source.js';
+import { readStreamedText } from '../storage/streamed-blob.js';
+import { filePolicy, STREAM_TEXT_MEDIA_TYPES, LEGACY_DOCUMENT_BYTES } from '../storage/file-policy.js';
+import { assertProjectReadable } from '../policy/lifecycle.js';
 import { readFileSync, lstatSync } from 'node:fs';
 import { join } from 'node:path';
 import { ensure } from '../domain/errors.js';
@@ -23,13 +27,14 @@ export function attachmentTypes(dataDir, session) {
         }
     }
     catch { }
-    const native = nativeAvailability(connection?.api ?? null, definition), extensions = { 'text/plain': ['.txt'], 'text/markdown': ['.md'], 'application/pdf': ['.pdf'], 'image/png': ['.png'], 'image/jpeg': ['.jpg', '.jpeg'], 'image/webp': ['.webp'], 'image/gif': ['.gif'], 'video/mp4': ['.mp4'] };
-    const types = ATTACHMENT_MEDIA_TYPES.filter(type => type.startsWith('text/') || type.startsWith('image/') && (!!definition?.capabilities.image || legacyImage) || type === 'application/pdf' && native.pdf.state === 'available' || type === 'video/mp4' && native.video.state === 'available').map(mediaType => ({ mediaType, extensions: extensions[mediaType], maxBytes: mediaType.startsWith('text/') ? 32 * 1024 * 1024 : NATIVE_ATTACHMENT_BYTES, native: !mediaType.startsWith('text/') }));
-    return { model: { provider: session.model.provider, model: session.model.model }, types, maxFiles: 5, nativeBytes: NATIVE_ATTACHMENT_BYTES, fileCapabilityReason: definition ? '附件类型按已保存模型声明及实际适配开放。' : legacyImage ? '当前本地目录已明确声明图片输入；PDF和视频还需保存完整模型能力配置。' : '尚未确认当前模型的文件输入能力；TXT和MD可用，其他类型须在模型管理中明确配置。' };
+    const native = nativeAvailability(connection?.api ?? null, definition), extensions = { 'text/plain': ['.txt'], 'text/markdown': ['.md'], 'application/pdf': ['.pdf'], 'image/png': ['.png'], 'image/jpeg': ['.jpg', '.jpeg'], 'image/webp': ['.webp'], 'image/gif': ['.gif'], 'video/mp4': ['.mp4'], 'text/csv': ['.csv'], 'text/tab-separated-values': ['.tsv'], 'application/json': ['.json'], 'application/x-ndjson': ['.jsonl', '.ndjson'] };
+    const textTypes = STREAM_TEXT_MEDIA_TYPES;
+    const types = ATTACHMENT_MEDIA_TYPES.filter(type => textTypes.includes(type) || type.startsWith('image/') && (!!definition?.capabilities.image || legacyImage) || type === 'application/pdf' && native.pdf.state === 'available' || type === 'video/mp4' && native.video.state === 'available').map(mediaType => ({ mediaType, extensions: extensions[mediaType], maxBytes: textTypes.includes(mediaType) ? filePolicy().legacyJsonFileBytes : NATIVE_ATTACHMENT_BYTES, ...(textTypes.includes(mediaType) ? { maxOriginalBytes: filePolicy().maxFileBytes, originalTransport: 'document-stream' } : {}), native: !textTypes.includes(mediaType) }));
+    return { model: { provider: session.model.provider, model: session.model.model }, types, fixedTextOriginals: { maxBytes: filePolicy().maxFileBytes, mediaTypes: [...STREAM_TEXT_MEDIA_TYPES], transport: 'document-stream' }, maxFiles: 5, nativeBytes: NATIVE_ATTACHMENT_BYTES, fileCapabilityReason: definition ? '附件类型按已保存模型声明及实际适配开放。' : legacyImage ? '当前本地目录已明确声明图片输入；PDF和视频还需保存完整模型能力配置。' : '尚未确认当前模型的文件输入能力；TXT和MD可用，其他类型须在模型管理中明确配置。' };
 }
 export function nativeAttachments(store, session, attachments) {
     const types = attachmentTypes(store.paths.dataDir, session).types;
-    const result = attachments.map(a => { const type = types.find(t => t.mediaType === a.mediaType); ensure(type && a.size <= type.maxBytes, 'MODEL_ATTACHMENT_UNSUPPORTED', '当前模型或适配器不支持此附件类型或大小', 409); return { ...a, ...(type.native ? { inputMode: 'native' } : {}) }; });
+    const result = attachments.map(a => { const type = types.find(t => t.mediaType === a.mediaType), fixedText = STREAM_TEXT_MEDIA_TYPES.includes(a.mediaType); ensure(fixedText && a.size <= filePolicy().maxFileBytes || type && a.size <= (type.maxOriginalBytes ?? type.maxBytes), 'MODEL_ATTACHMENT_UNSUPPORTED', '当前模型或适配器不支持此附件类型或大小', 409); return { ...a, ...(type?.native ? { inputMode: 'native' } : {}) }; });
     ensure(result.filter(a => a.inputMode === 'native').reduce((n, a) => n + a.size, 0) <= NATIVE_ATTACHMENT_BYTES, 'MODEL_ATTACHMENT_LIMIT', '本消息原生附件合计最多20 MiB', 413);
     return result;
 }
@@ -76,6 +81,9 @@ export function attachmentReferences(store, session, value, parsed = false, reso
 }
 export function attachmentScope(store, actor, session, value, resolveParsed) {
     scope(actor, session.projectId);
+    assertProjectReadable(store, session.projectId, actor);
+    if (actor.type === 'agent')
+        ensure(actor.sessionId === session.id && actor.role === 'coordinator' && session.state === 'running' && session.generation === actor.generation && session.leaseUntil > Date.now(), 'LEASE_EXPIRED', '附件读取租约已失效', 403);
     ensure(session.role === 'coordinator' && !session.taskId && !session.teamId && session.state !== 'archived' && !actor.taskId && !actor.wakeupId, 'ATTACHMENT_SCOPE_DENIED', '附件读取只支持当前交互主会话', 403);
     const x = object(value), m = store.get('message', text(x.messageId, 'messageId', 100), session.projectId);
     ensure(m.sessionId === session.id && m.role === 'user' && m.origin !== 'automation' && !m.wakeupId, 'ATTACHMENT_SCOPE_DENIED', '附件消息不属于当前用户对话', 403);
@@ -89,10 +97,25 @@ export function attachmentScope(store, actor, session, value, resolveParsed) {
 }
 export function readAttachment(store, actor, session, value, resolveParsed) {
     const x = object(value), a = attachmentScope(store, actor, session, x, resolveParsed), cursor = integer(x.cursor ?? 0, 'cursor', 0, Number.MAX_SAFE_INTEGER), limit = integer(x.limit ?? 16000, 'limit', 4, 64000);
+    if (x.readProtocol !== undefined) {
+        ensure(x.readProtocol === 'fixed-text-v1' && ['whole-text', 'dataset-reference'].includes(x.purpose), 'INVALID_INPUT', '固定读取须明确协议和purpose');
+        ensure(!a.parseResultId && !a.inputMode, 'ATTACHMENT_TEXT_REQUIRED', '固定文本协议不读取原生或解析附件');
+        ensure(x.sourceDigest === a.digest, 'DOCUMENT_SOURCE_CHANGED', '固定原件sourceDigest不符', 409);
+        if (x.attachmentBindingId !== undefined) {
+            const b = store.get('attachment-input-binding', text(x.attachmentBindingId, 'attachmentBindingId', 100), session.projectId);
+            ensure(b.sessionId === session.id && b.messageId === x.messageId && b.documentVersionId === a.documentVersionId && b.artifactId === a.artifactId && b.digest === a.digest && b.size === a.size && b.purpose === x.purpose, 'BRIEF_SOURCE_BINDING_CHANGED', '明确绑定的用途、消息或来源不能改变', 409);
+        }
+        ensure(a.size <= filePolicy().maxFileBytes, 'ARTIFACT_TOO_LARGE', '附件超过当前文本上限', 413);
+        const doc = store.get('document-version', a.documentVersionId, session.projectId), fixed = fixedDocumentTextSource(store, doc), page = readStreamedText(store, fixed.source, fixed.indexBlob, fixed.index, cursor, Math.min(limit, 16000));
+        const { totalBytes, ...range } = page;
+        return { ...a, messageId: x.messageId, ...range, total: totalBytes, readProtocol: 'fixed-text-v1', sourceDigest: a.digest, purpose: x.purpose, cursorUnit: 'utf8-byte', status: 'text', integrityScope: 'delivered-blocks' };
+    }
+    ensure(x.sourceDigest === undefined && x.purpose === undefined && x.attachmentBindingId === undefined, 'INVALID_INPUT', 'sourceDigest和purpose须搭配fixed-text-v1');
     if (a.parseResultId) {
         ensure(cursor === 0, 'INVALID_INPUT', '固定解析元数据没有文本游标');
         return { ...a, messageId: x.messageId, content: '', cursor: 0, end: 0, total: 0, complete: true, status: 'fixed_parse_metadata', cursorUnit: 'utf16' };
     }
+    ensure(a.size <= LEGACY_DOCUMENT_BYTES, 'ATTACHMENT_PROTOCOL_REQUIRED', '大附件须用fixed-text-v1字节分页');
     const artifact = store.get('artifact', a.artifactId, session.projectId), bytes = readFileSync(store.paths.physical(artifact.path));
     ensure(bytes.length === a.size && digest(bytes) === a.digest, 'ATTACHMENT_INVALID', '附件原件字节或摘要已改变');
     if (a.inputMode === 'native') {

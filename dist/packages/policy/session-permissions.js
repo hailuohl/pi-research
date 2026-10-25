@@ -223,7 +223,7 @@ export class SessionPermissionService {
         const brief = ['experiment_plan_submit', 'run_prepare', 'manuscript_create'].includes(operation) && s.role === 'coordinator' && s.researchBriefId ? this.app.store.get('research-brief', s.researchBriefId, s.projectId) : undefined;
         const researchBrief = brief ? { id: brief.id, digest: brief.digest, revision: brief.revision, status: brief.status, rootSessionId: brief.rootSessionId } : null;
         const draftFiles = operation === 'research_brief_save' && input.status === 'ready' && input.draftFiles !== undefined ? this.app.draftReads.validate(s, input.draftFiles) : undefined;
-        const sourceInputs = operation === 'research_brief_save' ? this.app.researchBriefs.sourceInputFingerprint(s.id, input.expectedRevisionId) : undefined;
+        const sourceInputs = operation === 'research_brief_save' ? this.app.researchBriefs.sourceInputFingerprint(s.id, input.expectedRevisionId, input.status) : undefined;
         let fixtureFingerprint;
         const currentBrief = ['research_brief_save', 'development_prepare'].includes(operation) && s.researchBriefId ? this.app.store.get('research-brief', s.researchBriefId, s.projectId) : undefined;
         const requested = operation === 'research_brief_save' ? input.methodContract?.specification?.quantitative : undefined, q = (requested ?? currentBrief?.methodContract?.specification.quantitative);

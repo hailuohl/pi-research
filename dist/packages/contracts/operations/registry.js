@@ -1,3 +1,4 @@
+import { recordAttachmentRead } from '../../research-workflows/attachment-inputs.js';
 import { prepareTaskModels, inspectThinkingPolicy } from '../../pi-adapter/thinking-policy.js';
 import { readCatalog, readSkill, inspectSessionSkills, selectSessionSkills } from '../../skills/runtime.js';
 import { attachmentScope, readAttachment } from '../../pi-adapter/attachments.js';
@@ -681,6 +682,12 @@ export class OperationRegistry {
         const preparedAfter = Number(this.app.store.db.prepare('SELECT COALESCE(MAX(rowid),0) n FROM records').get().n);
         const save = (value, fresh = true) => {
             let result = output(fresh ? this.app.automaticApprovals.postPrepare(actor, id, input, value, preparedAfter) : value);
+            if (fresh && id === 'session_attachment_read' && actor.type === 'agent') {
+                context.validate();
+                const extra = recordAttachmentRead(this.app.store, actor, session, result, key, input.attachmentBindingId);
+                if (extra)
+                    result = output({ ...result, ...extra });
+            }
             if (fresh && id === 'research_skill_read' && actor.type === 'agent') {
                 context.validate();
                 this.app.methodContracts.recordSkillRead(actor, session, result);
@@ -856,6 +863,13 @@ export class OperationRegistry {
                     spec.authorize(context, input);
                 const previous = lookup();
                 if (previous) {
+                    if (id === 'session_attachment_read' && input.readProtocol === 'fixed-text-v1') {
+                        context.validate();
+                        const fresh = spec.execute(context, input);
+                        const { attachmentReadId, attachmentBindingId, sourceInputPath, ...original } = previous.value;
+                        ensure(digest(fresh) === digest(original), 'ATTACHMENT_INVALID', '缓存固定页来源已变化');
+                        return output(previous.value);
+                    }
                     if (id === 'publication_citation_check') {
                         context.validate();
                         return output(this.app.publicationBuilds.replayCitationCheck(actor, pid, input, previous.value));

@@ -8,7 +8,7 @@ export const ATTACHMENT_MEDIA_TYPES=['text/plain','text/markdown','application/p
 export interface NativeAttachmentReference extends MessageAttachment {messageId:string;inputMode:'native';}
 export interface NativeAttachmentFile {reference:NativeAttachmentReference;data:string;}
 export interface AttachmentManifest {envelope:string;files:NativeAttachmentFile[];}
-export interface AttachmentTypes {model:{provider:string;model:string};types:Array<{mediaType:string;extensions:string[];maxBytes:number;native:boolean}>;maxFiles:5;nativeBytes:number;fileCapabilityReason:string;}
+export interface AttachmentTypes {model:{provider:string;model:string};types:Array<{mediaType:string;extensions:string[];maxBytes:number;maxOriginalBytes?:number;originalTransport?:'document-stream';native:boolean}>;fixedTextOriginals:{maxBytes:number;mediaTypes:string[];transport:'document-stream'};maxFiles:5;nativeBytes:number;fileCapabilityReason:string;}
 export const inputEnvelope=(id:string)=>`\n\n<pi-research-input:${id}>`;
 const terminalEnvelope=(text:string)=>text.match(/\n\n<pi-research-input:[A-Za-z0-9_-]+>$/)?.[0];
 const bodyText=(content:unknown)=>typeof content==='string'?content:Array.isArray(content)?content.filter(b=>b&&['text','input_text'].includes(b.type)).map(b=>b.text??'').join(''):'';

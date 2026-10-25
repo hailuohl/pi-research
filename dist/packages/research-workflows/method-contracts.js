@@ -1,3 +1,4 @@
+import { verifyStreamedBlob } from '../storage/streamed-blob.js';
 import { basename, dirname } from 'node:path';
 import { BEARING_PROFILE, BEARING_EXPORTS, bearingCandidatePaths, validateBearingOutputs, bearingFacts, bearingExports } from './bearing-outputs.js';
 import { ensure, asError } from '../domain/errors.js';
@@ -91,7 +92,7 @@ function ledger(spec, sources) {
     const records = [];
     for (const ref of spec.literatureSources) {
         const source = sources.find(s => s.path === ref.path && s.digest === ref.digest);
-        ensure(source && source.size === source.bytes.length && digest(source.bytes) === source.digest, 'METHOD_SOURCE_NOT_READ', `方法来源必须是当前主会话实际读取并固定的原文：${ref.path}`);
+        ensure(source && source.bytes && source.size === source.bytes.length && digest(source.bytes) === source.digest, 'METHOD_SOURCE_NOT_READ', `方法来源必须是当前主会话实际读取并固定的原文：${ref.path}`);
         let data;
         try {
             data = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(source.bytes));
@@ -202,15 +203,25 @@ function pairedEvaluation(q, metric, metrics, binding, artifacts) {
 }
 function compilerFor(spec) { const q = spec.quantitative; ensure(q.type === 'descriptive' || q.type === 'comparison' && ['positive-benefit-v1', 'paired-rmse-delta-v1', 'paired-rmse-plan-v1', 'paired-rmse-plan-v2'].includes(q.template), 'METHOD_SPEC_UNSUPPORTED', '不支持的方法模板'); return q.type === 'comparison' && q.template === 'paired-rmse-plan-v2' ? CLOSED_COMPILER : q.type === 'comparison' && q.template === 'paired-rmse-plan-v1' ? PLAN_COMPILER : q.type === 'comparison' && q.template === 'paired-rmse-delta-v1' ? PAIRED_COMPILER : METHOD_COMPILER; }
 export function compileMethodContract(value, sources) { const specification = parseMethodSpecification(value), q = specification.quantitative; if (isPlan(q))
-    ensure(sources.some(s => s.path === q.plan.formalInput.path && s.digest === q.plan.formalInput.digest && s.bytes.length === s.size && digest(s.bytes) === s.digest), 'METHOD_SOURCE_NOT_READ', '完整计划formalInput必须来自实际读取的固定输入'); const compilerVersion = compilerFor(specification), literatureLedger = ledger(specification, sources), boundaryExamples = boundaries(specification), contractDigest = digest({ compilerVersion, specification, literatureLedger, boundaryExamples }), content = protocol(specification, literatureLedger, boundaryExamples, contractDigest); ensure(Buffer.byteLength(content) <= MAX_TEXT_BYTES && Buffer.byteLength(JSON.stringify(content)) + 8192 <= 128 * 1024, 'METHOD_PROTOCOL_TOO_LARGE', '规范方法附件超过2MiB文本或128KiB固定保存参数限制（预留8KiB路径/摘要元数据）；缩小明确研究范围后重新编译', 400); return { specification, compilerVersion, contractDigest, protocol: content, protocolDigest: digest(Buffer.from(content)), literatureLedger, boundaryExamples }; }
-function sourceBytes(store, pid, inputs) { return inputs.map(input => { const a = store.get('artifact', input.artifactId, pid), physical = store.paths.physical(a.path); return { ...input, bytes: readStableFile(dirname(physical), basename(physical), 2 * 1024 * 1024) }; }); }
+    ensure(sources.some(s => s.path === q.plan.formalInput.path && s.digest === q.plan.formalInput.digest && (s.verifiedReference === true || s.bytes !== undefined && s.bytes.length === s.size && digest(s.bytes) === s.digest)), 'METHOD_SOURCE_NOT_READ', '完整计划formalInput必须来自实际读取的固定输入'); const compilerVersion = compilerFor(specification), literatureLedger = ledger(specification, sources), boundaryExamples = boundaries(specification), contractDigest = digest({ compilerVersion, specification, literatureLedger, boundaryExamples }), content = protocol(specification, literatureLedger, boundaryExamples, contractDigest); ensure(Buffer.byteLength(content) <= MAX_TEXT_BYTES && Buffer.byteLength(JSON.stringify(content)) + 8192 <= 128 * 1024, 'METHOD_PROTOCOL_TOO_LARGE', '规范方法附件超过2MiB文本或128KiB固定保存参数限制（预留8KiB路径/摘要元数据）；缩小明确研究范围后重新编译', 400); return { specification, compilerVersion, contractDigest, protocol: content, protocolDigest: digest(Buffer.from(content)), literatureLedger, boundaryExamples }; }
+function sourceBytes(store, pid, inputs, specification) {
+    return inputs.map(input => {
+        const a = store.get('artifact', input.artifactId, pid), physical = store.paths.physical(a.path);
+        ensure(a.digest === input.digest && a.size === input.size, 'BRIEF_SOURCE_CORRUPTED', '方法输入与固定产物不符');
+        if (!specification.literatureSources.some(s => s.path === input.path)) {
+            verifyStreamedBlob(store, { blobPath: a.path, digest: a.digest, size: a.size });
+            return { ...input, verifiedReference: true };
+        }
+        return { ...input, bytes: readStableFile(dirname(physical), basename(physical), 2 * 1024 * 1024) };
+    });
+}
 export function assertFrozenMethod(store, pid, contract, inputs, rootSessionId, phase) {
     if (!contract)
         return;
     const q = contract.specification.quantitative;
     if (phase !== 'formal' && isPlan(q))
         assertSyntheticFixture(store, pid, q.developmentData.fixtureRef, rootSessionId);
-    const fresh = compileMethodContract(contract.specification, sourceBytes(store, pid, inputs ?? [])), { protocol: _, ...compiled } = fresh, { protocolPath, ...fixed } = contract;
+    const fresh = compileMethodContract(contract.specification, sourceBytes(store, pid, inputs ?? [], contract.specification)), { protocol: _, ...compiled } = fresh, { protocolPath, ...fixed } = contract;
     relativePath(protocolPath);
     ensure(digest(compiled) === digest(fixed), 'METHOD_CONTRACT_CORRUPTED', '固定方法规则、来源台账或编译摘要已改变');
     return fresh;
@@ -353,7 +364,7 @@ export class MethodContractService {
     } return this.app.skills.bundleMethodRequirements(s.projectId, s.role, bundle).some(r => r === 'literature-identity' || r === 'quantitative-decision'); }
     assertSelected(s, contract, required = this.requirements(s)) { ensure(!required.includes('closed-paired-evidence') || contract?.compilerVersion === CLOSED_COMPILER, 'METHOD_OUTPUT_PROFILE_REQUIRED', '当前root已选择闭合paired证据流程，不能降级旧模板/删除profile'); ensure(!required.includes('structured-paired-protocol') || contract?.compilerVersion === PLAN_COMPILER || contract?.compilerVersion === CLOSED_COMPILER, 'METHOD_STRUCTURED_PLAN_REQUIRED', '当前root已选择结构化paired多项式流程，不能降级旧模板/描述模式；先准备fixture并编译v3完整protocol'); }
     preview(s, specification, inputs) {
-        const allowed = this.app.sourceInputs.previewBytes(s, s.researchBriefId ?? null, inputs ?? []), parsed = parseMethodSpecification(specification), q = parsed.quantitative;
+        const parsed = parseMethodSpecification(specification), allowed = this.app.sourceInputs.previewBytes(s, s.researchBriefId ?? null, inputs ?? [], parsed.literatureSources.map(s => s.path)), q = parsed.quantitative;
         if (isPlan(q))
             assertSyntheticFixture(this.app.store, s.projectId, q.developmentData.fixtureRef, s.id);
         const compiled = compileMethodContract(parsed, allowed);
@@ -366,7 +377,7 @@ export class MethodContractService {
         return this.preview(s, x.specification, old?.sourceInputs);
     }
     freeze(s, value, inputs, drafts) {
-        const x = closed(value, ['protocolPath', 'specification']), protocolPath = relativePath(x.protocolPath), compiled = compileMethodContract(x.specification, sourceBytes(this.app.store, s.projectId, inputs)), file = drafts?.find(f => f.path === protocolPath);
+        const x = closed(value, ['protocolPath', 'specification']), protocolPath = relativePath(x.protocolPath), compiled = compileMethodContract(x.specification, sourceBytes(this.app.store, s.projectId, inputs, parseMethodSpecification(x.specification))), file = drafts?.find(f => f.path === protocolPath);
         ensure(file && file.digest === compiled.protocolDigest, 'METHOD_PROTOCOL_READ_REQUIRED', '先research_method_compile，把完整protocol原样workspace_write并workspace_read回读，然后在draftFiles引用其draftReadId');
         const bytes = readStableFile(this.app.store.paths.physical(s.workspace), protocolPath, 2 * 1024 * 1024);
         ensure(digest(bytes) === compiled.protocolDigest && bytes.toString('utf8') === compiled.protocol, 'METHOD_PROTOCOL_CHANGED', '规范方法附件与确定性编译文本不符');

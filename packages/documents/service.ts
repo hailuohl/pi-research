@@ -1,3 +1,4 @@
+import {fixedDocumentTextSource} from './fixed-text-source.js';
 import {assertDiscoveryArtifact,discoveryContext,discoveryScope} from '../policy/discovery-grant-validation.js';
 import {digest} from '../storage/store.js';
 import {connectorSettings,assertSourceEnabled} from '../connectors/settings.js';
@@ -24,13 +25,7 @@ export class DocumentService {
   ensure(d.original.size<=LEGACY_DOCUMENT_BYTES,'DOCUMENT_TEXT_INDEX_REQUIRED','大原件缺少固定文本索引，不能退回旧全文读取路径',409);
   for(const item of [d.original,...(d.derivedText?[d.derivedText]:[])]){const {artifact:a}=this.evidence.read({type:'system'},item.artifactId);ensure(a.projectId===d.projectId&&a.digest===item.digest&&a.size===item.size&&a.mediaType===item.mediaType,'DOCUMENT_INVALID','文档原件或派生文本绑定已失效');}
  }
- private textSource(d:Row<DocumentVersion>) {
-  ensure(d.source.kind==='upload'&&d.contentKind==='user-text'&&!d.discoveryGrant&&!d.scopeSessionId&&!d.scopeTaskId&&!d.derivedText,'DOCUMENT_TEXT_SOURCE_DENIED','分页只接受用户上传的固定文本原件',403);
-  const fixed=this.c.store.maybe<DocumentTextSource>('document-text-source',d.id);ensure(fixed,'DOCUMENT_TEXT_INDEX_REQUIRED','该原件没有流式文本索引；旧 JSON 导入保留原读取协议',409);ensure(fixed.projectId===d.projectId,'SCOPE_DENIED','固定文本索引属于其他项目',403);
-  ensure(fixed.documentVersionId===d.id&&digest(fixed.original)===digest(d.original),'DOCUMENT_INVALID','固定文本索引绑定已改变',409);
-  const artifact=(descriptor:DocumentVersion['original'],origin:string)=>{const a=this.c.store.get<Artifact>('artifact',descriptor.artifactId,d.projectId!);ensure(digest(this.descriptor(a))===digest(descriptor)&&a.origin===origin&&!a.taskId&&!a.runId&&!a.wakeupId&&!a.discoveryGrant,'DOCUMENT_INVALID','固定文本产物绑定已改变',409);return {blobPath:a.path,digest:a.digest,size:a.size};};
-  return {source:artifact(fixed.original,'document:user-upload'),indexBlob:artifact(fixed.indexArtifact,'document:text-index'),index:fixed.index};
- }
+ private textSource(d:Row<DocumentVersion>){return fixedDocumentTextSource(this.c.store,d);}
  async importStream(actor:Actor,pid:string,value:DocumentStreamInput,input:AsyncIterable<Uint8Array>,key:string,signal?:AbortSignal) {
   userOnly(actor);scope(actor,pid);ensure(!actor.sessionId&&!actor.taskId&&!actor.attemptId&&!actor.wakeupId,'DOCUMENT_OWNER_ONLY','流式原件导入仅接受未绑定会话的 owner 请求',403);
   const epoch=assertProjectWritable(this.c.store,pid).lifecycleEpoch,policy=filePolicy();text(key,'Idempotency-Key',200);

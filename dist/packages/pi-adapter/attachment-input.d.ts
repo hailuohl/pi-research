@@ -23,8 +23,15 @@ export interface AttachmentTypes {
         mediaType: string;
         extensions: string[];
         maxBytes: number;
+        maxOriginalBytes?: number;
+        originalTransport?: 'document-stream';
         native: boolean;
     }>;
+    fixedTextOriginals: {
+        maxBytes: number;
+        mediaTypes: string[];
+        transport: 'document-stream';
+    };
     maxFiles: 5;
     nativeBytes: number;
     fileCapabilityReason: string;

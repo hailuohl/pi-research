@@ -1,0 +1,102 @@
+{
+  "batch": "2A",
+  "base": "55187dc6d5a1c1c2fba9767b7ccf31fbbc58ffac",
+  "scope": "authorized streamed attachment -> exact SDK delivery -> fixed research input",
+  "policy": {
+    "defaultFileBytes": 536870912,
+    "newReadProtocol": "fixed-text-v1",
+    "pageBytes": 16000,
+    "permission": "existing READ; no brief write/execution grant"
+  },
+  "fullRegression": {
+    "total": 2640,
+    "pass": 2615,
+    "skip": 25,
+    "fail": 0,
+    "durationMs": 2184745.4982
+  },
+  "capacity": [
+    {
+      "fixedAttachmentBytes": 536870912,
+      "sdkPageBytes": 16000,
+      "sdkResultBytes": 16794,
+      "wireBytes": 653223,
+      "peakRssBytes": 258129920,
+      "delivery": "delivered",
+      "purpose": "dataset-reference",
+      "freezeVia": "SDK-tool",
+      "postSaveRetry": false
+    },
+    {
+      "fixedAttachmentBytes": 4096,
+      "sdkPageBytes": 4096,
+      "sdkResultBytes": 4878,
+      "wireBytes": 1283930,
+      "peakRssBytes": 258129920,
+      "delivery": "delivered",
+      "purpose": "dataset-reference",
+      "freezeVia": "SDK-tool",
+      "postSaveRetry": true
+    }
+  ],
+  "wholeTextProbe": {
+    "scope": "Host ACK protocol, not actual SDK run",
+    "bytes": 3145728,
+    "pages": 197,
+    "passed": true,
+    "originalArtifactReused": true
+  },
+  "cleanBuild": {
+    "identical": true,
+    "files": 773,
+    "distManifestSha256": "51d915b96cdc1294a8594ec4ad2f3b4e3118a5815bf8ed145d85bbad361798e1",
+    "steps": [
+      {
+        "name": "npm-ci",
+        "exitCode": 0
+      },
+      {
+        "name": "build",
+        "exitCode": 0
+      },
+      {
+        "name": "typecheck",
+        "exitCode": 0
+      }
+    ]
+  },
+  "review": {
+    "initialBlockingFindings": 2,
+    "residualRetryBranchFixed": true,
+    "finalBlockingFindings": 0,
+    "snapshotFiles": 70,
+    "reviewedCodeFiles": 68,
+    "allReviewedCodeHashesMatch": true,
+    "manifestSha256": "04c739dddfc096ad3c20e9dda33133cb05594826565d94c5f62ffac67e3f39db",
+    "trackedPatchSha256": "162d21a1c514f5b16d57cb5e3eaa88027ead2932da8002a84a2540c52d92aa74"
+  },
+  "modelRequests": {
+    "implementation": {
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "runtimeEcho": false
+    },
+    "review": {
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "runtimeEcho": false
+    }
+  },
+  "notRun": [
+    "external provider",
+    "Docker",
+    "browser",
+    "scientific benchmark rerun"
+  ],
+  "remaining": [
+    "generic artifact/workspace/draft migration",
+    "Run/output/review",
+    "model/parser budgets and functional GUI transport"
+  ],
+  "nonblocking": "stored receipt corruption hardening; no legal model/user API mutation found"
+}

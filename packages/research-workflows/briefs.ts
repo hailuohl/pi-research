@@ -193,15 +193,16 @@ export class ResearchBriefService {
     validateReadyDrafts(actor:Actor,projectId:string,sessionId:string,input:unknown) {
         const parsed=parseContent(input);
         const root=this.root(actor,projectId,sessionId,true),drafts=parsed.status==='ready'&&(actor.type==='agent'||parsed.draftFiles!==undefined)?this.app.draftReads.validate(root,parsed.draftFiles):undefined;
-        this.sourceInputFingerprint(sessionId,parsed.expectedRevisionId);const previous=root.researchBriefId?this.app.store.get<ResearchBrief>('research-brief',root.researchBriefId,projectId):undefined;
+        this.sourceInputFingerprint(sessionId,parsed.expectedRevisionId,parsed.status);const previous=root.researchBriefId?this.app.store.get<ResearchBrief>('research-brief',root.researchBriefId,projectId):undefined;
         if(parsed.status==='ready')this.app.methodContracts.validateReady(root,parsed.methodContract,previous?.sourceInputs,drafts,previous?.methodContract,this.app.methodContracts.requirements(root,previous?.methodRequirements),parsed.draftRoles??previous?.draftRoles);
     }
 
-    sourceInputFingerprint(sessionId:string,expectedRevisionId:string|null) {
+    sourceInputFingerprint(sessionId:string,expectedRevisionId:string|null,status:'clarifying'|'ready'='ready') {
         const root=this.app.store.get<Session>('session',sessionId),previous=root.researchBriefId?this.app.store.get<ResearchBrief>('research-brief',root.researchBriefId,root.projectId!):undefined;
         ensure((root.researchBriefId??null)===expectedRevisionId,'VERSION_CONFLICT','研究简报已变化，请重新读取后保存');
         if(previous)ensure(previous.rootSessionId===root.id&&isIntact(previous),'BRIEF_CORRUPTED','当前研究简报版本损坏');
-        const inputs=this.app.sourceInputs.preview(root,expectedRevisionId,previous?.sourceInputs??[]);
+        const inputs=this.app.sourceInputs.preview(root,expectedRevisionId,previous?.sourceInputs??[],status);
+        const attachmentSelections=this.app.sourceInputs.selectionFingerprint(root);if(attachmentSelections.length)return {inputs,attachmentSelections};
         return inputs.length||previous?.sourceInputs!==undefined?inputs:undefined;
     }
 
@@ -218,7 +219,7 @@ export class ResearchBriefService {
             const draftFiles=status==='ready'&&(actor.type==='agent'||requestedDraftFiles!==undefined)?this.app.draftReads.validate(root,requestedDraftFiles):undefined;
             const methodRequirements=this.app.methodContracts.requirements(root,previous?.methodRequirements);
             if(status==='ready')this.app.methodContracts.validateReady(root,requestedMethodContract,previous?.sourceInputs,draftFiles,previous?.methodContract,methodRequirements,requestedRoles??previous?.draftRoles);
-            const sourceInputs=this.app.sourceInputs.freeze(root,expectedRevisionId,previous?.sourceInputs??[]);
+            const sourceInputs=this.app.sourceInputs.freeze(root,expectedRevisionId,previous?.sourceInputs??[],status);
             const methodContract=requestedMethodContract===undefined?previous?.methodContract:this.app.methodContracts.freeze(root,requestedMethodContract,sourceInputs,draftFiles);
             assertFrozenMethod(this.app.store,projectId,methodContract,sourceInputs,root.id);
             const draftRoles=status==='ready'?validateProtocolRoles(methodContract,draftFiles,requestedRoles??previous?.draftRoles):previous?.draftRoles,protocolDocument=methodContract?.compilerVersion==='method-contract-v3'?{path:methodContract.protocolPath,digest:methodContract.protocolDigest,compilerVersion:methodContract.compilerVersion}:undefined;

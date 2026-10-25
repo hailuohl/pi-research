@@ -547,7 +547,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["gpu_busy", "ready", "worker_active", "recovery_due", "target_unresolved", "target_unavailable", "target_changed", "legacy_target_unknown", "request_too_large", "host_capacity", "target_capacity", "earlier_job", "recovery_backoff", "manual_recovery_required"];
                         };
                     };
-                    readonly required: ("generation" | "state" | "id" | "projectId" | "requested" | "reason" | "targetId" | "backend" | "leaseUntil" | "kind" | "held" | "sequence" | "nextAttemptAt")[];
+                    readonly required: ("generation" | "state" | "id" | "projectId" | "requested" | "reason" | "kind" | "targetId" | "backend" | "leaseUntil" | "held" | "sequence" | "nextAttemptAt")[];
                     readonly additionalProperties: false;
                 };
             };

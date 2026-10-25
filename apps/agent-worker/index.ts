@@ -23,7 +23,7 @@ import type { Role, ModelConfig } from '../../packages/domain/types.js';
 import type { SessionSetup } from '../../packages/pi-adapter/options.js';
 import type { HostNotice } from '../../packages/pi-adapter/prompt.js';
 type WorkerMessage =
-    | {type: 'tool_response'|'model_http_response'; requestId: number; error?: {code: string; message: string}; result?: unknown}
+    | {type: 'tool_response'|'model_http_response'; requestId: number; readDelivery?:string; error?: {code: string; message: string}; result?: unknown}
     | {type: 'delta_ack'; deltaId:number}
     | {type: 'abort'}
     | {type: 'steer' | 'follow_up'; content: string; messageId: string;attachmentManifest?:AttachmentManifest}
@@ -37,6 +37,7 @@ const COMPACTION_FAILURE='CONTEXT_COMPACTION_FAILED: 本次上下文恢复未完
 let recoveryEligible=false,recoveryArmed=false,recoveryAttempted=false,compacting=false,summaryCalls=0;
 let started = false, stopping = false, taskSubmitted = false;
 const httpStop=new AbortController();
+const readDeliveries=new Map<string,string>();
 let seq = 0;
 const queuedInputs:Array<{id:string;content:string}>=[];
 const attachmentManifests:AttachmentManifest[]=[];
@@ -46,6 +47,7 @@ const pending = new Map<number, {
     reject: (e: Error) => void;
     timer: NodeJS.Timeout;
     attachmentRequest?:boolean;
+    toolCallId?:string;
 }>();
 function send(value: unknown) {
     if (process.connected)
@@ -54,7 +56,7 @@ function send(value: unknown) {
 const display=workerDeltaSender(send);
 function httpRpc(type:'model_http_acquire'|'model_http_finish',key:string,result?:unknown,imageRefs?:unknown[],attachmentRefs?:NativeAttachmentReference[],contextRecovery?:'summary'|'resume'){return new Promise<unknown>((resolve,reject)=>{const requestId=++seq,startedAt=Date.now(),timer=setTimeout(()=>{pending.delete(requestId);reject(new Error(`MODEL_HTTP_CONTROL_TIMEOUT: HTTP额度控制未响应 (${type}, requestId=${requestId}, elapsedMs=${Date.now()-startedAt})`));},30000);pending.set(requestId,{resolve,reject,timer,attachmentRequest:!!attachmentRefs?.length});send({type,requestId,key,result,...(contextRecovery?{contextRecovery}:{}),...(imageRefs?{imageRefs}:{}),...(attachmentRefs?{attachmentRefs}:{})});});}
 // Paper reads and host execution need their service budget plus cleanup and IPC delivery.
-function rpc(tool: string, input: unknown, toolCallId: string) { return new Promise<unknown>((resolve, reject) => { const requestId = ++seq; const timer = setTimeout(() => { pending.delete(requestId); reject(new Error(`受控工具请求超时；结果未确认，请核对原调用，不要自动重试 (tool=${tool}, toolCallId=${toolCallId}, requestId=${requestId})`)); }, tool === 'paper_read' ? PAPER_READ_TIMEOUT_MS+20000 : tool === 'host_execute' ? 80000 : 30000); pending.set(requestId, { resolve, reject, timer }); send({ type: 'tool', requestId, tool, input, toolCallId }); }); }
+function rpc(tool: string, input: unknown, toolCallId: string) { return new Promise<unknown>((resolve, reject) => { const requestId = ++seq; const timer = setTimeout(() => { pending.delete(requestId); reject(new Error(`受控工具请求超时；结果未确认，请核对原调用，不要自动重试 (tool=${tool}, toolCallId=${toolCallId}, requestId=${requestId})`)); }, tool === 'paper_read' ? PAPER_READ_TIMEOUT_MS+20000 : tool === 'host_execute' ? 80000 : 30000); pending.set(requestId, { resolve, reject, timer,toolCallId }); send({ type: 'tool', requestId, tool, input, toolCallId }); }); }
 function clearPending() {
     for (const p of pending.values()) {
         clearTimeout(p.timer);
@@ -73,6 +75,7 @@ process.on('message', async (message) => {
         pending.delete(raw.requestId);
         if(raw.type==='model_http_response'&&raw.error&&(p.attachmentRequest||raw.error.code.startsWith('MODEL_IMAGE_')||raw.error.code.startsWith('MODEL_ATTACHMENT_')))imageFailure=`${raw.error.code}: ${raw.error.message}`;
         if(raw.type==='model_http_response'&&raw.error?.code==='TASK_MODEL_STALE')taskModelFailure='TASK_MODEL_STALE: 原批准的任务模型执行定义已变化，请重新建立并批准计划。';
+        if(raw.type==='tool_response'&&!raw.error&&raw.readDelivery&&p.toolCallId)readDeliveries.set(p.toolCallId,raw.readDelivery);
         raw.error ? p.reject(new Error(`${raw.error.code}: ${raw.error.message}`)) : p.resolve(raw.result);
         return;
     }
@@ -200,7 +203,8 @@ process.on('message', async (message) => {
             if (e.type === 'tool_execution_start' || e.type === 'tool_execution_end') {
                 const definition=raw.tools.find(tool=>tool.name===e.toolName);
                 const diagnostic=e.type==='tool_execution_end'&&e.isError&&definition?toolResultDiagnostic(schema.object({input:definition.inputSchema},['input']),e.result):undefined;
-                send({type: e.type, tool: e.toolName, toolCallId: e.toolCallId, ...(e.type === 'tool_execution_end' ? {isError: e.isError,...(diagnostic?{diagnostic}:{})} : {})});
+                const delivery=e.type==='tool_execution_end'?readDeliveries.get(e.toolCallId):undefined;if(e.type==='tool_execution_end')readDeliveries.delete(e.toolCallId);
+                send({type: e.type, tool: e.toolName, toolCallId: e.toolCallId, ...(e.type === 'tool_execution_end' ? {isError: e.isError,...(delivery&&!e.isError?{readDelivery:delivery,resultDigest:digest(JSON.stringify(e.result))}:{}),...(diagnostic?{diagnostic}:{})} : {})});
             }
             if (!stopping && e.type === 'message_update' && e.assistantMessageEvent?.type === 'text_delta')
                 display.push(e.assistantMessageEvent.delta);

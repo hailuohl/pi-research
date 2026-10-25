@@ -1,3 +1,5 @@
+import {deliverAttachmentRead,type AttachmentRead} from '../research-workflows/attachment-inputs.js';
+import type {PermissionReference} from '../policy/session-permissions.js';
 import {sessionTaskModel} from '../collaboration/task-model.js';
 import {assertSessionTaskModelCurrent,assertTaskModelCurrentSync} from '../pi-adapter/thinking-policy.js';
 import {assertResearchReference,type ResearchContinuation} from '../policy/research-automation.js';
@@ -28,6 +30,7 @@ import {assertWorkspaceReady} from '../workspace/git-service.js';
 import {randomUUID} from 'node:crypto';
 import {AgentAdmissionService,type AgentAdmission} from './agent-admission.js';
 interface Active {
+    readResponses?:Map<string,{id:string;tool:string;resultDigest:string;actor:Actor;readId:string;permission:PermissionReference;epoch:number}>;
     catalogFingerprint:string;
     admissionId: string;
     child: ChildProcess;
@@ -313,6 +316,26 @@ export class AgentHost {
     private exited(a:Active,code:number|null) {
         try{if(!a.ended)this.finish(a,`Worker 退出（${code}）；请求或工具用量可能需要对账`);this.app.modelHttp.workerExited(a.admissionId,this.ownerHost,a.generation);this.admission.release(a.admissionId,this.ownerHost,a.generation,'confirmed-exit');}finally{if(this.active.get(a.sessionId)===a)this.active.delete(a.sessionId);}
     }
+    private readResponse(a:Active,actor:Actor,tool:string,callId:string,result:unknown,permission:PermissionReference,epoch:number){
+        const readId=(result as {attachmentReadId?:string})?.attachmentReadId;if(tool!=='session_attachment_read'||!readId)return;
+        return this.app.store.transaction(()=>{
+            const read=this.app.store.get<AttachmentRead>('attachment-input-read',readId,actor.projectId!);
+            if(read.delivery!=='pending'||read.offered||read.callId!==callId||read.sessionId!==actor.sessionId||read.generation!==actor.generation)return;
+            this.app.sessionPermissions.assert(permission,false);const project=this.app.store.get<import('../domain/types.js').Project>('project',actor.projectId!);ensure(project.lifecycleEpoch===epoch&&project.status==='active','ATTACHMENT_DELIVERY_STALE','项目生命周期已变化');
+            this.app.store.update<AttachmentRead>('attachment-input-read',read.id,read.version,{offered:true});
+            const id=randomUUID();(a.readResponses??=new Map()).set(callId,{id,tool,resultDigest:digest(JSON.stringify({content:[{type:'text',text:JSON.stringify(result)}],details:{}})),actor:{...actor},readId,permission:{...permission},epoch});return id;
+        });
+    }
+    private completeReadDelivery(a:Active,tool:string,callId:string,m:{readDelivery?:unknown;resultDigest?:unknown;isError?:unknown},failed=false){
+        const pending=a.readResponses?.get(callId);if(!pending)return false;
+        a.readResponses!.delete(callId);
+        if(failed||m.isError||pending.tool!==tool||pending.id!==m.readDelivery||pending.resultDigest!==m.resultDigest)return false;
+        try{this.app.store.transaction(()=>{
+            ensure(!a.stopError&&!a.ended&&!a.exitObserved&&this.valid(a)&&pending.actor.sessionId===a.sessionId&&pending.actor.generation===a.generation,'ATTACHMENT_DELIVERY_STALE','旧Worker不能确认读取');
+            this.app.sessionPermissions.assert(pending.permission,false);const p=this.app.store.get<import('../domain/types.js').Project>('project',pending.actor.projectId!);ensure(p.lifecycleEpoch===pending.epoch&&p.status==='active','ATTACHMENT_DELIVERY_STALE','项目生命周期已变化');
+            deliverAttachmentRead(this.app.store,pending.actor,pending.readId,callId);
+        });return true;}catch{return false;}
+    }
     private valid(a: Active) {
         if(a.actor.workflowContinuationId){try{this.app.workflowContinuations.assertBindingCurrent(a.actor.workflowContinuationId);}catch{return false;}}
         if(a.actor.continuationId&&!this.app.researchAutomation.isOwner())return false;
@@ -389,9 +412,12 @@ export class AgentHost {
                 ensure(!binding||binding.tool===tool,'SCOPE_DENIED','工具调用来源不匹配',403);
                 ensure(tool!=='session_action_resume'||binding,'SESSION_ACTION_NOTICE_REQUIRED','批准恢复需要合法工具开始边界',403);
                 ensure(tool!=='research_action_prepare'||binding,'RESEARCH_ACTION_ORIGIN_REQUIRED','人工请求需要合法工具开始边界',403);
-                const result = await this.tools.execute(binding?.actor??a.actor, String(m.tool), m.input, String(m.toolCallId));
-                if (!a.exitObserved && a.child.connected)
-                    a.child.send({ type: 'tool_response', requestId: m.requestId, result });
+                const callActor=binding?.actor??a.actor,permission=callActor.permission??this.app.sessionPermissions.capture(callActor.sessionId!),epoch=this.app.store.get<import('../domain/types.js').Project>('project',callActor.projectId!).lifecycleEpoch;
+                const result = await this.tools.execute(callActor, String(m.tool), m.input, String(m.toolCallId));
+                if (!a.exitObserved && a.child.connected){
+                    const readDelivery=this.readResponse(a,callActor,tool,callId,result,permission,epoch);
+                    a.child.send({ type: 'tool_response', requestId: m.requestId, result,...(readDelivery?{readDelivery}:{}) });
+                }
             }
             catch (e) {
                 const error = asError(e);
@@ -435,6 +461,7 @@ export class AgentHost {
                 // Keep the source captured at tool start even if a later steer is consumed.
                 if(!actors.has(callId))actors.set(callId,{tool,actor:{...a.actor,approvalNoticeMessageId:a.currentApprovalNoticeMessageId,messageId:a.currentMessageId===undefined?a.actor.messageId:a.currentMessageId??undefined}});
             }
+            if(m.type==='tool_execution_end')this.completeReadDelivery(a,tool,callId,m,!!error);
             const failed=m.type==='tool_execution_end'&&(m.isError||error);
             const reported=safeToolDiagnostic(schema.object({input:TOOL_DEFINITIONS[tool].inputSchema},['input']),m.diagnostic?.code,`${m.diagnostic?.path}: ${m.diagnostic?.reason}`);
             const diagnostic=error?error.diagnostic:reported?.code==='INVALID_INPUT'?reported:undefined;
