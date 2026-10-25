@@ -1,6 +1,7 @@
 import type { Store } from './store.js';
 import type { ArtifactBlob } from './artifact-blob.js';
 import type { DocumentBlobPublication } from './document-publication.js';
+import type { TextIndexPublication } from './text-index-publication.js';
 export declare const TEXT_BLOCK_BYTES: number;
 export interface FixedTextIndex {
     format: 'utf8-block-tree-v1';
@@ -13,9 +14,22 @@ export interface FixedTextIndex {
     utf16Length: number;
 }
 /** Full integrity boundary, bounded memory; never use metadata as a hash substitute. */
-export declare function verifyStreamedBlob(store: Pick<Store, 'paths'>, blob: ArtifactBlob): void;
-/** Private project-owned staging only. The caller must persist ownership before publishing CAS files. */
+export declare function verifyStreamedBlob(store: Pick<Store, 'paths'>, blob: ArtifactBlob, validate?: () => void): void;
 export declare function prepareStreamedText(store: Store, projectId: string, input: AsyncIterable<Uint8Array>, maxBytes: number, validate: () => void): Promise<{
+    publication: {
+        format: "document-blob-publication-v1";
+        stagingId: `${string}-${string}-${string}-${string}-${string}`;
+        blobs: {
+            stage: {
+                path: string;
+                dev: number;
+                ino: number;
+            };
+            blobPath: string;
+            digest: string;
+            size: number;
+        }[];
+    };
     blob: {
         blobPath: string;
         digest: string;
@@ -27,12 +41,30 @@ export declare function prepareStreamedText(store: Store, projectId: string, inp
         size: number;
     };
     index: FixedTextIndex;
-    publication: DocumentBlobPublication;
     dispose: () => Promise<void>;
 }>;
+/** Index an already-owned fixed source: only entries/index are staged, never the source bytes. */
+export declare function prepareFixedTextIndex(store: Store, projectId: string, artifactId: string, source: ArtifactBlob, maxBytes: number, validate: () => void, checkpoint?: () => void): Promise<{
+    publication: TextIndexPublication;
+    blob: {
+        blobPath: string;
+        digest: string;
+        size: number;
+    };
+    indexBlob: {
+        blobPath: string;
+        digest: string;
+        size: number;
+    };
+    index: FixedTextIndex;
+    dispose: () => Promise<void>;
+}>;
+export declare function publishFixedTextIndex(store: Store, publication: TextIndexPublication, validate: () => void): Promise<void>;
 export declare function publishStreamedText(store: Store, publication: DocumentBlobPublication, validate: () => void): Promise<void>;
 /** Merkle proofs authenticate only touched block entries, keeping index I/O bounded even for large configured limits. */
-export declare function readStreamedText(store: Store, source: ArtifactBlob, indexBlob: ArtifactBlob, index: FixedTextIndex, cursor: number, limit: number): {
+export declare function readStreamedText(store: Store, source: ArtifactBlob, indexBlob: ArtifactBlob, index: FixedTextIndex, cursor: number, limit: number, utf16?: boolean): {
+    utf16Start?: number | undefined;
+    utf16End?: number | undefined;
     content: string;
     cursor: number;
     end: number;

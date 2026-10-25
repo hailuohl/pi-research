@@ -33,6 +33,7 @@ interface Permission {
 export declare const TASK_PERMISSION_EFFECTS: string[];
 export declare class SessionPermissionService {
     private app;
+    private evidenceExecutions;
     constructor(app: ResearchApp);
     assertActionInput(input: Record<string, unknown>): void;
     executeAction(actor: Actor, sessionId: string, actionId: string, signal?: AbortSignal): unknown;
@@ -40,14 +41,14 @@ export declare class SessionPermissionService {
         blockedReason: string;
         actionId: string;
         operation: string;
-        state: "failed" | "pending" | "unknown" | "stale" | "completed" | "approved" | "rejected" | "executing";
+        state: "failed" | "unknown" | "pending" | "stale" | "completed" | "approved" | "rejected" | "executing";
         approvalStatus: "pending" | "stale" | "approved" | "rejected";
         input: Record<string, unknown> | null;
     } | {
         input: Record<string, unknown>;
         actionId: string;
         operation: string;
-        state: "failed" | "pending" | "unknown" | "stale" | "completed" | "approved" | "rejected" | "executing";
+        state: "failed" | "unknown" | "pending" | "stale" | "completed" | "approved" | "rejected" | "executing";
         approvalStatus: "pending" | "stale" | "approved" | "rejected";
         blockedReason: string | null;
     };
@@ -99,7 +100,7 @@ export declare class SessionPermissionService {
             unknownCommands: number;
             jobs: {
                 id: string;
-                state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
+                state: "succeeded" | "failed" | "cancelled" | "unknown" | "running" | "starting";
                 pid: number | undefined;
                 exitCode: number | null | undefined;
                 error: string | undefined;
@@ -161,7 +162,7 @@ export declare class SessionPermissionService {
             unknownCommands: number;
             jobs: {
                 id: string;
-                state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
+                state: "succeeded" | "failed" | "cancelled" | "unknown" | "running" | "starting";
                 pid: number | undefined;
                 exitCode: number | null | undefined;
                 error: string | undefined;
@@ -230,7 +231,50 @@ export declare class SessionPermissionService {
     assertDocumentImageAction(actor: Actor, value: unknown): void;
     assertImageAction(actor: Actor, value: unknown): void;
     validate(ref: PermissionReference, sessionId: string, operation: string, input: Record<string, unknown>, actionId?: string): void;
-    begin(id: string): void;
+    begin(id: string, actor: Actor): {
+        permissionActionId: string;
+        workflowContinuationId?: string;
+        workflowNoticeMessageId?: string;
+        messageId?: string;
+        approvalNoticeMessageId?: string;
+        researchModelDigest?: string;
+        continuationId?: string;
+        approvalResumeId?: string;
+        permission?: import("./session-permissions.js").PermissionReference;
+        type: "user" | "agent" | "system";
+        projectId?: string;
+        sessionId?: string;
+        role?: import("../domain/types.js").Role;
+        taskId?: string;
+        attemptId?: string;
+        generation?: number;
+        wakeupId?: string;
+    };
+    /** Registry-only completed-result capability; it can never authorize creation or another readId. */
+    evidenceReplayActor(actor: Actor, input: Record<string, unknown>, actionId: string, evidenceId: string): {
+        permissionActionId: string;
+        workflowContinuationId?: string;
+        workflowNoticeMessageId?: string;
+        messageId?: string;
+        approvalNoticeMessageId?: string;
+        researchModelDigest?: string;
+        continuationId?: string;
+        approvalResumeId?: string;
+        permission?: import("./session-permissions.js").PermissionReference;
+        type: "user" | "agent" | "system";
+        projectId?: string;
+        sessionId?: string;
+        role?: import("../domain/types.js").Role;
+        taskId?: string;
+        attemptId?: string;
+        generation?: number;
+        wakeupId?: string;
+    };
+    /** Object identity proves this invocation passed Registry begin/receipt lookup; strings cannot supply authority. */
+    assertEvidenceAction(actor: Actor, input: Record<string, unknown>, reader: {
+        generation: unknown;
+        sessionId: unknown;
+    }, evidenceId?: string): void;
     complete(id: string): void;
     failed(id: string, error: unknown, uncertain?: boolean): void;
     decide(actor: Actor, id: string, actionId: string, value: unknown): {
@@ -259,7 +303,7 @@ export declare class SessionPermissionService {
             unknownCommands: number;
             jobs: {
                 id: string;
-                state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
+                state: "succeeded" | "failed" | "cancelled" | "unknown" | "running" | "starting";
                 pid: number | undefined;
                 exitCode: number | null | undefined;
                 error: string | undefined;

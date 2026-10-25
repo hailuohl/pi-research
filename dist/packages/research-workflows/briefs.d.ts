@@ -63,24 +63,24 @@ export declare class ResearchBriefService {
     assertAdmission(projectId: string, ref: ResearchBriefRef, phase?: 'formal'): void;
     validateReadyDrafts(actor: Actor, projectId: string, sessionId: string, input: unknown): void;
     sourceInputFingerprint(sessionId: string, expectedRevisionId: string | null, status?: 'clarifying' | 'ready'): {
+        documentVersionId?: string | undefined;
         purpose?: "whole-text" | "dataset-reference" | undefined;
         digest: string;
         path: string;
         size: number;
         workspace: string;
         readId: string;
-        documentVersionId?: string | undefined;
         readProtocol?: "fixed-text-v1" | undefined;
         artifactId?: string;
     }[] | {
         inputs: {
+            documentVersionId?: string | undefined;
             purpose?: "whole-text" | "dataset-reference" | undefined;
             digest: string;
             path: string;
             size: number;
             workspace: string;
             readId: string;
-            documentVersionId?: string | undefined;
             readProtocol?: "fixed-text-v1" | undefined;
             artifactId?: string;
         }[];

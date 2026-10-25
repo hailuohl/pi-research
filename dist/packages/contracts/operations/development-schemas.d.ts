@@ -572,7 +572,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                 readonly maxLength: number;
                             };
                         };
-                        readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
+                        readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
                         readonly additionalProperties: false;
                     };
                     readonly approvalResumeDigest: {
@@ -1199,7 +1199,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                 readonly maxLength: number;
                             };
                         };
-                        readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
+                        readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
                         readonly additionalProperties: false;
                     };
                     readonly approvalResumeDigest: {
@@ -1924,7 +1924,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                     readonly maxLength: number;
                                 };
                             };
-                            readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
+                            readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
                             readonly additionalProperties: false;
                         };
                         readonly approvalResumeDigest: {
@@ -2550,7 +2550,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                     readonly maxLength: number;
                                 };
                             };
-                            readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
+                            readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
                             readonly additionalProperties: false;
                         };
                         readonly approvalResumeDigest: {
@@ -3243,7 +3243,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                 readonly maxLength: number;
                             };
                         };
-                        readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
+                        readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
                         readonly additionalProperties: false;
                     };
                     readonly approvalResumeDigest: {

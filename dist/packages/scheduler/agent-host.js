@@ -425,17 +425,23 @@ export class AgentHost {
         }
     }
     readResponse(a, actor, tool, callId, result, permission, epoch) {
-        const readId = result?.attachmentReadId;
-        if (tool !== 'session_attachment_read' || !readId)
+        const readId = tool === 'artifact_read' ? result?.artifactReadId : tool === 'session_attachment_read' ? result?.attachmentReadId : undefined;
+        if (!readId)
             return;
         return this.app.store.transaction(() => {
-            const read = this.app.store.get('attachment-input-read', readId, actor.projectId);
-            if (read.delivery !== 'pending' || read.offered || read.callId !== callId || read.sessionId !== actor.sessionId || read.generation !== actor.generation)
-                return;
+            if (tool === 'artifact_read') {
+                if (!this.app.artifactTexts.offer(actor, actor.projectId, readId, callId))
+                    return;
+            }
+            else {
+                const read = this.app.store.get('attachment-input-read', readId, actor.projectId);
+                if (read.delivery !== 'pending' || read.offered || read.callId !== callId || read.sessionId !== actor.sessionId || read.generation !== actor.generation)
+                    return;
+                this.app.store.update('attachment-input-read', read.id, read.version, { offered: true });
+            }
             this.app.sessionPermissions.assert(permission, false);
             const project = this.app.store.get('project', actor.projectId);
             ensure(project.lifecycleEpoch === epoch && project.status === 'active', 'ATTACHMENT_DELIVERY_STALE', '项目生命周期已变化');
-            this.app.store.update('attachment-input-read', read.id, read.version, { offered: true });
             const id = randomUUID();
             (a.readResponses ??= new Map()).set(callId, { id, tool, resultDigest: digest(JSON.stringify({ content: [{ type: 'text', text: JSON.stringify(result) }], details: {} })), actor: { ...actor }, readId, permission: { ...permission }, epoch });
             return id;
@@ -454,7 +460,10 @@ export class AgentHost {
                 this.app.sessionPermissions.assert(pending.permission, false);
                 const p = this.app.store.get('project', pending.actor.projectId);
                 ensure(p.lifecycleEpoch === pending.epoch && p.status === 'active', 'ATTACHMENT_DELIVERY_STALE', '项目生命周期已变化');
-                deliverAttachmentRead(this.app.store, pending.actor, pending.readId, callId);
+                if (pending.tool === 'artifact_read')
+                    this.app.artifactTexts.deliver(pending.actor, pending.actor.projectId, pending.readId, callId);
+                else
+                    deliverAttachmentRead(this.app.store, pending.actor, pending.readId, callId);
             });
             return true;
         }

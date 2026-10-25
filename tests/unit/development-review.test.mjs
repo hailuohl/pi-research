@@ -20,6 +20,15 @@ function tested(s,extra={},stdout='UNIT FIXTURE: passing test log\n') {
 function claim(s,review){approve(s.app,review.approvalId);s.app.teams.activate(USER,review.teamId);const claimed=s.app.teams.claim(review.teamId);assert.ok(claimed);return claimed;}
 function submitReview(s,c,r,verdict='accept'){return s.app.teams.submit(actor(c),result({verdict,evidenceIds:r.requiredEvidenceIds}));}
 
+test('fixed artifact preparation/pages retain exact reviewer log scope and cannot produce legacy review coverage',async()=>{
+ const s=setup();try{enable(s);const reviews=service(s),content='L'.repeat(2*1024*1024+1),{job,t}=tested(s,{resources:{logBytes:4*1024*1024}},content),r=reviews.prepare(USER,s.project.id,{jobId:job.id}),c=claim(s,r),who=actor(c),a=s.app.store.get('artifact',job.stdoutArtifactId),scope={projectId:s.project.id,sessionId:who.sessionId};
+ const prep={artifactId:a.id,sourceDigest:a.digest},p=await s.app.operations.execute(who,'artifact_text_prepare',prep,{...scope,idempotencyKey:'prepare-log'}),input={...prep,textSourceId:p.textSourceId,readProtocol:'fixed-text-v1',cursor:0,limit:16000};
+ const original=reviews.recordReading;reviews.recordReading=()=>{throw Error('byte page must not enter legacy UTF16 review coverage');};let page;try{page=s.app.operations.execute(who,'artifact_read',input,{...scope,idempotencyKey:'log-page'});}finally{reviews.recordReading=original;}assert.equal(page.content,'L'.repeat(16000));assert.ok(page.artifactReadId);assert.equal(page.reviewReadId,undefined);
+ const unrelated=s.app.evidence.put(s.project.id,'other',Buffer.from(content));await assert.rejects(async()=>s.app.operations.execute(who,'artifact_text_prepare',{artifactId:unrelated.id,sourceDigest:unrelated.digest},{...scope,idempotencyKey:'outside'}),{code:'TASK_SCOPE_DENIED'});
+ s.app.approvals.stale(t.id);await assert.rejects(async()=>s.app.operations.execute(who,'artifact_text_prepare',prep,{...scope,idempotencyKey:'prepare-log'}),{code:'APPROVAL_STALE'});assert.throws(()=>s.app.operations.execute(who,'artifact_read',input,{...scope,idempotencyKey:'log-page'}),{code:'APPROVAL_STALE'});
+ }finally{s.close();}
+});
+
 test('independent reviewers page beyond 2 MiB only in their frozen archived development logs',()=>{
  const s=setup();try{
   enable(s);const reviews=service(s),text='L'.repeat(2*1024*1024+16001)+'fixed-log-tail', {job,t}=tested(s,{resources:{logBytes:4*1024*1024}},text),r=reviews.prepare(USER,s.project.id,{jobId:job.id}),c=claim(s,r),who=actor(c);
@@ -39,6 +48,7 @@ test('large review log exceptions remain tied to the original archived wrapper i
   const replacement=s.app.evidence.put(s.project.id,'replacement log',Buffer.from(text+'changed'),'text/plain',`development:${job.id}`),stored=s.app.store.get('sandbox-job',job.id);
   s.app.store.update('sandbox-job',stored.id,stored.version,{stdoutArtifactId:replacement.id,artifactIds:[...stored.artifactIds,replacement.id]});
   assert.throws(()=>s.app.operations.execute(who,'artifact_read',{artifactId:replacement.id,cursor:0},{projectId:s.project.id,sessionId:who.sessionId,idempotencyKey:crypto.randomUUID()}),{code:'DEVELOPMENT_REVIEW_STALE'});
+  assert.throws(()=>s.app.operations.execute(who,'artifact_text_prepare',{artifactId:replacement.id,sourceDigest:replacement.digest},{projectId:s.project.id,sessionId:who.sessionId,idempotencyKey:crypto.randomUUID()}),{code:'DEVELOPMENT_REVIEW_STALE'});
  }finally{s.close();}
 });
 

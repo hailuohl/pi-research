@@ -1,0 +1,113 @@
+{
+  "baseline": "fb087bb5471c12a5d916341c119eb2afe9c91973",
+  "scope": "authorized artifact -> explicit index preparation -> byte page -> exact SDK ACK -> one-page quote registration/readback/reopen",
+  "fullRegression": {
+    "command": "npm test",
+    "exitCode": 1,
+    "total": 2690,
+    "pass": 2663,
+    "fail": 2,
+    "skip": 25,
+    "durationMs": 2211482.3206,
+    "log": "D:/项目/pi research/tmp/large-file-512mib-20261025/batch2b/regression.log",
+    "failures": [
+      "operation-outputs: missing new tool fixture",
+      "operation-schema: catalog count 173 instead of 174"
+    ]
+  },
+  "affectedFinal": {
+    "command": "node --test tests/unit/operation-outputs.test.mjs tests/unit/operation-schema.test.mjs",
+    "pass": 16,
+    "fail": 0,
+    "skip": 0,
+    "runtimeOrBuildChanged": false,
+    "log": "D:/项目/pi research/tmp/large-file-512mib-20261025/batch2b/contracts-final.log"
+  },
+  "relatedFinal": {
+    "pass": 95,
+    "fail": 0,
+    "log": "D:/项目/pi research/tmp/large-file-512mib-20261025/batch2b/fix-handoff-related.log"
+  },
+  "capacity": {
+    "session": 17045,
+    "status": "passed",
+    "log": "batch2b/capacity-accepted.log",
+    "bytes": 536870912,
+    "heapMiB": 192,
+    "cases": [
+      {
+        "fixedArtifactBytes": 536870912,
+        "sdkPageBytes": 16000,
+        "wireBytes": 1107478,
+        "peakRssBytes": 271482880,
+        "delivery": "delivered",
+        "evidenceVia": "SDK-tool",
+        "existingSourceCopied": false,
+        "reopen": true,
+        "permissionMode": "legacy"
+      },
+      {
+        "fixedArtifactBytes": 32768,
+        "sdkPageBytes": 16000,
+        "wireBytes": 1573017,
+        "peakRssBytes": 271482880,
+        "delivery": "delivered",
+        "evidenceVia": "SDK-tool",
+        "existingSourceCopied": false,
+        "reopen": true,
+        "permissionMode": "confirm"
+      }
+    ]
+  },
+  "cleanBuild": {
+    "session": 85713,
+    "status": "passed",
+    "log": "batch2b/clean-build.log",
+    "summary": ".validation/clean-build-bNCTWK/summary.json",
+    "files": 782,
+    "distManifestSha256": "c47171455d99d11858db00bde2bc89894a14be4eaea71723cfef06aac1a81637"
+  },
+  "review": {
+    "agent": "/root/large_file_batch2b_review",
+    "requestedModel": "gpt-6-astra",
+    "requestedEffort": "xhigh",
+    "runtimeEcho": false,
+    "status": "original blockers and necessary concurrency fix independently cleared; no new blocking or nonblocking finding",
+    "blockers": [
+      "512MiB prepare exceeds generic30s worker RPC (actual cold prepare56.54s)",
+      "confirm/autoEdit exact approved evidence registration resumes next generation and fails ARTIFACT_READ_REQUIRED"
+    ],
+    "approvalProbe": "batch2b/review-approval-probe.json",
+    "finalSnapshot": "batch2b/review-fix-snapshot.json",
+    "finalPatchSha256": "e1ee62e2946e7192ebca2387e4acbfb58bb5aef8dfedc8a0d99ceebd65d3310c",
+    "finalBlockingFindings": 0,
+    "finalHashFileCount": 106,
+    "fixProbe": "batch2b/review-fix-probes.json",
+    "fixtureFix": {
+      "status": "independent affected-only review cleared; no weakened assertion",
+      "snapshot": "batch2b/contract-fixture-fix-snapshot.json",
+      "pass": 16,
+      "fail": 0
+    }
+  },
+  "configuration": {
+    "implementation": {
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "high"
+    },
+    "independentReview": {
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "xhigh"
+    },
+    "runtimeEcho": false
+  },
+  "notRun": [
+    "external provider",
+    "Docker",
+    "browser",
+    "scientific benchmarks"
+  ],
+  "mainCheckoutAndService": "untouched",
+  "evidenceReuse": "test fixture corrections change no production/generated file; retain full passing paths and capacity/build results; original failing full log retained",
+  "finalSnapshot": "D:/项目/pi research/tmp/large-file-512mib-20261025/batch2b/delivery-snapshot.json"
+}

@@ -77,7 +77,7 @@ export declare const PUBLICATION_REVIEW_SCHEMA: {
             readonly type: "string";
         };
     };
-    readonly required: ("id" | "rootSessionId" | "status" | "digest" | "sourceDigest" | "publicationResultId" | "approvalId" | "teamId" | "taskId" | "revisionId" | "artifactIds" | "requiredEvidenceIds" | "jobId" | "validity" | "pdfDigest")[];
+    readonly required: ("rootSessionId" | "taskId" | "teamId" | "approvalId" | "revisionId" | "jobId" | "id" | "status" | "digest" | "sourceDigest" | "publicationResultId" | "artifactIds" | "requiredEvidenceIds" | "validity" | "pdfDigest")[];
     readonly additionalProperties: false;
 };
 export declare const PUBLICATION_INPUT_SCHEMAS: {
@@ -388,7 +388,7 @@ export declare const PUBLICATION_INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("limit" | "cursor")[];
+        readonly required: readonly ("cursor" | "limit")[];
         readonly additionalProperties: false;
     };
     readonly manuscript_inspect: {
@@ -559,7 +559,7 @@ export declare const PUBLICATION_INPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: readonly ("limit" | "cursor" | "revisionId")[];
+        readonly required: readonly ("revisionId" | "cursor" | "limit")[];
         readonly additionalProperties: false;
     };
 };
@@ -611,11 +611,11 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                         readonly type: "integer";
                     };
                 };
-                readonly required: ("digest" | "artifactId" | "bytes")[];
+                readonly required: ("artifactId" | "digest" | "bytes")[];
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("sourceDigest" | "revisionId" | "truncated" | "reportKind" | "scientificClaimSupport" | "literalStructure" | "identityComparison" | "reportArtifact" | "checkerVersion" | "bindingDigest")[];
+        readonly required: ("revisionId" | "sourceDigest" | "truncated" | "reportKind" | "scientificClaimSupport" | "literalStructure" | "identityComparison" | "reportArtifact" | "checkerVersion" | "bindingDigest")[];
         readonly additionalProperties: false;
     };
     readonly publication_page_image_read: {
@@ -762,7 +762,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "rootSessionId" | "status" | "digest" | "sourceDigest" | "publicationResultId" | "approvalId" | "teamId" | "taskId" | "revisionId" | "artifactIds" | "requiredEvidenceIds" | "jobId" | "validity" | "pdfDigest")[];
+        readonly required: ("rootSessionId" | "taskId" | "teamId" | "approvalId" | "revisionId" | "jobId" | "id" | "status" | "digest" | "sourceDigest" | "publicationResultId" | "artifactIds" | "requiredEvidenceIds" | "validity" | "pdfDigest")[];
         readonly additionalProperties: false;
     };
     readonly publication_review_inspect: {
@@ -844,7 +844,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "rootSessionId" | "status" | "digest" | "sourceDigest" | "publicationResultId" | "approvalId" | "teamId" | "taskId" | "revisionId" | "artifactIds" | "requiredEvidenceIds" | "jobId" | "validity" | "pdfDigest")[];
+        readonly required: ("rootSessionId" | "taskId" | "teamId" | "approvalId" | "revisionId" | "jobId" | "id" | "status" | "digest" | "sourceDigest" | "publicationResultId" | "artifactIds" | "requiredEvidenceIds" | "validity" | "pdfDigest")[];
         readonly additionalProperties: false;
     };
     readonly publication_review_list: {
@@ -929,7 +929,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                     readonly type: "string";
                 };
             };
-            readonly required: ("id" | "rootSessionId" | "status" | "digest" | "sourceDigest" | "publicationResultId" | "approvalId" | "teamId" | "taskId" | "revisionId" | "artifactIds" | "requiredEvidenceIds" | "jobId" | "validity" | "pdfDigest")[];
+            readonly required: ("rootSessionId" | "taskId" | "teamId" | "approvalId" | "revisionId" | "jobId" | "id" | "status" | "digest" | "sourceDigest" | "publicationResultId" | "artifactIds" | "requiredEvidenceIds" | "validity" | "pdfDigest")[];
             readonly additionalProperties: false;
         };
         readonly minItems: number;
@@ -979,7 +979,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("digest" | "mediaType" | "path" | "size")[];
+                    readonly required: ("digest" | "path" | "size" | "mediaType")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -1032,7 +1032,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("digest" | "mediaType" | "path" | "size")[];
+                    readonly required: ("digest" | "path" | "size" | "mediaType")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -1062,7 +1062,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("digest" | "mediaType" | "path" | "size" | "contentBase64")[];
+        readonly required: ("digest" | "path" | "size" | "mediaType" | "contentBase64")[];
         readonly additionalProperties: false;
     };
     readonly publication_templates: {
@@ -1112,7 +1112,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                                 readonly type: "string";
                             };
                         };
-                        readonly required: ("digest" | "mediaType" | "path" | "size")[];
+                        readonly required: ("digest" | "path" | "size" | "mediaType")[];
                         readonly additionalProperties: false;
                     };
                 };
@@ -1184,7 +1184,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
+                readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
                 readonly additionalProperties: false;
             };
             readonly evidenceIds: {
@@ -1245,12 +1245,12 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("digest" | "mediaType" | "artifactId" | "path" | "size" | "provenance")[];
+                    readonly required: ("artifactId" | "digest" | "path" | "size" | "mediaType" | "provenance")[];
                     readonly additionalProperties: false;
                 };
             };
         };
-        readonly required: ("version" | "id" | "createdAt" | "projectId" | "title" | "kind" | "updatedAt" | "sourceDigest" | "files" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
+        readonly required: ("kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "title" | "sourceDigest" | "files" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
         readonly additionalProperties: false;
     };
     readonly manuscript_inspect: {
@@ -1316,7 +1316,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
+                readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
                 readonly additionalProperties: false;
             };
             readonly evidenceIds: {
@@ -1377,12 +1377,12 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("digest" | "mediaType" | "artifactId" | "path" | "size" | "provenance")[];
+                    readonly required: ("artifactId" | "digest" | "path" | "size" | "mediaType" | "provenance")[];
                     readonly additionalProperties: false;
                 };
             };
         };
-        readonly required: ("version" | "id" | "createdAt" | "projectId" | "title" | "kind" | "updatedAt" | "sourceDigest" | "files" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
+        readonly required: ("kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "title" | "sourceDigest" | "files" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
         readonly additionalProperties: false;
     };
     readonly manuscript_list: {
@@ -1453,7 +1453,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
+                            readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
                             readonly additionalProperties: false;
                         };
                         readonly evidenceIds: {
@@ -1514,12 +1514,12 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                                         readonly additionalProperties: false;
                                     };
                                 };
-                                readonly required: ("digest" | "mediaType" | "artifactId" | "path" | "size" | "provenance")[];
+                                readonly required: ("artifactId" | "digest" | "path" | "size" | "mediaType" | "provenance")[];
                                 readonly additionalProperties: false;
                             };
                         };
                     };
-                    readonly required: ("version" | "id" | "createdAt" | "projectId" | "title" | "kind" | "updatedAt" | "sourceDigest" | "files" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
+                    readonly required: ("kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "title" | "sourceDigest" | "files" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -1559,7 +1559,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("content" | "digest" | "cursor" | "complete" | "mediaType" | "path" | "end")[];
+        readonly required: ("cursor" | "content" | "digest" | "complete" | "path" | "mediaType" | "end")[];
         readonly additionalProperties: false;
     };
     readonly publication_status: {
@@ -1643,7 +1643,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("limits" | "version" | "profileId" | "configured")[];
+        readonly required: ("version" | "limits" | "profileId" | "configured")[];
         readonly additionalProperties: false;
     };
     readonly publication_configure: {
@@ -1727,7 +1727,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("limits" | "version" | "profileId" | "configured")[];
+        readonly required: ("version" | "limits" | "profileId" | "configured")[];
         readonly additionalProperties: false;
     };
     readonly publication_prepare: {
@@ -1853,7 +1853,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("generation" | "state" | "exitCode" | "id" | "imageDigest" | "sourceDigest" | "approvalId" | "manifestDigest" | "profileId" | "engine" | "bibliography" | "revisionId" | "mainFile" | "dockerContext" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest" | "resources" | "jobId")[];
+        readonly required: ("approvalId" | "revisionId" | "jobId" | "id" | "generation" | "state" | "exitCode" | "imageDigest" | "sourceDigest" | "manifestDigest" | "profileId" | "engine" | "bibliography" | "mainFile" | "dockerContext" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest" | "resources")[];
         readonly additionalProperties: false;
     };
     readonly publication_submit: {
@@ -1979,7 +1979,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("generation" | "state" | "exitCode" | "id" | "imageDigest" | "sourceDigest" | "approvalId" | "manifestDigest" | "profileId" | "engine" | "bibliography" | "revisionId" | "mainFile" | "dockerContext" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest" | "resources" | "jobId")[];
+        readonly required: ("approvalId" | "revisionId" | "jobId" | "id" | "generation" | "state" | "exitCode" | "imageDigest" | "sourceDigest" | "manifestDigest" | "profileId" | "engine" | "bibliography" | "mainFile" | "dockerContext" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest" | "resources")[];
         readonly additionalProperties: false;
     };
     readonly publication_inspect: {
@@ -2105,7 +2105,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("generation" | "state" | "exitCode" | "id" | "imageDigest" | "sourceDigest" | "approvalId" | "manifestDigest" | "profileId" | "engine" | "bibliography" | "revisionId" | "mainFile" | "dockerContext" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest" | "resources" | "jobId")[];
+        readonly required: ("approvalId" | "revisionId" | "jobId" | "id" | "generation" | "state" | "exitCode" | "imageDigest" | "sourceDigest" | "manifestDigest" | "profileId" | "engine" | "bibliography" | "mainFile" | "dockerContext" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest" | "resources")[];
         readonly additionalProperties: false;
     };
     readonly publication_cancel: {
@@ -2231,7 +2231,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("generation" | "state" | "exitCode" | "id" | "imageDigest" | "sourceDigest" | "approvalId" | "manifestDigest" | "profileId" | "engine" | "bibliography" | "revisionId" | "mainFile" | "dockerContext" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest" | "resources" | "jobId")[];
+        readonly required: ("approvalId" | "revisionId" | "jobId" | "id" | "generation" | "state" | "exitCode" | "imageDigest" | "sourceDigest" | "manifestDigest" | "profileId" | "engine" | "bibliography" | "mainFile" | "dockerContext" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest" | "resources")[];
         readonly additionalProperties: false;
     };
     readonly publication_result: {
@@ -2359,7 +2359,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             readonly type: "integer";
                         };
                     };
-                    readonly required: ("digest" | "artifactId" | "bytes" | "pages")[];
+                    readonly required: ("artifactId" | "digest" | "bytes" | "pages")[];
                     readonly additionalProperties: false;
                 }, {
                     readonly type: "null";
@@ -2389,7 +2389,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             readonly type: "integer";
                         };
                     };
-                    readonly required: ("digest" | "artifactId" | "bytes" | "pageNumber" | "width" | "height")[];
+                    readonly required: ("artifactId" | "digest" | "bytes" | "pageNumber" | "width" | "height")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -2408,7 +2408,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             readonly type: "integer";
                         };
                     };
-                    readonly required: ("digest" | "artifactId" | "bytes")[];
+                    readonly required: ("artifactId" | "digest" | "bytes")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -2437,7 +2437,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly const: 1;
             };
         };
-        readonly required: ("version" | "id" | "createdAt" | "projectId" | "pdf" | "status" | "kind" | "updatedAt" | "sourceDigest" | "manifestDigest" | "previews" | "logs" | "formatVersion" | "profileId" | "engine" | "bibliography" | "engineVersion" | "hadErrors" | "converged" | "passes" | "diagnostics" | "revisionId" | "imageId" | "profileDigest" | "manifestArtifactId" | "manifestArtifactDigest" | "jobId" | "sourceValidity")[];
+        readonly required: ("revisionId" | "jobId" | "kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "pdf" | "sourceDigest" | "manifestDigest" | "previews" | "logs" | "formatVersion" | "profileId" | "engine" | "bibliography" | "engineVersion" | "hadErrors" | "converged" | "passes" | "diagnostics" | "imageId" | "profileDigest" | "manifestArtifactId" | "manifestArtifactDigest" | "sourceValidity")[];
         readonly additionalProperties: false;
     };
     readonly publication_build_list: {
@@ -2568,7 +2568,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("generation" | "state" | "exitCode" | "id" | "imageDigest" | "sourceDigest" | "approvalId" | "manifestDigest" | "profileId" | "engine" | "bibliography" | "revisionId" | "mainFile" | "dockerContext" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest" | "resources" | "jobId")[];
+                    readonly required: ("approvalId" | "revisionId" | "jobId" | "id" | "generation" | "state" | "exitCode" | "imageDigest" | "sourceDigest" | "manifestDigest" | "profileId" | "engine" | "bibliography" | "mainFile" | "dockerContext" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest" | "resources")[];
                     readonly additionalProperties: false;
                 };
             };

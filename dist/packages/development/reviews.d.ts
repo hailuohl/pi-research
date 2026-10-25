@@ -36,7 +36,7 @@ export declare class DevelopmentReviewService {
         status: "failed" | "running" | "pending" | "passed" | "stale" | "rejected" | "disputed" | "awaiting_approval";
         protocolDocument?: import("../research-workflows/method-contracts.js").ProtocolDocument | undefined;
         draftRoles?: import("../research-workflows/method-contracts.js").DraftRole[] | undefined;
-        protocolVersion?: 2 | 1 | undefined;
+        protocolVersion?: 1 | 2 | undefined;
         researchBrief?: import("../domain/types.js").ResearchBriefRef | undefined;
         sourceInputs?: import("../research-workflows/source-inputs.js").ResearchSourceInput[] | undefined;
         testArtifacts?: ReviewTestArtifact[] | undefined;
@@ -92,7 +92,7 @@ export declare class DevelopmentReviewService {
         status: "failed" | "running" | "pending" | "passed" | "stale" | "rejected" | "disputed" | "awaiting_approval";
         protocolDocument?: import("../research-workflows/method-contracts.js").ProtocolDocument | undefined;
         draftRoles?: import("../research-workflows/method-contracts.js").DraftRole[] | undefined;
-        protocolVersion?: 2 | 1 | undefined;
+        protocolVersion?: 1 | 2 | undefined;
         researchBrief?: import("../domain/types.js").ResearchBriefRef | undefined;
         sourceInputs?: import("../research-workflows/source-inputs.js").ResearchSourceInput[] | undefined;
         testArtifacts?: ReviewTestArtifact[] | undefined;
@@ -154,7 +154,7 @@ export declare class DevelopmentReviewService {
         status: "failed" | "running" | "pending" | "passed" | "stale" | "rejected" | "disputed" | "awaiting_approval";
         protocolDocument?: import("../research-workflows/method-contracts.js").ProtocolDocument | undefined;
         draftRoles?: import("../research-workflows/method-contracts.js").DraftRole[] | undefined;
-        protocolVersion?: 2 | 1 | undefined;
+        protocolVersion?: 1 | 2 | undefined;
         researchBrief?: import("../domain/types.js").ResearchBriefRef | undefined;
         sourceInputs?: import("../research-workflows/source-inputs.js").ResearchSourceInput[] | undefined;
         testArtifacts?: ReviewTestArtifact[] | undefined;
@@ -210,7 +210,7 @@ export declare class DevelopmentReviewService {
         status: "failed" | "running" | "pending" | "passed" | "stale" | "rejected" | "disputed" | "awaiting_approval";
         protocolDocument?: import("../research-workflows/method-contracts.js").ProtocolDocument | undefined;
         draftRoles?: import("../research-workflows/method-contracts.js").DraftRole[] | undefined;
-        protocolVersion?: 2 | 1 | undefined;
+        protocolVersion?: 1 | 2 | undefined;
         researchBrief?: import("../domain/types.js").ResearchBriefRef | undefined;
         sourceInputs?: import("../research-workflows/source-inputs.js").ResearchSourceInput[] | undefined;
         testArtifacts?: ReviewTestArtifact[] | undefined;

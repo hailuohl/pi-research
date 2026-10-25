@@ -11,7 +11,7 @@ import { scope, userOnly, interactiveCoordinator } from './permissions.js';
 import { assertSyntheticFixture } from '../research-workflows/synthetic-fixtures.js';
 const gitTuple = (job) => ({ id: job.id, action: job.action, sessionId: job.sessionId, sourceRevisionId: job.sourceRevisionId, snapshot: job.snapshot, expectedHead: job.expectedHead, branch: job.branch, workspace: job.workspace, previousWorkspace: job.previousWorkspace, message: job.message, commitDate: job.commitDate });
 // Explicit effects: idempotency receipts do not make an operation a pure read.
-const READ = new Set(['formal_report_review_inspect', 'formal_report_review_source_read', 'research_method_compile', 'session_action_inspect', 'research_action_inspect', 'research_history_list', 'execution_environment_list', 'development_review_inspect', 'development_review_source_list', 'development_review_source_read', 'run_source_list', 'run_source_read', 'workspace_history_inspect', 'workspace_history_diff', 'workspace_history_operation', 'development_inspect', 'development_logs', 'experiment_source_list', 'experiment_source_read', 'experiment_source_diff', 'research_skill_list', 'research_skill_read', 'connector_status', 'project_inspect', 'workspace_list', 'workspace_read', 'evidence_read', 'artifact_read', 'run_inspect', 'run_logs', 'task_inspect', 'task_result_read', 'task_context_read', 'session_notice_read', 'research_brief_inspect', 'session_attachment_read', 'campaign_inspect', 'publication_templates', 'publication_template_inspect', 'publication_template_read', 'manuscript_list', 'manuscript_inspect', 'manuscript_source_read', 'publication_status', 'publication_inspect', 'publication_result', 'publication_build_list', 'publication_review_inspect', 'publication_review_list', 'approval_request']);
+const READ = new Set(['formal_report_review_inspect', 'formal_report_review_source_read', 'research_method_compile', 'session_action_inspect', 'research_action_inspect', 'research_history_list', 'execution_environment_list', 'development_review_inspect', 'development_review_source_list', 'development_review_source_read', 'run_source_list', 'run_source_read', 'workspace_history_inspect', 'workspace_history_diff', 'workspace_history_operation', 'development_inspect', 'development_logs', 'experiment_source_list', 'experiment_source_read', 'experiment_source_diff', 'research_skill_list', 'research_skill_read', 'connector_status', 'project_inspect', 'workspace_list', 'workspace_read', 'evidence_read', 'artifact_read', 'artifact_text_prepare', 'run_inspect', 'run_logs', 'task_inspect', 'task_result_read', 'task_context_read', 'session_notice_read', 'research_brief_inspect', 'session_attachment_read', 'campaign_inspect', 'publication_templates', 'publication_template_inspect', 'publication_template_read', 'manuscript_list', 'manuscript_inspect', 'manuscript_source_read', 'publication_status', 'publication_inspect', 'publication_result', 'publication_build_list', 'publication_review_inspect', 'publication_review_list', 'approval_request']);
 const EDIT = new Set(['workspace_write', 'workspace_history_set_mode', 'workspace_prepare_from_revision']);
 const WRITE = new Set(['research_task_checkpoint', 'publication_citation_check', 'formal_report_review_prepare', 'research_fixture_prepare', 'research_action_prepare', PUBLICATION_IMAGE_TOOL, DOCUMENT_IMAGE_TOOL, 'research_brief_save', 'development_review_prepare', 'reviewed_change_prepare', 'development_prepare', 'development_cancel', 'change_proposal_prepare', 'artifact_create', 'evidence_register', 'experiment_plan_submit', 'run_prepare', 'collaboration_plan_submit', 'agent_delegate', 'campaign_prepare', 'campaign_enroll', 'campaign_decision_submit', 'publication_template_import', 'manuscript_create', 'publication_prepare', 'publication_review_prepare', 'text_evidence_search', 'task_result_submit']);
 const EXECUTE = new Set(['session_action_resume', 'session_action_execute', 'host_execute', 'workspace_history_commit', 'development_submit', 'run_submit']);
@@ -22,6 +22,7 @@ export const TASK_PERMISSION_EFFECTS = ['workspace_write', 'workspace_history_se
 const NETWORK = new Set(['literature_search', 'literature_discover', 'paper_read']);
 export class SessionPermissionService {
     app;
+    evidenceExecutions = new WeakMap();
     constructor(app) {
         this.app = app;
     }
@@ -427,7 +428,35 @@ export class SessionPermissionService {
         ensure(a.sessionId === sessionId && a.operation === operation && digest(a.input) === digest(input) && a.source === this.source(sessionId, operation, input).fingerprint && ['approved', 'executing'].includes(a.state), 'APPROVAL_STALE', '审批来源、参数或状态已失效');
         this.app.approvals.assert(a.approvalId, a.projectId, a.id, digest({ operation, input, policy: ref, source: a.source }), 'session.action');
     } }
-    begin(id) { const a = this.app.store.get('session-action', id); ensure(a.state === 'approved', 'SESSION_ACTION_CONSUMED', '批准已被消费，禁止再次执行'); this.app.store.update('session-action', id, a.version, { state: 'executing' }); }
+    begin(id, actor) { const a = this.app.store.get('session-action', id); ensure(a.state === 'approved', 'SESSION_ACTION_CONSUMED', '批准已被消费，禁止再次执行'); this.app.store.update('session-action', id, a.version, { state: 'executing' }); const executing = { ...actor, permissionActionId: id }; if (a.operation === 'evidence_register' && a.input.readProtocol === 'fixed-text-v1')
+        this.evidenceExecutions.set(executing, { actionId: id, phase: 'executing' }); return executing; }
+    /** Registry-only completed-result capability; it can never authorize creation or another readId. */
+    evidenceReplayActor(actor, input, actionId, evidenceId) {
+        const a = this.app.store.get('session-action', actionId, actor.projectId), receipt = this.app.store.agentOperationResult(actor.sessionId, `permission-action:${actionId}`, { name: 'evidence_register', input });
+        ensure(a.state === 'completed' && receipt.found && receipt.value.id === evidenceId && receipt.value.fixedText?.readId === input.readId, 'ARTIFACT_READ_REQUIRED', '需要准确已完成动作的原证据回执', 403);
+        const replay = { ...actor, permissionActionId: actionId };
+        this.evidenceExecutions.set(replay, { actionId, phase: 'completed', evidenceId });
+        return replay;
+    }
+    /** Object identity proves this invocation passed Registry begin/receipt lookup; strings cannot supply authority. */
+    assertEvidenceAction(actor, input, reader, evidenceId) {
+        const capability = this.evidenceExecutions.get(actor), phase = evidenceId === undefined ? 'executing' : 'completed';
+        this.evidenceExecutions.delete(actor);
+        ensure(actor.type === 'agent' && capability && capability.actionId === actor.permissionActionId && capability.phase === phase && capability.evidenceId === evidenceId, 'ARTIFACT_READ_REQUIRED', '需要宿主当前准确批准执行或原证据回放', 403);
+        const a = this.app.store.get('session-action', capability.actionId, actor.projectId), ref = actor.permission ?? this.capture(actor.sessionId);
+        ensure(a.state === phase && a.operation === 'evidence_register' && a.input.readProtocol === 'fixed-text-v1' && a.sessionId === actor.sessionId && a.sessionId === reader.sessionId && typeof reader.generation === 'number' && a.generation === reader.generation && a.workflowContinuationId === actor.workflowContinuationId && digest(a.input) === digest(input) && digest(a.policy) === digest(ref), 'ARTIFACT_READ_REQUIRED', '批准动作与原代已送达页、参数或权限不符', 403);
+        this.app.operations.authorizeAgent(actor, 'evidence_register');
+        this.assertActionInput(input);
+        if (phase === 'executing')
+            this.validate(ref, a.sessionId, a.operation, input, a.id);
+        else {
+            this.assert(ref);
+            if (a.workflowContinuationId)
+                this.app.workflowContinuations.assertBindingCurrent(a.workflowContinuationId);
+            ensure(a.source === this.source(a.sessionId, a.operation, input).fingerprint, 'APPROVAL_STALE', '已完成动作来源已改变');
+            this.app.approvals.assert(a.approvalId, a.projectId, a.id, digest({ operation: a.operation, input, policy: ref, source: a.source }), 'session.action');
+        }
+    }
     complete(id) { const a = this.app.store.get('session-action', id); this.app.store.update('session-action', id, a.version, { state: 'completed' }); const approval = this.app.store.get('approval', a.approvalId); if (approval.automaticApproval)
         this.app.store.update('approval', approval.id, approval.version, { automaticExecution: { state: 'completed' } }); }
     failed(id, error, uncertain = false) { const a = this.app.store.get('session-action', id); if (['approved', 'executing'].includes(a.state)) {

@@ -452,7 +452,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
+                readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
                 readonly additionalProperties: false;
             };
             readonly sourceInputs: {
@@ -515,7 +515,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("digest" | "artifactId" | "path" | "size" | "workspace" | "readId")[];
+                    readonly required: ("artifactId" | "digest" | "path" | "size" | "workspace" | "readId")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1006,7 +1006,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
+                readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
                 readonly additionalProperties: false;
             };
             readonly sourceInputs: {
@@ -1069,7 +1069,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("digest" | "artifactId" | "path" | "size" | "workspace" | "readId")[];
+                    readonly required: ("artifactId" | "digest" | "path" | "size" | "workspace" | "readId")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;

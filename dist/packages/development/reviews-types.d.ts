@@ -36,7 +36,7 @@ export declare function reviewInputBinding(r: Pick<DevelopmentReview, 'jobId' | 
 }): {
     protocolDocument?: ProtocolDocument | undefined;
     draftRoles?: DraftRole[] | undefined;
-    protocolVersion?: 2 | 1 | undefined;
+    protocolVersion?: 1 | 2 | undefined;
     researchBrief?: ResearchBriefRef | undefined;
     sourceInputs?: ResearchSourceInput[] | undefined;
     testArtifacts?: ReviewTestArtifact[] | undefined;
@@ -54,7 +54,7 @@ export declare function reviewInputBinding(r: Pick<DevelopmentReview, 'jobId' | 
 } | {
     protocolDocument?: ProtocolDocument | undefined;
     draftRoles?: DraftRole[] | undefined;
-    protocolVersion?: 2 | 1 | undefined;
+    protocolVersion?: 1 | 2 | undefined;
     researchBrief?: ResearchBriefRef | undefined;
     sourceInputs?: ResearchSourceInput[] | undefined;
     testArtifacts?: ReviewTestArtifact[] | undefined;
@@ -79,7 +79,7 @@ export type DevelopmentReviewInputBinding = ReturnType<typeof reviewInputBinding
 export declare function reviewPayload(r: DevelopmentReview): {
     protocolDocument?: ProtocolDocument | undefined;
     draftRoles?: DraftRole[] | undefined;
-    protocolVersion?: 2 | 1 | undefined;
+    protocolVersion?: 1 | 2 | undefined;
     researchBrief?: ResearchBriefRef | undefined;
     sourceInputs?: ResearchSourceInput[] | undefined;
     testArtifacts?: ReviewTestArtifact[] | undefined;
@@ -105,7 +105,7 @@ export declare function reviewPayload(r: DevelopmentReview): {
 } | {
     protocolDocument?: ProtocolDocument | undefined;
     draftRoles?: DraftRole[] | undefined;
-    protocolVersion?: 2 | 1 | undefined;
+    protocolVersion?: 1 | 2 | undefined;
     researchBrief?: ResearchBriefRef | undefined;
     sourceInputs?: ResearchSourceInput[] | undefined;
     testArtifacts?: ReviewTestArtifact[] | undefined;

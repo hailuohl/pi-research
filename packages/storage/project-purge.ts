@@ -9,6 +9,7 @@ import {digest} from './store.js';
 import {DataPaths,loadDataPaths,assertPhysicalDataRoot} from './data-paths.js';
 import {stateCheck} from './backup.js';
 import {acquireMaintenance,assertMaintenance,releaseMaintenance,type MaintenancePermit} from './process-coordination.js';
+import {existingTextIndexBlobs,settleTextIndexLinks} from './text-index-publication.js';
 import {existingPublicationBlobs,settleDocumentPublicationLinks} from './document-publication.js';
 type Entry={key:string;type:'file'|'directory';dev:number;ino:number;size?:number;hash?:string};
 type RecordRow={kind:string;id:string;projectId:string|null;value:Record<string,unknown>};
@@ -29,7 +30,7 @@ function description(paths:DataPaths,key:string):Entry {
  return {key,type:'file',dev:stat.dev,ino:stat.ino,size,hash:hash.digest('hex')};
 }
 function walk(paths:DataPaths,key:string):Entry[]{const entry=description(paths,key);return entry.type==='file'?[entry]:[...readdirSync(paths.physical('pi-data:/'+key.split('/').map(encodeURIComponent).join('/'))).sort().flatMap(name=>walk(paths,key+'/'+name)),entry];}
-function references(paths:DataPaths,records:RecordRow[]){
+function references(db:DatabaseSync,paths:DataPaths,records:RecordRow[]){
  const result=new Set<string>();const visit=(value:unknown,key='',recordKind='')=>{
   if(Array.isArray(value)){value.forEach(v=>visit(v,key));return;}if(value&&typeof value==='object'){for(const [k,v]of Object.entries(value)){
    // A past command's arguments and cwd describe execution; they do not own resources.
@@ -42,7 +43,7 @@ function references(paths:DataPaths,records:RecordRow[]){
   const normalized=(path:string)=>process.platform==='win32'?path.toLowerCase():path,candidate=normalized(resolve(value));
   const managed=[paths.dataDir,...paths.legacyRoots].some(root=>{const base=normalized(root);return candidate===base||candidate.startsWith(base.endsWith(sep)?base:base+sep);});
   ensure(!managed,'PURGE_UNKNOWN_REFERENCE','存在未识别字段的旧受管路径引用');
- };for(const row of records){if(row.kind==='document-blob-publication'){for(const blob of existingPublicationBlobs(paths,row.projectId,row.value))result.add(paths.key(blob.blobPath));continue;}visit(row.value,'',row.kind);if(row.kind==='skill-package-revision'&&Array.isArray(row.value.files))for(const raw of row.value.files){const file=raw as {digest?:unknown};ensure(typeof file.digest==='string'&&/^[a-f0-9]{64}$/.test(file.digest),'PURGE_OWNER_INVALID','技能资源摘要无效');result.add('skill-blobs/'+file.digest);}}return result;
+ };for(const row of records){if(row.kind==='text-index-publication'){for(const blob of existingTextIndexBlobs(db,paths,row.projectId,row.value))result.add(paths.key(blob.blobPath));continue;}if(row.kind==='document-blob-publication'){for(const blob of existingPublicationBlobs(paths,row.projectId,row.value))result.add(paths.key(blob.blobPath));continue;}visit(row.value,'',row.kind);if(row.kind==='skill-package-revision'&&Array.isArray(row.value.files))for(const raw of row.value.files){const file=raw as {digest?:unknown};ensure(typeof file.digest==='string'&&/^[a-f0-9]{64}$/.test(file.digest),'PURGE_OWNER_INVALID','技能资源摘要无效');result.add('skill-blobs/'+file.digest);}}return result;
 }
 function receiptOwnership(db:DatabaseSync){
  for(const op of db.prepare('SELECT scope,response,owner_kind,project_id FROM operations').all()){
@@ -61,7 +62,7 @@ function protection(db:DatabaseSync,paths:DataPaths,pid:string,plan?:Plan){
  databaseShape(db);receiptOwnership(db);ensure(!db.prepare("SELECT 1 FROM project_purges WHERE project_id<>? AND state<>'completed' AND plan IS NOT NULL").get(pid),'PURGE_OTHER_PLAN_PENDING','另一个固定清理计划尚未完成，请先续清该计划');const all=rows(db),target=all.filter(r=>owned(r,pid)),other=retainedRecords(db,all,pid);
  const ids=new Set((plan?.records??target).map(r=>r.id));const cross=(v:unknown):boolean=>typeof v==='string'?ids.has(v):Array.isArray(v)?v.some(cross):!!v&&typeof v==='object'&&Object.values(v).some(cross);
  ensure(!other.some(r=>cross(r.value)),'PURGE_REFERENCED','其他项目或全局记录仍引用待清理项目');
- const targetRefs=references(paths,target),otherRefs=references(paths,other);
+ const targetRefs=references(db,paths,target),otherRefs=references(db,paths,other);
  if(plan){
   ensure(target.length===0||digest(target.map(r=>({kind:r.kind,id:r.id,hash:digest(r.value)})))===digest(plan.records),'PURGE_RECORDS_CHANGED','目标记录已改变，拒绝扩展原计划');
   ensure(![...otherRefs].some(ref=>plan.roots.some(root=>overlaps(ref,root))||plan.paths.some(entry=>overlaps(ref,entry.key))),'PURGE_REFERENCES_CHANGED','其他项目或维护计划新增了对删除资源的引用');
@@ -101,7 +102,7 @@ export function runOfflinePurge(dataDir:string,projectId:string,options:{offline
  try{db.exec('PRAGMA busy_timeout=5000');const paths=loadDataPaths(db,root);let request=db.prepare('SELECT * FROM project_purges WHERE project_id=?').get(projectId);ensure(request,'NOT_FOUND','没有永久清理请求',404);const operationId=String(request.id);
   permit=acquireMaintenance(db,root,operationId,options.resume===true,()=>{const current=db.prepare('SELECT * FROM project_purges WHERE project_id=?').get(projectId);ensure(current&&current.id===operationId,'PURGE_STATE_INVALID','清理请求身份已变化');ensure(current.state==='pending'||options.resume===true||current.state==='completed','PURGE_RESUME_REQUIRED','已开始或失败的计划必须显式 --resume');if(current.state!=='completed')ensure(current.name_hash===digest(options.confirmName),'PURGE_NAME_MISMATCH','确认名称不匹配');request=current;databaseShape(db);try{stateCheck(db,true);}catch(error){const e=asError(error);if(['BACKUP_BUSY','BACKUP_RECOVERY_PENDING'].includes(e.code))throw new DomainError('PURGE_BUSY','仍有执行、未知结果或未完成恢复，不能维护');throw error;}});const check=()=>assertMaintenance(db,root,permit!);
   if(request.state==='completed'){checkpoint(db);releaseMaintenance(db,root,permit);permit=undefined;return projectPurgeView(db,root,projectId);}
-  settleDocumentPublicationLinks(db,paths,permit);
+  settleDocumentPublicationLinks(db,paths,permit);settleTextIndexLinks(db,paths,permit);
   const patch=(state:string,phase:string,fields:{completed?:number;plan?:Plan;error?:string}={})=>{check();const changed=db.prepare("UPDATE project_purges SET state=?,phase=?,completed_paths=COALESCE(?,completed_paths),total_paths=COALESCE(?,total_paths),plan=COALESCE(?,plan),error=?,updated_at=? WHERE id=? AND state<>'completed'").run(state,phase,fields.completed??null,fields.plan?.paths.length??null,fields.plan?JSON.stringify(fields.plan):null,fields.error??null,new Date().toISOString(),operationId);ensure(changed.changes===1,'PURGE_STATE_INVALID','终态清理请求不可倒退');};
   const existing:Plan|undefined=request.plan?JSON.parse(String(request.plan)):undefined;if(existing){validatePlan(existing,paths,projectId,operationId);protection(db,paths,projectId,existing);}
   patch('running','planning');const plan:Plan=existing??buildPlan(db,paths,projectId,operationId);validatePlan(plan,paths,projectId,operationId);if(!existing)patch('running','files',{plan});

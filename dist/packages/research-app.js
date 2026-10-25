@@ -1,3 +1,4 @@
+import { ArtifactTextService } from './evidence/fixed-text.js';
 import { AutomaticApprovalService } from './policy/automatic-approvals.js';
 import { FormalReportReviewService } from './publications/formal-report-reviews.js';
 import { ResearchActionService } from './research-workflows/actions.js';
@@ -58,6 +59,7 @@ import { BudgetService } from './policy/budget.js';
 import { EvidenceService } from './evidence/service.js';
 import { RunService } from './runners/service.js';
 export class ResearchApp {
+    artifactTexts = new ArtifactTextService(this);
     workflowContinuations = new WorkflowContinuationService(this);
     automaticApprovals;
     researchActions;

@@ -121,7 +121,7 @@ export class TextCorpusGrantService {
     authorizeContent(actor:Actor,pid:string,name:string,x:Record<string,unknown>){
         let pmcEvidence:Evidence|undefined;
         if(actor.type==='agent'){
-            if(name==='artifact_read'||name==='evidence_register')assertPmcArtifactRead(this.app.store,actor,pid,x.artifactId as string);
+            if(name==='artifact_read'||name==='artifact_text_prepare'||name==='evidence_register')assertPmcArtifactRead(this.app.store,actor,pid,x.artifactId as string);
             if(name==='evidence_read'){
                 const e=this.app.store.get<Evidence>('evidence',x.evidenceId as string,pid);
                 if(e.providerText||isPmcArtifact(this.app.store,pid,e.artifactId)){
@@ -133,7 +133,7 @@ export class TextCorpusGrantService {
             }
         }
         if(actor.type!=='agent'||actor.taskId||actor.wakeupId&&!this.app.automaticApprovals.isContinuation(actor))return;
-        if(name==='artifact_read'||name==='evidence_register'){assertPdfArtifactRead(this.app.store,actor,pid,x.artifactId as string);return;}
+        if(name==='artifact_read'||name==='artifact_text_prepare'||name==='evidence_register'){assertPdfArtifactRead(this.app.store,actor,pid,x.artifactId as string);return;}
         if(name!=='evidence_read')return;
         const evidence=this.app.store.get<Evidence>('evidence',x.evidenceId as string,pid);
         if(!pmcEvidence&&!evidence.document&&!isPdfArtifact(this.app.store,pid,evidence.artifactId))return;

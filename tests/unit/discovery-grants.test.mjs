@@ -23,6 +23,15 @@ function revoke(s,g){const row=s.app.store.get('discovery-grant',g.id);return s.
 function start(s,id){const r=s.app.store.get('literature-task',id);return s.app.store.update('literature-task',id,r.version,{state:'running',phase:'requesting',generation:r.generation+1,leaseUntil:Date.now()+30000,deadline:Date.now()+60000}).generation;}
 const op=async(s,actor,name,input,key)=>s.app.operations.execute(actor,name,input,{projectId:s.project.id,idempotencyKey:key});
 
+test('fixed artifact pages retain Owner history but never turn revoked discovery into new evidence authority',async()=>{const s=setup();try{
+ network(s);const g=activate(s),who=agent(s),found=await op(s,who,'literature_discover',search,'fixed-search'),paper=await op(s,who,'paper_read',{source:'crossref',id:found.items[0].id},'fixed-paper'),a=s.app.store.get('artifact',paper.artifactId);
+ const prep={artifactId:a.id,sourceDigest:a.digest},p=await op(s,USER,'artifact_text_prepare',prep,'owner-prepare'),pageInput={...prep,textSourceId:p.textSourceId,readProtocol:'fixed-text-v1',cursor:0,limit:64},owner=await op(s,USER,'artifact_read',pageInput,'owner-page');await op(s,who,'artifact_text_prepare',prep,'agent-prepare');await op(s,who,'artifact_read',pageInput,'agent-page');
+ const register={artifactId:a.id,readProtocol:'fixed-text-v1',readId:owner.artifactReadId,exactQuote:owner.content},e=await op(s,USER,'evidence_register',register,'before-revoke');revoke(s,g);
+ assert.equal((await op(s,USER,'artifact_text_prepare',prep,'owner-prepare')).textSourceId,p.textSourceId);assert.equal((await op(s,USER,'artifact_read',pageInput,'owner-page')).content,owner.content);assert.equal((await op(s,USER,'evidence_read',{evidenceId:e.id},'history')).quote,e.quote);
+ for(const key of ['before-revoke','after-revoke'])await assert.rejects(op(s,USER,'evidence_register',register,key),{code:'DISCOVERY_GRANT_REVOKED'});assert.throws(()=>s.app.evidence.verify(s.project.id,e.id),{code:'DISCOVERY_GRANT_REVOKED'});assert.throws(()=>s.app.evidence.proposeClaim(USER,s.project.id,'New assertion',[e.id]),{code:'DISCOVERY_GRANT_REVOKED'});
+ await assert.rejects(op(s,who,'artifact_text_prepare',prep,'agent-prepare'),{code:'DISCOVERY_GRANT_REVOKED'});await assert.rejects(op(s,who,'artifact_read',pageInput,'agent-page'),{code:'DISCOVERY_GRANT_REVOKED'});await assert.rejects(op(s,who,'evidence_read',{evidenceId:e.id},'agent-history'),{code:'DISCOVERY_GRANT_REVOKED'});
+}finally{s.close();}});
+
 test('DiscoveryGrant freezes owner approval and disabled sources without creating network/model/compute work',()=>{const s=setup();try{
  const cfg=s.app.connectors.settings(USER,s.project.id),g=prepare(s);assert.equal(g.effectiveState,'draft');assert.throws(()=>s.app.discoveryGrants.activate(USER,s.project.id,{grantId:g.id,expectedVersion:g.version}),{code:'APPROVAL_REQUIRED'});
  activate(s,g);assert.equal(s.app.store.get('session',s.session.id).discoveryGrantId,g.id);assert.deepEqual(s.app.connectors.settings(USER,s.project.id),cfg);

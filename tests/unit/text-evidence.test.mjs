@@ -218,6 +218,8 @@ test('TextCorpusGrant rejects identities, mixed sources and PDF generic-tool byp
  for(const artifactId of [f.document.original.artifactId,f.result.pages[4].textArtifactId,secret]){
   assert.throws(()=>grantOp(s,who,'artifact_read',{artifactId},'read-'+artifactId),{code:'TEXT_GRANT_TOOL_DENIED'});
   assert.throws(()=>grantOp(s,who,'evidence_register',{artifactId,start:0,end:4,description:'bypass'},'register-'+artifactId),{code:'TEXT_GRANT_TOOL_DENIED'});
+  const a=s.app.store.get('artifact',artifactId);assert.throws(()=>grantOp(s,who,'artifact_text_prepare',{artifactId,sourceDigest:a.digest},'prepare-'+artifactId),{code:'TEXT_GRANT_TOOL_DENIED'});
+  assert.throws(()=>grantOp(s,who,'artifact_read',{artifactId,readProtocol:'fixed-text-v1',sourceDigest:a.digest,textSourceId:'untrusted-index'},'fixed-read-'+artifactId),{code:'TEXT_GRANT_TOOL_DENIED'});
  }
  const legacy=s.app.evidence.register(USER,s.project.id,f.result.pages[4].textArtifactId,0,4,'old generic evidence');assert.throws(()=>grantOp(s,who,'evidence_read',{evidenceId:legacy.id},'legacy-bypass'),{code:'TEXT_GRANT_EVIDENCE_DENIED'});
  assert.throws(()=>s.app.evidence.registerDocument(who,s.project.id,{documentVersionId:f.document.id,parseResultId:f.result.id,pageNumber:5,start:0,end:4,description:'direct'}),{code:'PERMISSION_DENIED'});

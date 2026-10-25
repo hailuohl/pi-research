@@ -152,7 +152,7 @@ const team = row('team', {
     delegationEnabled: boolean, planVersion: integer, directiveVersion: integer, planDigest: string, approvalId: string, summarySent: boolean, autoSummarize: boolean, blockReason: string, sourceRevisionId: string
 }, ['autoSummarize', 'blockReason', 'sourceRevisionId']);
 const providerTextLink=object({documentVersionId:string,documentDigest:string,rawDigest:string,textArtifactDigest:string,reportedVersion:string});
-const evidence = row('evidence', { type: enumeration('artifact', 'run', 'paper', 'code'), artifactId: string, digest: string, locator, quote: string, description: string, runId: string,document:DOCUMENT_EVIDENCE_LINK_SCHEMA,providerText:providerTextLink }, ['runId','document','providerText']);
+const evidence = row('evidence', { type: enumeration('artifact', 'run', 'paper', 'code'), artifactId: string, digest: string, locator, quote: string, description: string, runId: string,document:DOCUMENT_EVIDENCE_LINK_SCHEMA,providerText:providerTextLink,fixedText:object({readProtocol:{const:'fixed-text-v1'},textSourceId:string,readId:string,start:integer,end:integer}) }, ['runId','document','providerText','fixedText']);
 const skillSource = object({ repository: string, commit: string, path: string, blob: string });
 const member = row('campaign-member', { campaignId: string, roundId: string, experimentId: string, intentId: string, required: boolean, repairDecisionId: string,candidateId:string,repairOfMemberId:string,repairRootMemberId:string }, ['repairDecisionId','candidateId','repairOfMemberId','repairRootMemberId']);
 const decision = row('campaign-decision', {
@@ -216,7 +216,8 @@ export const OUTPUT_SCHEMAS = {
     }),
     reviewed_change_prepare:CORE_OUTPUT_SCHEMAS.change_proposal_prepare,
     workspace_list: array(object({ path: string, size: integer, digest: string }, ['digest'])),
-    artifact_read: object({ artifactId: string, digest: string, title: string, mediaType: string, content: string, cursor: integer, complete: boolean,reviewReadId:string },['reviewReadId']),
+    artifact_text_prepare:object({artifactId:string,sourceDigest:string,size:integer,textSourceId:string,readProtocol:{const:'fixed-text-v1'},utf16Length:integer,status:{const:'ready'}}),
+    artifact_read:{anyOf:[object({artifactId:string,digest:string,title:string,mediaType:string,content:string,cursor:integer,complete:boolean,reviewReadId:string},['reviewReadId']),object({artifactId:string,digest:string,sourceDigest:string,title:string,mediaType:string,content:string,cursor:integer,end:integer,totalBytes:integer,complete:boolean,textSourceId:string,readProtocol:{const:'fixed-text-v1'},cursorUnit:{const:'utf8-byte'},integrityScope:{const:'delivered-blocks'},utf16Start:integer,utf16End:integer,artifactReadId:string},['artifactReadId'])]},
     artifact_create: artifact,
     report_create:artifact,
     report_export:artifact,

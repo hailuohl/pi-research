@@ -13,10 +13,12 @@ export declare class EvidenceService {
         protocol: string;
     } | undefined;
     /** Host-only staging: immutable CAS bytes, without publishing any database record. */
-    prepareArtifact(projectId: string, title: string, bytes: Buffer, mediaType?: string, origin?: string, extra?: Partial<Artifact>): Artifact;
+    prepareArtifact(projectId: string, title: string, bytes: Buffer, mediaType?: string, origin?: string, extra?: Partial<Artifact>, maxBytes?: number): Artifact;
     /** Receives only host-prepared descriptors; callers fence authorization inside the publish transaction. */
     publishPrepared(projectId: string, prepared: Artifact): Row<Artifact>;
-    put(projectId: string, title: string, bytes: Buffer, mediaType?: string, origin?: string, extra?: Partial<Artifact>): Row<Artifact>;
+    put(projectId: string, title: string, bytes: Buffer, mediaType?: string, origin?: string, extra?: Partial<Artifact>, maxBytes?: number): Row<Artifact>;
+    /** Metadata only; transport/task authority remains the caller's responsibility. */
+    descriptor(actor: Actor, id: string): Row<Artifact>;
     read(actor: Actor, id: string): {
         artifact: Row<Artifact>;
         bytes: NonSharedBuffer;

@@ -11,6 +11,7 @@ import { GitCommand } from '../workspace/git-command.js';
 import { DataPaths, readDataLocation, setDataLocation } from './data-paths.js';
 import { hasEnvironmentSecrets, environmentSecrets, redactEnvironment } from '../runtime/environment.js';
 import { createModelManagementSnapshot, validateModelManagementSnapshot, restoreModelManagementSnapshot } from './model-management-backup.js';
+import { textIndexPublication, assertTextIndexSource } from './text-index-publication.js';
 import { documentPublication } from './document-publication.js';
 const ROOTS = new Set(['projects', 'experiments', 'workspaces', 'sessions', 'snapshots', 'artifacts', 'skill-blobs', 'jobs', 'sandbox-jobs', 'document-jobs', 'publication-jobs', 'git-worktrees', 'git-operations', 'exports', 'integration-staging', 'state.db.text-writes']);
 const EXCLUDED = new Set(['access.token', 'models.json', 'models-store.json', 'ssh-targets.json', 'ssh-targets.json.tmp', 'ssh-private', 'local-runtimes.json', 'local-runtimes.json.tmp', 'state.db-wal', 'state.db-shm', 'state.db-journal']);
@@ -292,6 +293,16 @@ async function references(db, sourceRoot, dataRoot, entries, legacyRoots = []) {
             ref(r.piSessionPath, 'file', `sessions/${r.id}/pi/`);
         if (kind === 'artifact')
             blob(r);
+        if (kind === 'text-index-publication') {
+            ensure(r.id === id, 'TEXT_INDEX_PUBLICATION_INVALID', '文本索引发布记录ID不符', 409);
+            const publication = textIndexPublication(logical, projectId, r);
+            assertTextIndexSource(db, projectId, publication);
+            blob({ path: publication.source.blobPath, digest: publication.source.digest, size: publication.source.size });
+            for (const pending of publication.blobs) {
+                if (index.has(logical.key(pending.blobPath)))
+                    blob({ path: pending.blobPath, digest: pending.digest, size: pending.size });
+            }
+        }
         if (kind === 'document-blob-publication') {
             ensure(r.id === id, 'DOCUMENT_PUBLICATION_INVALID', '原件发布记录标识与数据库不一致', 409);
             for (const pending of documentPublication(logical, projectId, r).blobs) {

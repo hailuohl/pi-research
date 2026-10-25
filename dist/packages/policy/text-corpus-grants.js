@@ -154,7 +154,7 @@ export class TextCorpusGrantService {
     authorizeContent(actor, pid, name, x) {
         let pmcEvidence;
         if (actor.type === 'agent') {
-            if (name === 'artifact_read' || name === 'evidence_register')
+            if (name === 'artifact_read' || name === 'artifact_text_prepare' || name === 'evidence_register')
                 assertPmcArtifactRead(this.app.store, actor, pid, x.artifactId);
             if (name === 'evidence_read') {
                 const e = this.app.store.get('evidence', x.evidenceId, pid);
@@ -168,7 +168,7 @@ export class TextCorpusGrantService {
         }
         if (actor.type !== 'agent' || actor.taskId || actor.wakeupId && !this.app.automaticApprovals.isContinuation(actor))
             return;
-        if (name === 'artifact_read' || name === 'evidence_register') {
+        if (name === 'artifact_read' || name === 'artifact_text_prepare' || name === 'evidence_register') {
             assertPdfArtifactRead(this.app.store, actor, pid, x.artifactId);
             return;
         }

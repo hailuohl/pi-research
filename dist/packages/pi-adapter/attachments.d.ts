@@ -23,6 +23,8 @@ export declare function readAttachment(store: Store, actor: Actor, session: Row<
     cursorUnit: "utf8-byte";
     status: "text";
     integrityScope: "delivered-blocks";
+    utf16Start?: number | undefined;
+    utf16End?: number | undefined;
     content: string;
     cursor: number;
     end: number;

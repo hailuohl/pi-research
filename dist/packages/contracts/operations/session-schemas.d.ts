@@ -29,7 +29,7 @@ export declare const SESSION_HISTORY_INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("query" | "limit" | "role" | "stateFilter" | "beforeSessionId")[];
+        readonly required: readonly ("role" | "query" | "limit" | "stateFilter" | "beforeSessionId")[];
         readonly additionalProperties: false;
     };
     readonly session_view: {

@@ -8,6 +8,7 @@ import { digest } from './store.js';
 import { loadDataPaths, assertPhysicalDataRoot } from './data-paths.js';
 import { stateCheck } from './backup.js';
 import { acquireMaintenance, assertMaintenance, releaseMaintenance } from './process-coordination.js';
+import { existingTextIndexBlobs, settleTextIndexLinks } from './text-index-publication.js';
 import { existingPublicationBlobs, settleDocumentPublicationLinks } from './document-publication.js';
 const TABLES = new Set(['schema_migrations', 'records', 'operations', 'events', 'inbox', 'compute_limits', 'compute_contexts', 'compute_queue', 'compute_gpu_claims', 'text_write_receipts', 'text_write_key', 'data_location', 'project_record_epochs', 'normal_process_claims', 'maintenance_gate', 'project_purges']);
 const CAS = ['artifacts', 'snapshots', 'skill-blobs'];
@@ -42,7 +43,7 @@ function description(paths, key) {
     return { key, type: 'file', dev: stat.dev, ino: stat.ino, size, hash: hash.digest('hex') };
 }
 function walk(paths, key) { const entry = description(paths, key); return entry.type === 'file' ? [entry] : [...readdirSync(paths.physical('pi-data:/' + key.split('/').map(encodeURIComponent).join('/'))).sort().flatMap(name => walk(paths, key + '/' + name)), entry]; }
-function references(paths, records) {
+function references(db, paths, records) {
     const result = new Set();
     const visit = (value, key = '', recordKind = '') => {
         if (Array.isArray(value)) {
@@ -71,6 +72,11 @@ function references(paths, records) {
         ensure(!managed, 'PURGE_UNKNOWN_REFERENCE', '存在未识别字段的旧受管路径引用');
     };
     for (const row of records) {
+        if (row.kind === 'text-index-publication') {
+            for (const blob of existingTextIndexBlobs(db, paths, row.projectId, row.value))
+                result.add(paths.key(blob.blobPath));
+            continue;
+        }
         if (row.kind === 'document-blob-publication') {
             for (const blob of existingPublicationBlobs(paths, row.projectId, row.value))
                 result.add(paths.key(blob.blobPath));
@@ -110,7 +116,7 @@ function protection(db, paths, pid, plan) {
     const ids = new Set((plan?.records ?? target).map(r => r.id));
     const cross = (v) => typeof v === 'string' ? ids.has(v) : Array.isArray(v) ? v.some(cross) : !!v && typeof v === 'object' && Object.values(v).some(cross);
     ensure(!other.some(r => cross(r.value)), 'PURGE_REFERENCED', '其他项目或全局记录仍引用待清理项目');
-    const targetRefs = references(paths, target), otherRefs = references(paths, other);
+    const targetRefs = references(db, paths, target), otherRefs = references(db, paths, other);
     if (plan) {
         ensure(target.length === 0 || digest(target.map(r => ({ kind: r.kind, id: r.id, hash: digest(r.value) }))) === digest(plan.records), 'PURGE_RECORDS_CHANGED', '目标记录已改变，拒绝扩展原计划');
         ensure(![...otherRefs].some(ref => plan.roots.some(root => overlaps(ref, root)) || plan.paths.some(entry => overlaps(ref, entry.key))), 'PURGE_REFERENCES_CHANGED', '其他项目或维护计划新增了对删除资源的引用');
@@ -261,6 +267,7 @@ export function runOfflinePurge(dataDir, projectId, options, hooks = {}) {
             return projectPurgeView(db, root, projectId);
         }
         settleDocumentPublicationLinks(db, paths, permit);
+        settleTextIndexLinks(db, paths, permit);
         const patch = (state, phase, fields = {}) => { check(); const changed = db.prepare("UPDATE project_purges SET state=?,phase=?,completed_paths=COALESCE(?,completed_paths),total_paths=COALESCE(?,total_paths),plan=COALESCE(?,plan),error=?,updated_at=? WHERE id=? AND state<>'completed'").run(state, phase, fields.completed ?? null, fields.plan?.paths.length ?? null, fields.plan ? JSON.stringify(fields.plan) : null, fields.error ?? null, new Date().toISOString(), operationId); ensure(changed.changes === 1, 'PURGE_STATE_INVALID', '终态清理请求不可倒退'); };
         const existing = request.plan ? JSON.parse(String(request.plan)) : undefined;
         if (existing) {

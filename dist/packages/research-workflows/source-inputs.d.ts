@@ -31,37 +31,37 @@ export declare class SourceInputService {
         version: number;
     }[];
     preview(session: Row<Session>, anchorBriefId: string | null, inherited: ResearchSourceInput[], status?: 'clarifying' | 'ready'): {
+        documentVersionId?: string | undefined;
         purpose?: "whole-text" | "dataset-reference" | undefined;
         digest: string;
         path: string;
         size: number;
         workspace: string;
         readId: string;
-        documentVersionId?: string | undefined;
         readProtocol?: "fixed-text-v1" | undefined;
         artifactId?: string;
     }[];
     previewBytes(session: Row<Session>, anchorBriefId: string | null, inherited: ResearchSourceInput[], bytePaths: string[]): ({
         bytes: undefined;
         verifiedReference: true;
+        documentVersionId?: string | undefined;
         purpose?: "whole-text" | "dataset-reference" | undefined;
         digest: string;
         path: string;
         size: number;
         workspace: string;
         readId: string;
-        documentVersionId?: string | undefined;
         readProtocol?: "fixed-text-v1" | undefined;
         artifactId?: string;
     } | {
         bytes: Buffer<ArrayBufferLike>;
+        documentVersionId?: string | undefined;
         purpose?: "whole-text" | "dataset-reference" | undefined;
         digest: string;
         path: string;
         size: number;
         workspace: string;
         readId: string;
-        documentVersionId?: string | undefined;
         readProtocol?: "fixed-text-v1" | undefined;
         artifactId?: string;
     })[];

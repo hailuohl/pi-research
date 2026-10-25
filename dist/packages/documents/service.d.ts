@@ -14,6 +14,8 @@ export declare class DocumentService {
     private textSource;
     importStream(actor: Actor, pid: string, value: DocumentStreamInput, input: AsyncIterable<Uint8Array>, key: string, signal?: AbortSignal): Promise<Row<DocumentVersion>>;
     readText(actor: Actor, pid: string, id: string, input: DocumentTextPageInput): {
+        utf16Start?: number | undefined;
+        utf16End?: number | undefined;
         content: string;
         cursor: number;
         end: number;

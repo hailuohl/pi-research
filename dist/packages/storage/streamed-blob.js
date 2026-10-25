@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { open, link, unlink, chmod, mkdir, rmdir } from 'node:fs/promises';
 import { openSync, closeSync, readSync, fstatSync, lstatSync, constants } from 'node:fs';
 import { join } from 'node:path';
-import { ensure } from '../domain/errors.js';
+import { ensure, DomainError } from '../domain/errors.js';
 import { integer } from '../contracts/validation.js';
 import { TEXT_PAGE_BYTES } from './file-policy.js';
 export const TEXT_BLOCK_BYTES = 1024 * 1024;
@@ -43,12 +43,15 @@ function unchanged(store, blob, file) {
     sameFile(file.before, lstatSync(validBlob(store, blob)));
 }
 /** Full integrity boundary, bounded memory; never use metadata as a hash substitute. */
-export function verifyStreamedBlob(store, blob) {
+export function verifyStreamedBlob(store, blob, validate) {
     const file = checkedOpen(store, blob);
     try {
         const hash = createHash('sha256');
-        for (let position = 0; position < blob.size; position += IO_BYTES)
+        for (let position = 0; position < blob.size; position += IO_BYTES) {
+            validate?.();
             hash.update(readAt(file.fd, Math.min(IO_BYTES, blob.size - position), position));
+        }
+        validate?.();
         ensure(hash.digest('hex') === blob.digest, 'ARTIFACT_CORRUPTED', '原件完整摘要校验失败', 409);
         unchanged(store, blob, file);
     }
@@ -88,6 +91,7 @@ async function publishFile(store, blob, validate) {
     validate();
     ensure(stage.isFile() && !stage.isSymbolicLink() && stage.dev === blob.stage.dev && stage.ino === blob.stage.ino && stage.size === blob.size, 'DOCUMENT_PUBLICATION_INVALID', '待发布暂存原件身份改变', 409);
     await chmod(path, 0o444);
+    validate();
     try {
         await link(path, target);
     }
@@ -95,6 +99,7 @@ async function publishFile(store, blob, validate) {
         if (error.code !== 'EEXIST')
             throw error;
     }
+    validate();
     // Also hash the selected CAS file on deduplication; a retry must not repair or overwrite old bytes.
     const before = lstatSync(validBlob(store, blob));
     ensure(before.isFile() && !before.isSymbolicLink() && before.size === blob.size, 'ARTIFACT_CORRUPTED', '产物库类型或大小改变', 409);
@@ -110,8 +115,8 @@ async function publishFile(store, blob, validate) {
     }
 }
 /** Private project-owned staging only. The caller must persist ownership before publishing CAS files. */
-export async function prepareStreamedText(store, projectId, input, maxBytes, validate) {
-    const stagingId = randomUUID(), directory = store.paths.physical(join(store.paths.dataDir, 'projects', projectId, 'document-upload-staging', stagingId));
+async function prepareText(store, projectId, input, maxBytes, validate, fixedSource) {
+    const stagingId = randomUUID(), directory = store.paths.physical(join(store.paths.dataDir, 'projects', projectId, fixedSource ? 'text-index-staging' : 'document-upload-staging', stagingId));
     await mkdir(directory, { recursive: true, mode: 0o700 });
     const cas = store.paths.physical(join(store.paths.dataDir, 'artifacts'));
     await mkdir(cas, { recursive: true, mode: 0o700 });
@@ -133,7 +138,8 @@ export async function prepareStreamedText(store, projectId, input, maxBytes, val
             throw error;
     } };
     try {
-        source = await open(paths[0], 'wx+', 0o600);
+        if (!fixedSource)
+            source = await open(paths[0], 'wx+', 0o600);
         entries = await open(paths[1], 'wx+', 0o600);
         const decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }), fullHash = createHash('sha256');
         let blockHash = createHash('sha256'), size = 0, blockSize = 0, blockCount = 0, utf16Length = 0, blockUtf16Start = 0;
@@ -154,7 +160,8 @@ export async function prepareStreamedText(store, projectId, input, maxBytes, val
                 }
                 fullHash.update(bytes);
                 blockHash.update(bytes);
-                await writeAt(source, bytes, size);
+                if (source)
+                    await writeAt(source, bytes, size);
                 size += length;
                 blockSize += length;
                 offset += length;
@@ -169,12 +176,16 @@ export async function prepareStreamedText(store, projectId, input, maxBytes, val
         catch {
             ensure(false, 'DOCUMENT_FORMAT_INVALID', '文本必须是有效 UTF-8', 400);
         }
-        ensure(size > 0, 'DOCUMENT_FORMAT_INVALID', '原件不能为空', 400);
+        ensure(size > 0 || !!fixedSource, 'DOCUMENT_FORMAT_INVALID', '原件不能为空', 400);
         if (blockSize)
             await finishBlock();
         const sourceDigest = fullHash.digest('hex');
-        await source.sync();
-        ensure(await hashFile(source, size, validate) === sourceDigest, 'ARTIFACT_CORRUPTED', '暂存原件摘要改变', 409);
+        if (source) {
+            await source.sync();
+            ensure(await hashFile(source, size, validate) === sourceDigest, 'ARTIFACT_CORRUPTED', '暂存原件摘要改变', 409);
+        }
+        else
+            ensure(fixedSource?.digest === sourceDigest && fixedSource.size === size, 'ARTIFACT_CORRUPTED', '固定原件完整摘要改变', 409);
         let leafCount = 1;
         while (leafCount < blockCount)
             leafCount *= 2;
@@ -200,8 +211,8 @@ export async function prepareStreamedText(store, projectId, input, maxBytes, val
         const indexDigest = await hashFile(index, indexSize, validate);
         const blob = { blobPath: store.paths.reference(join(cas, sourceDigest)), digest: sourceDigest, size }, indexBlob = { blobPath: store.paths.reference(join(cas, indexDigest)), digest: indexDigest, size: indexSize };
         const metadata = { format: 'utf8-block-tree-v1', sourceDigest, sourceSize: size, blockBytes: TEXT_BLOCK_BYTES, blockCount, leafCount, rootDigest, utf16Length };
-        const publication = { format: 'document-blob-publication-v1', stagingId, blobs: [blob, indexBlob].map((b, i) => { const path = paths[i === 0 ? 0 : 2], s = lstatSync(path); return { ...b, stage: { path: store.paths.reference(path), dev: s.dev, ino: s.ino } }; }) };
-        await source.close();
+        const publication = { stagingId, blobs: (fixedSource ? [indexBlob] : [blob, indexBlob]).map((b, i) => { const path = paths[fixedSource || i !== 0 ? 2 : 0], s = lstatSync(path); return { ...b, stage: { path: store.paths.reference(path), dev: s.dev, ino: s.ino } }; }) };
+        await source?.close();
         source = undefined;
         await index.close();
         index = undefined;
@@ -217,6 +228,50 @@ export async function prepareStreamedText(store, projectId, input, maxBytes, val
             await dispose();
     }
 }
+export async function prepareStreamedText(store, projectId, input, maxBytes, validate) {
+    const prepared = await prepareText(store, projectId, input, maxBytes, validate);
+    return { ...prepared, publication: { ...prepared.publication, format: 'document-blob-publication-v1' } };
+}
+/** Index an already-owned fixed source: only entries/index are staged, never the source bytes. */
+export async function prepareFixedTextIndex(store, projectId, artifactId, source, maxBytes, validate, checkpoint = validate) {
+    async function* input() {
+        const path = validBlob(store, source), before = lstatSync(path);
+        ensure(before.isFile() && !before.isSymbolicLink() && before.size === source.size, 'ARTIFACT_CORRUPTED', '固定原件大小或类型改变', 409);
+        const file = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+        try {
+            sameFile(before, await file.stat());
+            for (let cursor = 0; cursor < source.size; cursor += IO_BYTES) {
+                if (cursor % TEXT_BLOCK_BYTES === 0)
+                    checkpoint();
+                validate();
+                yield await readAsync(file, Math.min(IO_BYTES, source.size - cursor), cursor);
+            }
+            checkpoint();
+            sameFile(before, await file.stat());
+            sameFile(before, lstatSync(path));
+        }
+        finally {
+            await file.close();
+        }
+    }
+    const prepared = await prepareText(store, projectId, input(), maxBytes, validate, source);
+    const publication = { ...prepared.publication, format: 'text-index-publication-v1', source: { artifactId, ...source } };
+    return { ...prepared, publication };
+}
+export async function publishFixedTextIndex(store, publication, validate) {
+    validate();
+    try {
+        await publishFile(store, publication.blobs[0], validate);
+    }
+    catch (error) {
+        if (!(error instanceof DomainError) || error.code !== 'ARTIFACT_CHANGED')
+            throw error;
+        // Another publisher may remove its redundant stage link; re-prove the entire current CAS once.
+        validate();
+        verifyStreamedBlob(store, publication.blobs[0], validate);
+    }
+    validate();
+}
 export async function publishStreamedText(store, publication, validate) {
     for (const blob of publication.blobs) {
         validate();
@@ -225,14 +280,14 @@ export async function publishStreamedText(store, publication, validate) {
     validate();
 }
 function validateIndex(source, indexBlob, index) {
-    ensure(index.format === 'utf8-block-tree-v1' && index.sourceDigest === source.digest && index.sourceSize === source.size && index.blockBytes === TEXT_BLOCK_BYTES && Number.isSafeInteger(index.blockCount) && index.blockCount === Math.ceil(source.size / TEXT_BLOCK_BYTES) && index.blockCount > 0, 'ARTIFACT_CORRUPTED', '文本索引来源绑定失效', 409);
+    ensure(index.format === 'utf8-block-tree-v1' && index.sourceDigest === source.digest && index.sourceSize === source.size && index.blockBytes === TEXT_BLOCK_BYTES && Number.isSafeInteger(index.blockCount) && index.blockCount === Math.ceil(source.size / TEXT_BLOCK_BYTES) && index.blockCount >= 0, 'ARTIFACT_CORRUPTED', '文本索引来源绑定失效', 409);
     let leafCount = 1;
     while (leafCount < index.blockCount)
         leafCount *= 2;
-    ensure(index.leafCount === leafCount && indexBlob.size === (2 * leafCount - 1) * HASH_BYTES + index.blockCount * ENTRY_BYTES && /^[a-f0-9]{64}$/.test(index.rootDigest) && Number.isSafeInteger(index.utf16Length) && index.utf16Length > 0 && index.utf16Length <= source.size, 'ARTIFACT_CORRUPTED', '文本索引结构失效', 409);
+    ensure(index.leafCount === leafCount && indexBlob.size === (2 * leafCount - 1) * HASH_BYTES + index.blockCount * ENTRY_BYTES && /^[a-f0-9]{64}$/.test(index.rootDigest) && Number.isSafeInteger(index.utf16Length) && (source.size === 0 ? index.utf16Length === 0 : index.utf16Length > 0) && index.utf16Length <= source.size, 'ARTIFACT_CORRUPTED', '文本索引结构失效', 409);
 }
 /** Merkle proofs authenticate only touched block entries, keeping index I/O bounded even for large configured limits. */
-export function readStreamedText(store, source, indexBlob, index, cursor, limit) {
+export function readStreamedText(store, source, indexBlob, index, cursor, limit, utf16 = false) {
     validateIndex(source, indexBlob, index);
     integer(cursor, 'cursor', 0, source.size);
     integer(limit, 'limit', 4, TEXT_PAGE_BYTES);
@@ -245,9 +300,11 @@ export function readStreamedText(store, source, indexBlob, index, cursor, limit)
         if (cursor === source.size) {
             unchanged(store, source, sourceFile);
             unchanged(store, indexBlob, indexFile);
-            return { content: '', cursor, end: cursor, totalBytes: source.size, complete: true };
+            return { content: '', cursor, end: cursor, totalBytes: source.size, complete: true, ...(utf16 ? { utf16Start: index.utf16Length, utf16End: index.utf16Length } : {}) };
         }
-        const wantedEnd = Math.min(cursor + limit, source.size), first = Math.floor(cursor / TEXT_BLOCK_BYTES), last = Math.floor(Math.min(wantedEnd, source.size - 1) / TEXT_BLOCK_BYTES), chunks = [];
+        // One preceding authenticated block supplies any UTF-8 character pending at the checkpoint.
+        const wantedEnd = Math.min(cursor + limit, source.size), first = Math.max(0, Math.floor(cursor / TEXT_BLOCK_BYTES) - (utf16 ? 1 : 0)), last = Math.floor(Math.min(wantedEnd, source.size - 1) / TEXT_BLOCK_BYTES), chunks = [];
+        let checkpoint = 0;
         for (let block = first; block <= last; block++) {
             const entry = readAt(indexFd, ENTRY_BYTES, (2 * index.leafCount - 1) * HASH_BYTES + block * ENTRY_BYTES);
             let position = index.leafCount - 1 + block, proof = sha(entry);
@@ -257,6 +314,8 @@ export function readStreamedText(store, source, indexBlob, index, cursor, limit)
                 position = Math.floor((position - 1) / 2);
             }
             ensure(proof.toString('hex') === index.rootDigest, 'ARTIFACT_CORRUPTED', '文本索引块校验失败', 409);
+            if (block === Math.floor(cursor / TEXT_BLOCK_BYTES))
+                checkpoint = Number(entry.readBigUInt64BE(32));
             const bytes = readAt(sourceFd, Math.min(TEXT_BLOCK_BYTES, source.size - block * TEXT_BLOCK_BYTES), block * TEXT_BLOCK_BYTES);
             ensure(sha(bytes).equals(entry.subarray(0, HASH_BYTES)), 'ARTIFACT_CORRUPTED', '原件块摘要改变', 409);
             chunks.push(bytes);
@@ -273,9 +332,22 @@ export function readStreamedText(store, source, indexBlob, index, cursor, limit)
         catch {
             ensure(false, 'ARTIFACT_CORRUPTED', '原件文本编码改变', 409);
         }
+        let utf16Start;
+        if (utf16) {
+            let prefix = (Math.floor(cursor / TEXT_BLOCK_BYTES) - first) * TEXT_BLOCK_BYTES;
+            while (prefix > 0 && (bytes[prefix] & 0xc0) === 0x80)
+                prefix--;
+            // The checkpoint excludes a split character; decode it from its authenticated leading byte.
+            try {
+                utf16Start = checkpoint + new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes.subarray(prefix, start)).length;
+            }
+            catch {
+                ensure(false, 'ARTIFACT_CORRUPTED', '文本位置编码改变', 409);
+            }
+        }
         unchanged(store, source, sourceFile);
         unchanged(store, indexBlob, indexFile);
-        return { content: content, cursor, end: first * TEXT_BLOCK_BYTES + end, totalBytes: source.size, complete: first * TEXT_BLOCK_BYTES + end === source.size };
+        return { content: content, cursor, end: first * TEXT_BLOCK_BYTES + end, totalBytes: source.size, complete: first * TEXT_BLOCK_BYTES + end === source.size, ...(utf16 ? { utf16Start: utf16Start, utf16End: utf16Start + content.length } : {}) };
     }
     finally {
         closeSync(sourceFd);

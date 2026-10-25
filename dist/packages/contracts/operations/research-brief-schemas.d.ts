@@ -56,7 +56,7 @@ export declare const RESEARCH_SOURCE_INPUT_SCHEMA: {
             readonly maxLength: number;
         };
     };
-    readonly required: ("digest" | "artifactId" | "path" | "size" | "workspace" | "readId")[];
+    readonly required: ("artifactId" | "digest" | "path" | "size" | "workspace" | "readId")[];
     readonly additionalProperties: false;
 };
 export declare const RESEARCH_BRIEF_REFERENCE_SCHEMA: {
@@ -89,7 +89,7 @@ export declare const RESEARCH_BRIEF_REFERENCE_SCHEMA: {
             readonly maxLength: number;
         };
     };
-    readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
+    readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
     readonly additionalProperties: false;
 };
 export declare const RESEARCH_BRIEF_INPUT_SCHEMAS: {
@@ -300,7 +300,7 @@ export declare const RESEARCH_BRIEF_INPUT_SCHEMAS: {
                 readonly minItems: number;
             };
         };
-        readonly required: ("status" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "expectedRevisionId")[];
+        readonly required: ("status" | "scope" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary" | "expectedRevisionId")[];
         readonly additionalProperties: false;
     };
     readonly research_brief_inspect: {
@@ -640,7 +640,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("digest" | "artifactId" | "path" | "size" | "workspace" | "readId")[];
+                    readonly required: ("artifactId" | "digest" | "path" | "size" | "workspace" | "readId")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -705,7 +705,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "id" | "createdAt" | "projectId" | "rootSessionId" | "status" | "revision" | "digest" | "kind" | "updatedAt" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary")[];
+        readonly required: ("rootSessionId" | "kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "scope" | "revision" | "digest" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
         readonly additionalProperties: false;
     };
     readonly research_brief_inspect: {
@@ -1014,7 +1014,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                                         readonly maxLength: number;
                                     };
                                 };
-                                readonly required: ("digest" | "artifactId" | "path" | "size" | "workspace" | "readId")[];
+                                readonly required: ("artifactId" | "digest" | "path" | "size" | "workspace" | "readId")[];
                                 readonly additionalProperties: false;
                             };
                             readonly minItems: number;
@@ -1079,7 +1079,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("version" | "id" | "createdAt" | "projectId" | "rootSessionId" | "status" | "revision" | "digest" | "kind" | "updatedAt" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary")[];
+                    readonly required: ("rootSessionId" | "kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "scope" | "revision" | "digest" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
                     readonly additionalProperties: false;
                 }, {
                     readonly type: "null";
@@ -1154,7 +1154,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("current" | "evidenceId")[];
+                    readonly required: ("evidenceId" | "current")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1472,7 +1472,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("digest" | "artifactId" | "path" | "size" | "workspace" | "readId")[];
+                    readonly required: ("artifactId" | "digest" | "path" | "size" | "workspace" | "readId")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1537,7 +1537,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "id" | "createdAt" | "projectId" | "rootSessionId" | "status" | "revision" | "digest" | "kind" | "updatedAt" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary")[];
+        readonly required: ("rootSessionId" | "kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "scope" | "revision" | "digest" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
         readonly additionalProperties: false;
     };
 };

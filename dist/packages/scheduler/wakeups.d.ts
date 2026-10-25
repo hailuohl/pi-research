@@ -233,7 +233,7 @@ export declare class WakeupService {
             status: "failed" | "running" | "pending" | "passed" | "stale" | "rejected" | "disputed" | "awaiting_approval";
             protocolDocument?: import("../research-workflows/method-contracts.js").ProtocolDocument | undefined;
             draftRoles?: import("../research-workflows/method-contracts.js").DraftRole[] | undefined;
-            protocolVersion?: 2 | 1 | undefined;
+            protocolVersion?: 1 | 2 | undefined;
             researchBrief?: import("../domain/types.js").ResearchBriefRef | undefined;
             sourceInputs?: import("../research-workflows/source-inputs.js").ResearchSourceInput[] | undefined;
             testArtifacts?: import("../development/review-assessment.js").ReviewTestArtifact[] | undefined;
@@ -289,7 +289,7 @@ export declare class WakeupService {
             status: "failed" | "running" | "pending" | "passed" | "stale" | "rejected" | "disputed" | "awaiting_approval";
             protocolDocument?: import("../research-workflows/method-contracts.js").ProtocolDocument | undefined;
             draftRoles?: import("../research-workflows/method-contracts.js").DraftRole[] | undefined;
-            protocolVersion?: 2 | 1 | undefined;
+            protocolVersion?: 1 | 2 | undefined;
             researchBrief?: import("../domain/types.js").ResearchBriefRef | undefined;
             sourceInputs?: import("../research-workflows/source-inputs.js").ResearchSourceInput[] | undefined;
             testArtifacts?: import("../development/review-assessment.js").ReviewTestArtifact[] | undefined;
@@ -339,7 +339,7 @@ export declare class WakeupService {
             } | undefined;
             id: string;
             experimentId: string;
-            state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "unknown" | "submitting" | "cancelling";
+            state: "succeeded" | "failed" | "cancelled" | "unknown" | "queued" | "running" | "submitting" | "cancelling";
             integrity: "pending" | "incomplete" | "complete" | "invalid";
             validation: "incomplete" | "invalid" | "verified";
             explanation: string;
@@ -451,7 +451,7 @@ export declare class WakeupService {
         purpose: string;
         run: {
             id: string;
-            state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "unknown" | "submitting" | "cancelling";
+            state: "succeeded" | "failed" | "cancelled" | "unknown" | "queued" | "running" | "submitting" | "cancelling";
             integrity: "pending" | "incomplete" | "complete" | "invalid";
             validation: "incomplete" | "invalid" | "verified";
             explanation: string;

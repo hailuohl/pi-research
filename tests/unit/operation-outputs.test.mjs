@@ -123,6 +123,8 @@ test('all existing public tools have closed, literal success contracts exercised
   await call('workspace_write',{path:'sample.txt',content:'sample',expectedDigest:null});
   const sampleRead=await call('workspace_read',{path:'sample.txt'});
   const artifact=await call('artifact_create',{title:'text.txt',content:'measured original text'});
+  const preparedText=await call('artifact_text_prepare',{artifactId:artifact.id,sourceDigest:artifact.digest});assert.equal(preparedText.status,'ready');assert.equal(preparedText.readProtocol,'fixed-text-v1');
+  const fixedPage=await call('artifact_read',{artifactId:artifact.id,sourceDigest:artifact.digest,textSourceId:preparedText.textSourceId,readProtocol:'fixed-text-v1'});assert.equal(fixedPage.content,'measured original text');assert.equal(fixedPage.sourceDigest,artifact.digest);
   await call('artifact_read',{artifactId:artifact.id});
   const evidence=await call('evidence_register',{artifactId:artifact.id,exactQuote:'measured'});
   await call('evidence_read',{evidenceId:evidence.id});

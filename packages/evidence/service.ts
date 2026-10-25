@@ -9,6 +9,7 @@ import {captureAcceptance,assertAcceptanceCurrent} from './acceptance.js';
 import {assertProjectReadable,assertProjectWritable} from '../policy/lifecycle.js';
 import { readFileSync } from 'node:fs';
 import {prepareArtifactBlob} from '../storage/artifact-blob.js';
+import {verifyFixedTextEvidence} from './fixed-text.js';
 import type { AppContext } from '../domain/context.js';
 import type { Actor, Artifact, Evidence, Claim, Task, Row } from '../domain/types.js';
 import { scope, userOnly } from '../policy/permissions.js';
@@ -19,10 +20,11 @@ import {environmentSecrets,redactEnvironment} from '../runtime/environment.js';
 import {fixedResearchBrief} from '../research-workflows/briefs.js';
 import type {ResearchBrief} from '../research-workflows/briefs.js';
 import {assertFrozenMethod} from '../research-workflows/method-contracts.js';
-function readEvidenceArtifact(c:Pick<AppContext,'store'>,actor:Actor,id:string) {const a=c.store.get<Artifact>('artifact',id);scope(actor,a.projectId!);assertProjectReadable(c.store,a.projectId!,actor);ensure(a.origin!=='native-continuation'||actor.type!=='agent','NATIVE_CONTINUATION_PRIVATE','原生续跑材料不向普通助手提供',403);assertPmcArtifactRead(c.store,actor,a.projectId!,id);assertPdfArtifactRead(c.store,actor,a.projectId!,id);const bytes=readFileSync(c.store.paths.physical(a.path));ensure(digest(bytes)===a.digest,'ARTIFACT_CORRUPTED','产物内容校验失败',409);return {artifact:a,bytes};}
+function evidenceDescriptor(c:Pick<AppContext,'store'>,actor:Actor,id:string) {const a=c.store.get<Artifact>('artifact',id);scope(actor,a.projectId!);assertProjectReadable(c.store,a.projectId!,actor);ensure(a.origin!=='native-continuation'||actor.type!=='agent','NATIVE_CONTINUATION_PRIVATE','原生续跑材料不向普通助手提供',403);assertPmcArtifactRead(c.store,actor,a.projectId!,id);assertPdfArtifactRead(c.store,actor,a.projectId!,id);return a;}
+function readEvidenceArtifact(c:Pick<AppContext,'store'>,actor:Actor,id:string) {const a=evidenceDescriptor(c,actor,id),bytes=readFileSync(c.store.paths.physical(a.path));ensure(digest(bytes)===a.digest,'ARTIFACT_CORRUPTED','产物内容校验失败',409);return {artifact:a,bytes};}
 
 /** Host reference validation shares the complete evidence chain with the ordinary service. */
-export function verifyEvidence(c:Pick<AppContext,'store'>,projectId:string,evidenceId:string,current=true) {const e=c.store.get<Evidence>('evidence',evidenceId,projectId);const {artifact,bytes}=readEvidenceArtifact(c,{type:'system'},e.artifactId);ensure(artifact.projectId===projectId&&artifact.digest===e.digest&&bytes.toString('utf8').slice(e.locator.start,e.locator.end)===e.quote,'EVIDENCE_INVALID','证据引用或内容已失效',409);if(current)assertDiscoveryArtifact(c.store,projectId,artifact);if(e.providerText)verifyPmcText(c,projectId,e.providerText.documentVersionId,e.providerText,e.artifactId);if(e.document){const link=verifyDocumentLink(c,projectId,e.document,e.artifactId);if(current)assertDiscoveryDocument(c.store,projectId,link.document);}return e;}
+export function verifyEvidence(c:Pick<AppContext,'store'>,projectId:string,evidenceId:string,current=true) {const e=c.store.get<Evidence>('evidence',evidenceId,projectId);const artifact=evidenceDescriptor(c,{type:'system'},e.artifactId);if(e.fixedText)verifyFixedTextEvidence(c.store,projectId,artifact,e);else {const {bytes}=readEvidenceArtifact(c,{type:'system'},e.artifactId);ensure(artifact.projectId===projectId&&artifact.digest===e.digest&&bytes.toString('utf8').slice(e.locator.start,e.locator.end)===e.quote,'EVIDENCE_INVALID','证据引用或内容已失效',409);}if(current)assertDiscoveryArtifact(c.store,projectId,artifact);if(e.providerText)verifyPmcText(c,projectId,e.providerText.documentVersionId,e.providerText,e.artifactId);if(e.document){const link=verifyDocumentLink(c,projectId,e.document,e.artifactId);if(current)assertDiscoveryDocument(c.store,projectId,link.document);}return e;}
 
 export class EvidenceService {
     constructor(private c: AppContext) { }
@@ -33,7 +35,7 @@ export class EvidenceService {
         const brief=fixedResearchBrief(this.c.store,projectId,ref,'formal');ensure(brief.methodContract&&brief.methodContract.contractDigest===expectedContractDigest,'METHOD_CONTRACT_CORRUPTED','方法清单标识缺失或不符合原冻结计划');const compiled=assertFrozenMethod(this.c.store,projectId,brief.methodContract,brief.sourceInputs,brief.rootSessionId,'formal');return {contract:brief.methodContract,protocol:compiled!.protocol};
     }
     /** Host-only staging: immutable CAS bytes, without publishing any database record. */
-    prepareArtifact(projectId: string, title: string, bytes: Buffer, mediaType = 'text/plain', origin = 'user', extra: Partial<Artifact> = {}):Artifact {
+    prepareArtifact(projectId: string, title: string, bytes: Buffer, mediaType = 'text/plain', origin = 'user', extra: Partial<Artifact> = {},maxBytes=32*1024*1024):Artifact {
         this.c.store.get('project', projectId);
         if(origin.startsWith('agent:')) {
             const secrets=environmentSecrets(this.c.dataDir);
@@ -45,13 +47,15 @@ export class EvidenceService {
             }
         }
         text(title, 'title', 200);
-        ensure(bytes.length <= 32 * 1024 * 1024, 'ARTIFACT_TOO_LARGE', '产物超过 32 MiB', 413);
+        ensure(Number.isSafeInteger(maxBytes)&&maxBytes>0&&bytes.length<=maxBytes, 'ARTIFACT_TOO_LARGE', `产物超过 ${maxBytes} bytes`, 413);
         const blob=prepareArtifactBlob(this.c.store,bytes);
         return { ...extra, title, digest:blob.digest, size:blob.size, path:blob.blobPath, mediaType, origin };
     }
     /** Receives only host-prepared descriptors; callers fence authorization inside the publish transaction. */
     publishPrepared(projectId:string,prepared:Artifact){this.c.store.get('project',projectId);return this.c.store.create<Artifact>('artifact',projectId,prepared);}
-    put(projectId:string,title:string,bytes:Buffer,mediaType='text/plain',origin='user',extra:Partial<Artifact>={}){return this.publishPrepared(projectId,this.prepareArtifact(projectId,title,bytes,mediaType,origin,extra));}
+    put(projectId:string,title:string,bytes:Buffer,mediaType='text/plain',origin='user',extra:Partial<Artifact>={},maxBytes=32*1024*1024){return this.publishPrepared(projectId,this.prepareArtifact(projectId,title,bytes,mediaType,origin,extra,maxBytes));}
+    /** Metadata only; transport/task authority remains the caller's responsibility. */
+    descriptor(actor:Actor,id:string){return evidenceDescriptor(this.c,actor,id);}
     read(actor: Actor, id: string) {return readEvidenceArtifact(this.c,actor,id);}
     register(actor: Actor, projectId: string, artifactId: string, start: number|undefined, end: number|undefined, description: string, type: Evidence['type'] = 'artifact', runId?: string, exactQuote?:string) {
         scope(actor, projectId);

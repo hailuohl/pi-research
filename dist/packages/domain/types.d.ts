@@ -305,6 +305,13 @@ export interface Artifact {
     taskId?: string;
 }
 export interface Evidence {
+    fixedText?: {
+        readProtocol: 'fixed-text-v1';
+        textSourceId: string;
+        readId: string;
+        start: number;
+        end: number;
+    };
     type: 'artifact' | 'run' | 'paper' | 'code';
     artifactId: string;
     digest: string;

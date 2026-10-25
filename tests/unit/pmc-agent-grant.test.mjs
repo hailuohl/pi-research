@@ -53,6 +53,7 @@ test('PMC grant rejects non-owner preparation, mixed or extra documents, unrelat
  const f=fixture(s);assert.throws(()=>s.app.textCorpusGrants.prepare({...USER,sessionId:s.session.id},s.project.id,f.prepare),{code:'PMC_OWNER_ONLY'});
  assert.throws(()=>s.app.textCorpusGrants.prepare(USER,s.project.id,{...f.prepare,pmcDocuments:[...f.prepare.pmcDocuments,{documentVersionId:f.other.id}]}),{code:'TEXT_SOURCE_REQUIRED'});
  activate(s,f);
+ for(const artifactId of [f.document.original.artifactId,f.document.derivedText.artifactId]){const a=s.app.store.get('artifact',artifactId);assert.throws(()=>op(s,f.actor,'artifact_text_prepare',{artifactId,sourceDigest:a.digest},'prepare-'+artifactId),{code:'PMC_OWNER_ONLY'});}
  const owner=op(s,USER,'text_evidence_search',{...f.input,query:'control'},'owner-result'),generic=s.app.evidence.register(USER,s.project.id,f.document.derivedText.artifactId,0,10,'generic');
  assert.throws(()=>read(s,f,owner.hits[0].evidenceId),{code:'TEXT_GRANT_EVIDENCE_DENIED'});assert.throws(()=>read(s,f,generic.id),{code:'PMC_OWNER_ONLY'});
  assert.throws(()=>search(s,f,'outside',{pmcDocuments:[{documentVersionId:f.other.id}]}),{code:'TEXT_GRANT_SOURCE_DENIED'});
@@ -63,6 +64,7 @@ test('PMC grant rejects non-owner preparation, mixed or extra documents, unrelat
   if(Object.keys(extra).length)assert.throws(()=>s.app.textEvidence.search(actor,s.project.id,f.input),{code:'PERMISSION_DENIED'});
   for(const artifactId of [f.document.original.artifactId,f.document.derivedText.artifactId]){
    assert.throws(()=>s.app.evidence.read(actor,artifactId),{code:'PMC_OWNER_ONLY'});
+   assert.throws(()=>s.app.textCorpusGrants.authorizeContent(actor,s.project.id,'artifact_text_prepare',{artifactId}),{code:'PMC_OWNER_ONLY'});
    assert.throws(()=>s.app.evidence.register(actor,s.project.id,artifactId,0,5,'bypass'),{code:'PMC_OWNER_ONLY'});
   }
  }

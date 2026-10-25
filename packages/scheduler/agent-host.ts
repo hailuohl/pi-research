@@ -317,12 +317,13 @@ export class AgentHost {
         try{if(!a.ended)this.finish(a,`Worker 退出（${code}）；请求或工具用量可能需要对账`);this.app.modelHttp.workerExited(a.admissionId,this.ownerHost,a.generation);this.admission.release(a.admissionId,this.ownerHost,a.generation,'confirmed-exit');}finally{if(this.active.get(a.sessionId)===a)this.active.delete(a.sessionId);}
     }
     private readResponse(a:Active,actor:Actor,tool:string,callId:string,result:unknown,permission:PermissionReference,epoch:number){
-        const readId=(result as {attachmentReadId?:string})?.attachmentReadId;if(tool!=='session_attachment_read'||!readId)return;
+        const readId=tool==='artifact_read'?(result as {artifactReadId?:string})?.artifactReadId:tool==='session_attachment_read'?(result as {attachmentReadId?:string})?.attachmentReadId:undefined;if(!readId)return;
         return this.app.store.transaction(()=>{
+            if(tool==='artifact_read'){if(!this.app.artifactTexts.offer(actor,actor.projectId!,readId,callId))return;}else{
             const read=this.app.store.get<AttachmentRead>('attachment-input-read',readId,actor.projectId!);
             if(read.delivery!=='pending'||read.offered||read.callId!==callId||read.sessionId!==actor.sessionId||read.generation!==actor.generation)return;
+            this.app.store.update<AttachmentRead>('attachment-input-read',read.id,read.version,{offered:true});}
             this.app.sessionPermissions.assert(permission,false);const project=this.app.store.get<import('../domain/types.js').Project>('project',actor.projectId!);ensure(project.lifecycleEpoch===epoch&&project.status==='active','ATTACHMENT_DELIVERY_STALE','项目生命周期已变化');
-            this.app.store.update<AttachmentRead>('attachment-input-read',read.id,read.version,{offered:true});
             const id=randomUUID();(a.readResponses??=new Map()).set(callId,{id,tool,resultDigest:digest(JSON.stringify({content:[{type:'text',text:JSON.stringify(result)}],details:{}})),actor:{...actor},readId,permission:{...permission},epoch});return id;
         });
     }
@@ -333,7 +334,7 @@ export class AgentHost {
         try{this.app.store.transaction(()=>{
             ensure(!a.stopError&&!a.ended&&!a.exitObserved&&this.valid(a)&&pending.actor.sessionId===a.sessionId&&pending.actor.generation===a.generation,'ATTACHMENT_DELIVERY_STALE','旧Worker不能确认读取');
             this.app.sessionPermissions.assert(pending.permission,false);const p=this.app.store.get<import('../domain/types.js').Project>('project',pending.actor.projectId!);ensure(p.lifecycleEpoch===pending.epoch&&p.status==='active','ATTACHMENT_DELIVERY_STALE','项目生命周期已变化');
-            deliverAttachmentRead(this.app.store,pending.actor,pending.readId,callId);
+            if(pending.tool==='artifact_read')this.app.artifactTexts.deliver(pending.actor,pending.actor.projectId!,pending.readId,callId);else deliverAttachmentRead(this.app.store,pending.actor,pending.readId,callId);
         });return true;}catch{return false;}
     }
     private valid(a: Active) {
