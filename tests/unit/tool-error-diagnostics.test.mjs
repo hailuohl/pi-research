@@ -9,7 +9,7 @@ import {DomainError} from '../../dist/packages/domain/errors.js';
 
 async function failedTool(s,error,tool='artifact_read'){
  const session=s.app.store.get('session',s.session.id);s.app.store.update('session',session.id,session.version,{state:'running',generation:1,leaseUntil:Date.now()+60000});
- const host=new AgentHost(s.app),sent=[],a={sessionId:session.id,generation:1,ended:false,actor:{type:'agent',projectId:s.project.id,sessionId:session.id,role:'coordinator',generation:1},child:{connected:true,send:value=>sent.push(value)},advertisedTools:new Set(['artifact_read'])};
+ const host=new AgentHost(s.app),sent=[],a={sessionId:session.id,generation:1,ended:false,actor:{type:'agent',projectId:s.project.id,sessionId:session.id,role:'coordinator',generation:1},child:{connected:true,send:value=>sent.push(value)},advertisedTools:new Set([tool])};
  host.tools.execute=async()=>{throw error;};
  await host.onMessage(a,{type:'tool',tool,toolCallId:'private-call-id-canary',requestId:1,input:{artifactId:'private-input-canary'}},join(s.dir,'sessions',session.id));
  return {host,a,sent};
@@ -30,6 +30,23 @@ test('permission failures retain a fixed safe diagnostic through SDK results and
   await host.onMessage(a,{type:'tool_execution_end',tool:'artifact_read',toolCallId:'private-call-id-canary',isError:true},join(s.dir,'sessions',s.session.id));
   const notice=s.app.sessions.messages(USER,s.session.id).filter(m=>m.role==='system').at(-1);
   assert.equal(notice.status,'failed');assert.equal(notice.content,message);assert.doesNotMatch(notice.content,/private-|sk-secret|D:\//);
+ }finally{s.close();}
+});
+
+test('quote failure notices provide bounded recovery without leaking source text or error details',async()=>{
+ const s=setup();try{
+  const error=new DomainError('EVIDENCE_QUOTE_NOT_FOUND','private-source-canary D:/private-data/source.txt',400,{quote:'private-quote-canary',path:'D:/private-path',url:'https://private.invalid/?token=secret-canary'});
+  const {host,a,sent}=await failedTool(s,error,'evidence_register');
+  const response=sent.at(-1).error;assert.equal(response.code,'EVIDENCE_QUOTE_NOT_FOUND');assert.equal(response.details,undefined);
+  await host.onMessage(a,{type:'tool_execution_end',tool:'evidence_register',toolCallId:'private-call-id-canary',isError:true},join(s.dir,'sessions',s.session.id));
+  const notice=s.app.sessions.messages(USER,s.session.id).filter(m=>m.role==='system').at(-1);
+  assert.equal(notice.status,'failed');
+  assert.match(notice.content,/同一.*Artifact/);assert.match(notice.content,/artifact_read/);assert.match(notice.content,/evidence_read/);
+  assert.match(notice.content,/demonstrate/);assert.match(notice.content,/under-/);
+  assert.match(notice.content,/新.*准确请求/);assert.match(notice.content,/failed\/unknown/);assert.match(notice.content,/PDF\/PMC/);
+  assert.doesNotMatch(notice.content,/private-|secret-canary|D:\//);
+  const ambiguous=toolFailureMessage('evidence_register',{code:'EVIDENCE_QUOTE_AMBIGUOUS'});
+  assert.match(ambiguous,/唯一上下文/);assert.doesNotMatch(ambiguous,/或.*start\/end/);
  }finally{s.close();}
 });
 

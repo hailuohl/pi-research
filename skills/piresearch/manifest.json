@@ -1,5 +1,5 @@
 {
-  "bundleId": "76710206b59393c7c65d3754d6a7016481b87ce9a528c896b85e66d8b35312da",
+  "bundleId": "cf2f0270a626a97a8070804373685ecfd246b556b62d44defbf53e2471f38f90",
   "skills": [
     {
       "id": "pi-research-overview",
@@ -188,7 +188,7 @@
         "writer"
       ],
       "path": "skills/piresearch/pi-research-evidence/SKILL.md",
-      "digest": "303798c91235023ca71abe34d6a2a6f44bdfb0f58445a287a1f5c900b748dd1f",
+      "digest": "57665572f3405ee7436089865cc34b158e86fc22aa73dc131704ae655c872432",
       "resources": [
         {
           "path": "references/exploratory-data-analysis.md",
@@ -461,7 +461,7 @@
         "writer"
       ],
       "path": "skills/piresearch/pi-research-lit-review/SKILL.md",
-      "digest": "63e94a8dbede6583277a7a1f70311bead357a7e1e38e1cbc371b9fe33863486f",
+      "digest": "a847808cdcdb9bec1488858a8a9b1b2e270fa7e4db740b4af5604a9f1b5f575b",
       "resources": [
         {
           "path": "references/document-reading.md",
@@ -469,7 +469,7 @@
         },
         {
           "path": "references/discovery-permissions.md",
-          "digest": "9b26d75b3f6df622c44daed8381826d0afb0d7a6845c09f8bc1315343be19193"
+          "digest": "cfc88ab5d3f28c876ab5e04ecb9bda138df57444726f04122fea7ca0057646cb"
         },
         {
           "path": "references/systematic-review.md",

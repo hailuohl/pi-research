@@ -1,4 +1,4 @@
-export declare const BUNDLE_ID = "76710206b59393c7c65d3754d6a7016481b87ce9a528c896b85e66d8b35312da";
+export declare const BUNDLE_ID = "cf2f0270a626a97a8070804373685ecfd246b556b62d44defbf53e2471f38f90";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
@@ -126,7 +126,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "检查数据质量、统计结果、测量不确定性与科学主张支持程度；设计可核验运行输出，回读日志和原始来源，区分实测、论文报告值、图片观察与解释。";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-evidence/SKILL.md";
-    readonly digest: "303798c91235023ca71abe34d6a2a6f44bdfb0f58445a287a1f5c900b748dd1f";
+    readonly digest: "57665572f3405ee7436089865cc34b158e86fc22aa73dc131704ae655c872432";
     readonly resources: readonly [{
         readonly path: "references/exploratory-data-analysis.md";
         readonly digest: "2f6fd4bce9bc499d9cc622671b339f56a7ad1e1cdee2fe3e4a2690ed3711e3d7";
@@ -315,13 +315,13 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "用原始研究证据解释、比较科学或技术概念，适用于研究主张、架构问题、文献综述与related work，即使用户未点名论文；按问题缩放检索，明确系统/范围综述时读取专用方法。";
     readonly roles: readonly ["coordinator", "literature", "designer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-lit-review/SKILL.md";
-    readonly digest: "63e94a8dbede6583277a7a1f70311bead357a7e1e38e1cbc371b9fe33863486f";
+    readonly digest: "a847808cdcdb9bec1488858a8a9b1b2e270fa7e4db740b4af5604a9f1b5f575b";
     readonly resources: readonly [{
         readonly path: "references/document-reading.md";
         readonly digest: "0d9ce18da2ddd1a7effee54219b3760a9b9e55d144339e920ff9b4c48ddf4140";
     }, {
         readonly path: "references/discovery-permissions.md";
-        readonly digest: "9b26d75b3f6df622c44daed8381826d0afb0d7a6845c09f8bc1315343be19193";
+        readonly digest: "cfc88ab5d3f28c876ab5e04ecb9bda138df57444726f04122fea7ca0057646cb";
     }, {
         readonly path: "references/systematic-review.md";
         readonly digest: "ba53d57c35bf0fdc1c37efd1a2add4e09d40be46d7b3923757a5679acf6cffda";

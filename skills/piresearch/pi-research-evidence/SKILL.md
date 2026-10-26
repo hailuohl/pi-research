@@ -95,17 +95,21 @@ metrics.json必须由实际程序写入，是**平铺的JSON对象，每个值�
 
 ## 原文读取与稳定定位
 
-artifact_read只读获准不可变UTF-8产物，响应digest/content/cursor/complete；不是PDF或二进制图形读取器。paper_read所得metadata/abstract/full_text必须据实际contentKind/fullTextRead和返回正文判断。检索元数据、摘要、服务生成概述和全文分别标注；摘要不是全篇，生成概述不是作者原文。fullTextRead表示取得提取文本，不证明已读全部段落、PDF页或图；只有实际阅读的范围支持相应结论。版本不能证实一致就保存未核验状态，不虚构页码或数值出处。
+artifact_read只读获准不可变UTF-8产物；普通模式响应artifactId/digest/content/cursor/complete，cursor单位是UTF-16，返回cursor是下一页起点。记录原请求cursor以回读同页，并核对同一artifactId/digest；按返回cursor续读到complete=true才可称已读全文。content为原样正文，JSON字符串中的`\n`代表真实换行，不能重排空格、换行或断词。显式fixed-text-v1另用UTF-8字节cursor和返回end续读，按工具说明保留sourceDigest/textSourceId/readId，不混用游标。此工具不是PDF或二进制图形读取器。paper_read所得metadata/abstract/full_text必须据实际contentKind/fullTextRead和返回正文判断。检索元数据、摘要、服务生成概述和全文分别标注；摘要不是全篇，生成概述不是作者原文。fullTextRead表示取得提取文本，不证明已读全部段落、PDF页或图；只有实际阅读的范围支持相应结论。版本不能证实一致就保存未核验状态，不虚构页码或数值出处。
 
 取得、解析或读取固定PDF/页图前，先读pi-research-lit-review的references/document-reading.md；涉及联网或固定全文授权时，先读其references/discovery-permissions.md。当前固定解析OCR=false，textStatus=no-text-layer表示未提取到可用文字，不证明页面空白或论文没有相关内容。默认模型具备图片识别能力，获准真实页图到达后直接视觉阅读，no-text-layer 不触发OCR需求或额外OCR实现。用户另行提供OCR文字时保留原件、页、识别来源和限制；不冒充原始文字层或项目OCR产物。
 
-普通文本用evidence_register建立稳定片段：
+普通文本从同一固定Artifact的实际返回content复制唯一完整句，用evidence_register建立稳定片段：
 
 ```json
-{"tool":"evidence_register","input":{"artifactId":"<实际文本产物ID>","start":0,"end":10,"description":"定位实际读取的支持片段"}}
+{"tool":"evidence_register","input":{"artifactId":"<实际文本产物ID>","exactQuote":"从返回content逐字复制的完整句子。"}}
 ```
 
-示例tool仅标明工具，实际Pi参数为{input: ...}。start/end必须换成实际原文位置，单位是UTF-16字符区间[start,end)，不是UTF-8字节、PDF页号或Tokens。随后evidence_read({input:{evidenceId:"<返回的真实evidenceId>"}})重核定位与digest；不把文件移动后的另一份内容当同一证据。
+示例tool仅标明工具，实际Pi参数为{input: ...}。交互协调者必须传exactQuote，不传自由description、不猜start/end；重复片段回读并扩展唯一上下文，不能选第一个匹配。保留原空格、换行和连字符：`demonstrate\na`不能挪成`demonstrate a\n`，`under-\nlying`不能合成`underlying`。释义与解释留在研究叙述中，不能写入exactQuote或用省略号替换原句。显式fixed-text-v1沿工具的单页实际送达回执登记，不用旧区间替代。
+
+出现EVIDENCE_QUOTE_NOT_FOUND后停止凭记忆重写，沿原获准读取入口回读同一artifactId/digest的相关分页，复制实际存在的唯一完整句并核对后提交一次。没有该句时，选实际存在且支持同一论点的引文，或报告证据不足。固定批准动作先session_action_inspect核对原终态；改引文须按当前权限模式提交新的准确请求，不能改参数消费旧actionId、不重放failed/unknown旧动作，详见pi-research-lit-review的references/discovery-permissions.md。
+
+登记后evidence_read({input:{evidenceId:"<返回的真实evidenceId>"}})回读quote/digest/locator，核对原文、数值与条件；locator是原文UTF-16区间[start,end)，不是UTF-8字节、PDF页号或Tokens。登记只验证原字节，不证明解释成立；不把文件移动后的另一份内容当同一证据。
 
 已授权固定PDF解析或单份PMC OA原文检索用text_evidence_search及project_inspect.textCorpus真实documents/pmcDocuments、corpusId、configurationVersion；该权限仅明确授权主会话、最多两次新词项查询，不能混选。PMC额度耗尽禁止重放检索；有效期内已返回片段仍可evidence_read，不以artifact_read或普通evidence_register复制受控全文。具体文献方法读pi-research-lit-review。
 

@@ -43,6 +43,16 @@ test('search preserves UTF16 offsets, line numbers, emoji, Chinese and original 
  const raw='Title 😀\r\n\r\n吸附能取决于缺陷结构，实验仍需验证。\r\n第二行：这是人工测试文本。';const a=source(s,'中文.txt',raw);enable(s,[a]);const r=run(s,a,'吸附能');
  assert.ok(r.hits.length);for(const h of r.hits){assert.equal(raw.slice(h.locator.start,h.locator.end),h.quote);assert.equal(h.lineStart,3);assert.equal(h.sourceKind,'user_imported_text');assert.equal(s.app.evidence.verify(s.project.id,h.evidenceId).quote,h.quote);assert.equal(h.page,null);}assert.equal(r.usage.modelCalls,0);
 }finally{s.close();}});
+test('exact recovery keeps Chinese and emoji UTF16 locators after duplicate and wrong-offset refusals',()=>{const s=setup();try{
+ const content='中😀\r\nA line.\nA line.\n结论😀\nunder-\nlying.',a=source(s,'exact-recovery.txt',content);
+ const register=input=>s.app.operations.execute(USER,'evidence_register',{artifactId:a.id,...input},{projectId:s.project.id,idempotencyKey:crypto.randomUUID()});
+ assert.throws(()=>register({exactQuote:'A line.'}),{code:'EVIDENCE_QUOTE_AMBIGUOUS'});
+ assert.throws(()=>register({exactQuote:'结论😀\nunder-\nlying.',start:20,end:38}),{code:'EVIDENCE_QUOTE_MISMATCH'});
+ assert.equal(s.app.store.list('evidence').length,0);
+ const evidence=register({exactQuote:'结论😀\nunder-\nlying.'});assert.deepEqual(evidence.locator,{start:21,end:39});assert.equal(evidence.digest,a.digest);assert.equal(evidence.quote,'结论😀\nunder-\nlying.');
+ assert.deepEqual(Buffer.from(content.slice(21,39)),Buffer.from(evidence.quote));
+}finally{s.close();}});
+
 test('no lexical overlap is explicit and does not fabricate an answer or evidence',()=>{const s=setup();try{
  const a=source(s);enable(s,[a]);const r=run(s,a,'photosynthetic chlorophyll');assert.equal(r.status,'no_lexical_match');assert.deepEqual(r.hits,[]);assert.equal(s.app.store.list('claim').length,0);assert.equal(s.app.store.list('evidence').length,0);assert.match(r.limitations.join(' '),/不证明/);
 }finally{s.close();}});

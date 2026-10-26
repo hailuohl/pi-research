@@ -48,6 +48,9 @@ test('HTTP and CLI operations share strict contracts, owner scope and idempotenc
         app.store.update('session', session.id, session.version, {state: 'running', generation: 1, leaseUntil: Date.now() + 60000});
         const tools = new ToolDispatcher(app), agent = {type: 'agent', projectId: project.id, sessionId: session.id, role: 'coordinator', generation: 1};
         for (const spec of specs.value) {
+            // CLI parity can span a worker lease; keep this fixture's worker live.
+            const live = app.store.get('session', session.id);
+            app.store.update('session', live.id, live.version, {leaseUntil: Date.now() + 60000});
             const http = await request(`/operations/${spec.id}`, {projectId: project.id, sessionId: session.id, input: {unexpected: true}});
             const command = cli('operation', spec.id, '--project', project.id, '--session', session.id, '--input', '{"unexpected":true}');
             let toolError;

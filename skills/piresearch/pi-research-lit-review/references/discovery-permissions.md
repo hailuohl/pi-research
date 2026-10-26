@@ -4,6 +4,12 @@
 
 **来源开关和HTTP额度不是会话批准。** 新主会话默认 `confirm`；`literature_search`、`literature_discover`、`paper_read` 均属于联网副作用。当前调用会冻结 operation、完整input、来源指纹和权限版本，产生待用户批准的精确 `SessionAction`，返回 `APPROVAL_REQUIRED` 与actionId，尚未发送该请求。用户在会话批准入口确认后，协调者只能沿原工具调用的准确参数继续；无法回查原参数就停止，不改query/source/date/limit再沿用批准。参数、来源设置、绑定授权、模型或权限版本改变可能使动作stale；被拒绝则本轮停止，failed/unknown先核对效果，不反复重发。Agent不能自己批准。`readOnly` 阻止修改、联网和执行；`autoEdit` 只有已绑定DiscoveryGrant的联网可沿授权执行。旧legacy入口及显式本机fullAccess另有模式规则，不能把它们当默认confirm或建议切模式规避确认；领域运行/文稿/发布批准仍独立。
 
+## 精确引文失败后的原入口恢复
+
+普通获准文本的EVIDENCE_QUOTE_NOT_FOUND只表示该exactQuote未逐字存在；不触发模糊搜索、自动归一化或额外原文返回。停止凭记忆重写，沿原获准artifact_read回读同一固定artifactId/digest的相关分页，使用原请求UTF-16 cursor回读本页；返回cursor用于下一页。保留content中的真实空格、换行、断词：`demonstrate\na`不能挪成`demonstrate a\n`，`under-\nlying`不能合成`underlying`。复制实际存在且唯一的完整句，核对后提交一次，再evidence_read核对quote/digest/locator。重复句扩展唯一上下文，不猜offset；没有支持片段则说明证据不足，不把释义或省略号写进exactQuote。
+
+若错误引文属于已批准的固定SessionAction，先session_action_inspect核对原动作终态；failed/unknown不重放，不改参数消费旧actionId。改后的引文是新的准确请求，沿当前会话权限模式处理；需确认时等待新批准，不能拿旧通知执行。当前读取、来源、额度和期限仍须有效；PDF/PMC受保护全文只沿下文原获准检索和evidence_read入口，不因quote失败转用artifact_read或普通evidence_register。
+
 **主会话有限发现授权**是另一层。用户可对尚未绑定授权的专用主协调会话 `discovery_grant_prepare`，再批准并activate；它固定模型、来源设置版本、searches/targets/formats、最多HTTP尝试、响应字节和未来24小时内期限。绑定后只用这些固定范围，难度/跟进预算不授予额外网络权限；来源启用不扩大Grant。`confirm` 模式下有活跃Grant仍需上述精确SessionAction，不能用Grant替代会话动作批准。新查询或原文目标越界先报告，由用户建立适用的新授权；未绑定Grant的既有入口仍遵守实际会话模式、角色、来源开关和全局请求额度，不宣称所有旧检索都必需新Grant。
 
 **当前Task级DiscoveryGrant只实现狭窄Crossref流程**：只可绑定尚未派发、attemptCount=0且未有会话/尝试/授权的literature Task，固定其原团队计划、原协作批准、task spec、模型与宿主真实task/session/attempt/generation。来源只能crossref，`maxRequests=1`、`formats=["provider-text"]`、`allowSearchResults=false`，且恰好二选一：(a)一次固定Crossref keyword/default检索，targets为空；(b)一次唯一规范化Crossref DOI元数据读取，searches为空、无requestedVersion。不允许给Task任意多源检索、embedding、跟进、多次请求、命中后自动paper_read、PDF或版本全文授权。检索型Task取得候选后即停；深入阅读转回主协调者在其实际授权内处理。Task Grant需用户单独批准/激活，团队计划的协作批准也必须有效；缺失或变化时停止，让用户处理后重新派发，不能在Task内申请通用SessionAction来扩权。绑定由宿主核对，不在工具input冒用身份。

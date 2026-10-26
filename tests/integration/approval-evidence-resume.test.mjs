@@ -65,6 +65,35 @@ test('paginated full text retains BOM and UTF-16 offsets and quotes round-trip b
  }finally{s.close();}
 });
 
+test('a failed fixed quote recovers by rereading the same page and approving a new exact request',async()=>{
+ const s=setup();try{
+  const a=agent(s),exactQuote='We demonstrate\na useful under-\nlying result: 中文😀 32%.',content='\ufeff😀'+('background '.repeat(1600))+exactQuote+'\nEnd.',artifact=s.app.evidence.put(s.project.id,'recovery fixture',Buffer.from(content));
+  const input={artifactId:artifact.id,exactQuote:'We demonstrate a\nuseful under-\nlying result: 中文😀 32%.'};
+  assert.throws(()=>call(s,a,'evidence_register',input,'failed-quote'),{code:'APPROVAL_REQUIRED'});
+  const failed=approve(s,a);
+  await assert.rejects(async()=>call(s,failed.actor,'session_action_resume'),{code:'EVIDENCE_QUOTE_NOT_FOUND'});
+  assert.equal(call(s,a,'session_action_inspect',{actionId:failed.action.id}).state,'failed');
+  assert.equal(s.app.store.list('evidence').length,0);
+  await assert.rejects(async()=>call(s,failed.actor,'session_action_resume'),{code:'SESSION_ACTION_NOT_APPROVED'});
+  assert.throws(()=>call(s,USER,'evidence_register',{artifactId:artifact.id,exactQuote:exactQuote.replace('under-\nlying','underlying')}),{code:'EVIDENCE_QUOTE_NOT_FOUND'});
+  assert.equal(s.app.store.list('evidence').length,0);
+  const first=call(s,a,'artifact_read',{artifactId:artifact.id,cursor:0});assert.equal(first.complete,false);
+  const page=JSON.parse(JSON.stringify(call(s,a,'artifact_read',{artifactId:artifact.id,cursor:first.cursor})));
+  assert.equal(page.artifactId,artifact.id);assert.equal(page.digest,first.digest);assert.equal(page.digest,artifact.digest);
+  const copied=page.content.slice(page.content.indexOf('We demonstrate'),page.content.indexOf('\nEnd.'));assert.equal(copied,exactQuote);
+  const corrected={artifactId:page.artifactId,exactQuote:copied};
+  assert.throws(()=>s.app.operations.execute(failed.actor,'evidence_register',corrected,{projectId:s.project.id,sessionId:s.session.id,idempotencyKey:'changed-old-action',approvedActionId:failed.action.id}),{code:'APPROVAL_STALE'});
+  assert.throws(()=>call(s,a,'evidence_register',corrected,'corrected-quote'),{code:'APPROVAL_REQUIRED'});
+  const fixed=approve(s,a);assert.notEqual(fixed.action.id,failed.action.id);
+  const evidence=(await call(s,fixed.actor,'session_action_resume')).result,read=call(s,a,'evidence_read',{evidenceId:evidence.id});
+  assert.equal(read.quote,exactQuote);assert.equal(read.digest,artifact.digest);assert.deepEqual(read.locator,{start:content.indexOf(exactQuote),end:content.indexOf(exactQuote)+exactQuote.length});
+  assert.deepEqual(Buffer.from(content.slice(read.locator.start,read.locator.end)),Buffer.from(exactQuote));
+  s.app.close();s.app=new ResearchApp(s.dir,process.cwd());
+  const reopened=call(s,a,'evidence_read',{evidenceId:evidence.id});assert.equal(reopened.quote,read.quote);assert.equal(reopened.digest,read.digest);assert.deepEqual(reopened.locator,read.locator);
+  assert.equal(s.app.store.get('session-action',failed.action.id).state,'failed');assert.deepEqual(s.app.store.get('session-action',failed.action.id).input,input);assert.equal(s.app.store.list('evidence').length,1);
+ }finally{s.close();}
+});
+
 test('changed source blocks fixed resume without creating replacement approvals',async()=>{
  const s=setup();try{
   const a=agent(s),input={path:'frozen.txt',content:'approved bytes',expectedDigest:null};assert.throws(()=>call(s,a,'workspace_write',input),{code:'APPROVAL_REQUIRED'});const fixed=approve(s,a);
