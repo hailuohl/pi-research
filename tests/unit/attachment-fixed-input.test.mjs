@@ -1,3 +1,4 @@
+import {acknowledgeWorkspaceRead} from '../support/workspace-delivery.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {setup,USER} from '../support/research.mjs';
@@ -105,7 +106,7 @@ test('new revisions recheck inherited attachment authority and reject legacy wor
   let message=s.app.store.get('message',f.m.id);s.app.store.update('message',message.id,message.version,{queueRemoved:true});
   assert.throws(()=>s.app.researchBriefs.sourceInputFingerprint(s.session.id,brief.id),{code:'ATTACHMENT_NOT_DELIVERED'});assertSourceInputs(s.app.store,s.project.id,s.session.id,brief.sourceInputs);
   message=s.app.store.get('message',f.m.id);s.app.store.update('message',message.id,message.version,{queueRemoved:false});
-  s.app.projects.writeFile(USER,s.project.id,input.path,'replacement',null);s.app.operations.execute(f.actor,'workspace_read',{source:'project',path:input.path},{projectId:s.project.id,idempotencyKey:'legacy-alias'});
+  s.app.projects.writeFile(USER,s.project.id,input.path,'replacement',null);acknowledgeWorkspaceRead(s.app,f.actor,s.app.operations.execute(f.actor,'workspace_read',{source:'project',path:input.path},{projectId:s.project.id,idempotencyKey:'legacy-alias'}));
   assert.throws(()=>s.app.researchBriefs.sourceInputFingerprint(s.session.id,brief.id),{code:'BRIEF_SOURCE_BINDING_CHANGED'});
  }finally{s.close();}
 });

@@ -425,11 +425,16 @@ export class AgentHost {
         }
     }
     readResponse(a, actor, tool, callId, result, permission, epoch) {
-        const readId = tool === 'artifact_read' ? result?.artifactReadId : tool === 'session_attachment_read' ? result?.attachmentReadId : undefined;
+        const workspace = tool === 'workspace_read' ? result : undefined, workspaceKind = workspace?.draftReadId ? 'draft' : workspace?.sourceInputReadId ? 'source' : undefined;
+        const readId = workspace?.draftReadId ?? workspace?.sourceInputReadId ?? (tool === 'artifact_read' ? result?.artifactReadId : tool === 'session_attachment_read' ? result?.attachmentReadId : undefined);
         if (!readId)
             return;
         return this.app.store.transaction(() => {
-            if (tool === 'artifact_read') {
+            if (workspaceKind) {
+                if (!(workspaceKind === 'draft' ? this.app.draftReads : this.app.sourceInputs).offer(actor, readId, callId))
+                    return;
+            }
+            else if (tool === 'artifact_read') {
                 if (!this.app.artifactTexts.offer(actor, actor.projectId, readId, callId))
                     return;
             }
@@ -443,7 +448,7 @@ export class AgentHost {
             const project = this.app.store.get('project', actor.projectId);
             ensure(project.lifecycleEpoch === epoch && project.status === 'active', 'ATTACHMENT_DELIVERY_STALE', '项目生命周期已变化');
             const id = randomUUID();
-            (a.readResponses ??= new Map()).set(callId, { id, tool, resultDigest: digest(JSON.stringify({ content: [{ type: 'text', text: JSON.stringify(result) }], details: {} })), actor: { ...actor }, readId, permission: { ...permission }, epoch });
+            (a.readResponses ??= new Map()).set(callId, { id, tool, resultDigest: digest(JSON.stringify({ content: [{ type: 'text', text: JSON.stringify(result) }], details: {} })), actor: { ...actor }, readId, ...(workspaceKind ? { workspaceKind } : {}), permission: { ...permission }, epoch });
             return id;
         });
     }
@@ -460,7 +465,9 @@ export class AgentHost {
                 this.app.sessionPermissions.assert(pending.permission, false);
                 const p = this.app.store.get('project', pending.actor.projectId);
                 ensure(p.lifecycleEpoch === pending.epoch && p.status === 'active', 'ATTACHMENT_DELIVERY_STALE', '项目生命周期已变化');
-                if (pending.tool === 'artifact_read')
+                if (pending.workspaceKind)
+                    (pending.workspaceKind === 'draft' ? this.app.draftReads : this.app.sourceInputs).deliver(pending.actor, pending.readId, callId);
+                else if (pending.tool === 'artifact_read')
                     this.app.artifactTexts.deliver(pending.actor, pending.actor.projectId, pending.readId, callId);
                 else
                     deliverAttachmentRead(this.app.store, pending.actor, pending.readId, callId);
@@ -702,7 +709,7 @@ export class AgentHost {
                 const actors = a.callIdActors ??= new Map();
                 // Keep the source captured at tool start even if a later steer is consumed.
                 if (!actors.has(callId))
-                    actors.set(callId, { tool, actor: { ...a.actor, approvalNoticeMessageId: a.currentApprovalNoticeMessageId, messageId: a.currentMessageId === undefined ? a.actor.messageId : a.currentMessageId ?? undefined } });
+                    actors.set(callId, { tool, actor: { ...a.actor, approvalNoticeMessageId: a.currentApprovalNoticeMessageId, messageId: a.actor.continuationId && !a.currentMessageId ? (a.continuationHumanInputConsumed ? undefined : a.actor.messageId) : a.currentMessageId === undefined ? a.actor.messageId : a.currentMessageId ?? undefined } });
             }
             if (m.type === 'tool_execution_end')
                 this.completeReadDelivery(a, tool, callId, m, !!error);
@@ -777,6 +784,8 @@ export class AgentHost {
                     this.app.workflowContinuations.consumed(current, a.generation);
                 else if (current.role === 'user' && current.origin !== 'automation' && !current.wakeupId && !current.approvalNoticeId && !s.taskId && s.role === 'coordinator') {
                     this.app.workflowContinuations.humanConsumed(s.id, current.id);
+                    if (a.actor.continuationId)
+                        a.continuationHumanInputConsumed = true;
                 } a.consumedIds.add(m.messageId); a.currentMessageId = current.approvalNoticeId || a.actor.workflowContinuationId ? null : m.messageId; a.currentApprovalNoticeMessageId = current.approvalNoticeId ? current.id : undefined; });
             }
             else {

@@ -41,7 +41,7 @@ export class WorkflowContinuationService {
             const brief = row;
             ensure(root.researchBriefId === brief.id, 'WORKFLOW_SOURCE_STALE', reasons.WORKFLOW_SOURCE_STALE);
             this.app.researchBriefs.assertReference(USER, projectId, root.id, { id: brief.id, digest: brief.digest, revision: brief.revision, rootSessionId: root.id });
-            this.app.draftReads.assertCurrent(root, brief.draftFiles);
+            this.app.draftReads.assertAcceptedCurrent(root, brief.id);
             return digest({ id: brief.id, digest: brief.digest, revision: brief.revision });
         }
         if (source.sourceKind === 'campaign') {

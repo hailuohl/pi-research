@@ -30,7 +30,7 @@ import {assertWorkspaceReady} from '../workspace/git-service.js';
 import {randomUUID} from 'node:crypto';
 import {AgentAdmissionService,type AgentAdmission} from './agent-admission.js';
 interface Active {
-    readResponses?:Map<string,{id:string;tool:string;resultDigest:string;actor:Actor;readId:string;permission:PermissionReference;epoch:number}>;
+    readResponses?:Map<string,{id:string;tool:string;resultDigest:string;actor:Actor;readId:string;workspaceKind?:'draft'|'source';permission:PermissionReference;epoch:number}>;
     catalogFingerprint:string;
     admissionId: string;
     child: ChildProcess;
@@ -38,6 +38,7 @@ interface Active {
     generation: number;
     actor: Actor;
     currentMessageId?:string|null;
+    continuationHumanInputConsumed?:boolean;
     callIdActors?:Map<string,{tool:string;actor:Actor}>;
     messageIds: string[];
     consumedIds: Set<string>;
@@ -317,14 +318,16 @@ export class AgentHost {
         try{if(!a.ended)this.finish(a,`Worker 退出（${code}）；请求或工具用量可能需要对账`);this.app.modelHttp.workerExited(a.admissionId,this.ownerHost,a.generation);this.admission.release(a.admissionId,this.ownerHost,a.generation,'confirmed-exit');}finally{if(this.active.get(a.sessionId)===a)this.active.delete(a.sessionId);}
     }
     private readResponse(a:Active,actor:Actor,tool:string,callId:string,result:unknown,permission:PermissionReference,epoch:number){
-        const readId=tool==='artifact_read'?(result as {artifactReadId?:string})?.artifactReadId:tool==='session_attachment_read'?(result as {attachmentReadId?:string})?.attachmentReadId:undefined;if(!readId)return;
+        const workspace=tool==='workspace_read'?result as {draftReadId?:string;sourceInputReadId?:string}:undefined,workspaceKind=workspace?.draftReadId?'draft':workspace?.sourceInputReadId?'source':undefined;
+        const readId=workspace?.draftReadId??workspace?.sourceInputReadId??(tool==='artifact_read'?(result as {artifactReadId?:string})?.artifactReadId:tool==='session_attachment_read'?(result as {attachmentReadId?:string})?.attachmentReadId:undefined);if(!readId)return;
         return this.app.store.transaction(()=>{
-            if(tool==='artifact_read'){if(!this.app.artifactTexts.offer(actor,actor.projectId!,readId,callId))return;}else{
+            if(workspaceKind){if(!(workspaceKind==='draft'?this.app.draftReads:this.app.sourceInputs).offer(actor,readId,callId))return;}
+            else if(tool==='artifact_read'){if(!this.app.artifactTexts.offer(actor,actor.projectId!,readId,callId))return;}else{
             const read=this.app.store.get<AttachmentRead>('attachment-input-read',readId,actor.projectId!);
             if(read.delivery!=='pending'||read.offered||read.callId!==callId||read.sessionId!==actor.sessionId||read.generation!==actor.generation)return;
             this.app.store.update<AttachmentRead>('attachment-input-read',read.id,read.version,{offered:true});}
             this.app.sessionPermissions.assert(permission,false);const project=this.app.store.get<import('../domain/types.js').Project>('project',actor.projectId!);ensure(project.lifecycleEpoch===epoch&&project.status==='active','ATTACHMENT_DELIVERY_STALE','项目生命周期已变化');
-            const id=randomUUID();(a.readResponses??=new Map()).set(callId,{id,tool,resultDigest:digest(JSON.stringify({content:[{type:'text',text:JSON.stringify(result)}],details:{}})),actor:{...actor},readId,permission:{...permission},epoch});return id;
+            const id=randomUUID();(a.readResponses??=new Map()).set(callId,{id,tool,resultDigest:digest(JSON.stringify({content:[{type:'text',text:JSON.stringify(result)}],details:{}})),actor:{...actor},readId,...(workspaceKind?{workspaceKind}:{}),permission:{...permission},epoch});return id;
         });
     }
     private completeReadDelivery(a:Active,tool:string,callId:string,m:{readDelivery?:unknown;resultDigest?:unknown;isError?:unknown},failed=false){
@@ -334,7 +337,8 @@ export class AgentHost {
         try{this.app.store.transaction(()=>{
             ensure(!a.stopError&&!a.ended&&!a.exitObserved&&this.valid(a)&&pending.actor.sessionId===a.sessionId&&pending.actor.generation===a.generation,'ATTACHMENT_DELIVERY_STALE','旧Worker不能确认读取');
             this.app.sessionPermissions.assert(pending.permission,false);const p=this.app.store.get<import('../domain/types.js').Project>('project',pending.actor.projectId!);ensure(p.lifecycleEpoch===pending.epoch&&p.status==='active','ATTACHMENT_DELIVERY_STALE','项目生命周期已变化');
-            if(pending.tool==='artifact_read')this.app.artifactTexts.deliver(pending.actor,pending.actor.projectId!,pending.readId,callId);else deliverAttachmentRead(this.app.store,pending.actor,pending.readId,callId);
+            if(pending.workspaceKind)(pending.workspaceKind==='draft'?this.app.draftReads:this.app.sourceInputs).deliver(pending.actor,pending.readId,callId);
+            else if(pending.tool==='artifact_read')this.app.artifactTexts.deliver(pending.actor,pending.actor.projectId!,pending.readId,callId);else deliverAttachmentRead(this.app.store,pending.actor,pending.readId,callId);
         });return true;}catch{return false;}
     }
     private valid(a: Active) {
@@ -460,7 +464,7 @@ export class AgentHost {
             if(m.type==='tool_execution_start'&&typeof m.toolCallId==='string'){
                 const actors=a.callIdActors??=new Map();
                 // Keep the source captured at tool start even if a later steer is consumed.
-                if(!actors.has(callId))actors.set(callId,{tool,actor:{...a.actor,approvalNoticeMessageId:a.currentApprovalNoticeMessageId,messageId:a.currentMessageId===undefined?a.actor.messageId:a.currentMessageId??undefined}});
+                if(!actors.has(callId))actors.set(callId,{tool,actor:{...a.actor,approvalNoticeMessageId:a.currentApprovalNoticeMessageId,messageId:a.actor.continuationId&&!a.currentMessageId?(a.continuationHumanInputConsumed?undefined:a.actor.messageId):a.currentMessageId===undefined?a.actor.messageId:a.currentMessageId??undefined}});
             }
             if(m.type==='tool_execution_end')this.completeReadDelivery(a,tool,callId,m,!!error);
             const failed=m.type==='tool_execution_end'&&(m.isError||error);
@@ -516,7 +520,7 @@ export class AgentHost {
         }
         if(m?.type==='input_consumed'&&a.messageIds.includes(m.messageId)&&a.sent.has(m.messageId)&&(!a.actor.workflowContinuationId||!a.consumedIds.has(m.messageId))){
             const input=this.app.store.maybe<Message>('message',m.messageId);
-            if(this.consumedInputSource(a,s,input)){this.app.store.transaction(()=>{ensure(this.valid(a),'LEASE_EXPIRED','旧Worker不能确认本轮消费');const current=this.app.store.get<Message>('message',input.id,s.projectId!);ensure(this.consumedInputSource(a,s,current),'MESSAGE_STALE','消费确认来源已变化');if(a.actor.workflowContinuationId)this.app.workflowContinuations.consumed(current,a.generation);else if(current.role==='user'&&current.origin!=='automation'&&!current.wakeupId&&!current.approvalNoticeId&&!s.taskId&&s.role==='coordinator'){this.app.workflowContinuations.humanConsumed(s.id,current.id);}a.consumedIds.add(m.messageId);a.currentMessageId=current.approvalNoticeId||a.actor.workflowContinuationId?null:m.messageId;a.currentApprovalNoticeMessageId=current.approvalNoticeId?current.id:undefined;});}
+            if(this.consumedInputSource(a,s,input)){this.app.store.transaction(()=>{ensure(this.valid(a),'LEASE_EXPIRED','旧Worker不能确认本轮消费');const current=this.app.store.get<Message>('message',input.id,s.projectId!);ensure(this.consumedInputSource(a,s,current),'MESSAGE_STALE','消费确认来源已变化');if(a.actor.workflowContinuationId)this.app.workflowContinuations.consumed(current,a.generation);else if(current.role==='user'&&current.origin!=='automation'&&!current.wakeupId&&!current.approvalNoticeId&&!s.taskId&&s.role==='coordinator'){this.app.workflowContinuations.humanConsumed(s.id,current.id);if(a.actor.continuationId)a.continuationHumanInputConsumed=true;}a.consumedIds.add(m.messageId);a.currentMessageId=current.approvalNoticeId||a.actor.workflowContinuationId?null:m.messageId;a.currentApprovalNoticeMessageId=current.approvalNoticeId?current.id:undefined;});}
             else{a.currentMessageId=null;a.currentApprovalNoticeMessageId=undefined;}
         }
         if(m?.type==='control_error'&&a.messageIds.includes(m.messageId))this.failInput(a,m.messageId,this.clean(String(m.error??'Worker 未接受输入')));

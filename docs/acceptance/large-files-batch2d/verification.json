@@ -1,0 +1,102 @@
+{
+  "baseline": "aa79bb4557029936f0e77c376a4644a6789067b3",
+  "scope": "workspace_read default/page, managed draft and legacy project read actualSDK proof ->ready/confirm/history; bounded preimage refusal/comparison",
+  "fullRegressionOriginal": {
+    "session": 63637,
+    "status": "completed initial frozen snapshot:4 failures requiring compatibility/fixture repairs",
+    "exitCode": 1,
+    "log": "batch2d/regression.log",
+    "total": 2741,
+    "pass": 2712,
+    "fail": 4,
+    "skip": 25,
+    "durationMs": 2301814.0496
+  },
+  "necessaryAffectedRepairs": {
+    "originalFailedFiles": {
+      "pass": 83,
+      "fail": 0,
+      "log": "batch2d/authority-fix/original-four-files-final.log"
+    },
+    "related": {
+      "pass": 136,
+      "fail": 0,
+      "skip": 2,
+      "log": "batch2d/authority-fix/affected-files-final.log"
+    },
+    "sdk": {
+      "pass": 9,
+      "fail": 0,
+      "log": "batch2d/authority-fix/sdk-authority-final.log"
+    },
+    "permissions": {
+      "pass": 55,
+      "fail": 0,
+      "log": "batch2d/authority-fix/permission-authority-final.log"
+    }
+  },
+  "finalFence": {
+    "host": {
+      "pass": 49,
+      "fail": 0,
+      "log": "batch2d/authority-fix/fence-host-final.log"
+    },
+    "sdk": {
+      "pass": 6,
+      "fail": 0,
+      "log": "batch2d/authority-fix/fence-sdk-final.log"
+    }
+  },
+  "independentReports": [
+    "batch2d/INDEPENDENT-REVIEW.md",
+    "batch2d/INDEPENDENT-FIX-REVIEW.md",
+    "batch2d/authority-fix/INDEPENDENT-AUTHORITY-REVIEW.md",
+    "batch2d/authority-fix/INDEPENDENT-FENCE-REVIEW.md"
+  ],
+  "review": {
+    "agent": "/root/large_file_batch2d_review",
+    "requestedModel": "gpt-6-astra",
+    "requestedEffort": "xhigh",
+    "runtimeEcho": false,
+    "status": "all confirmed originalFS/alias/authority/fence blockers cleared by affected-only independent checks",
+    "snapshot": "batch2d/review-snapshot.json",
+    "blockers": [
+      {
+        "file": "packages/workspace/text-write-recovery.ts:30",
+        "cause": "named stat metadata change after FD stat ignored; observed append overwritten and backup removed",
+        "probe": "batch2d/reviewer-tail-stat-probe.mjs",
+        "log": "batch2d/reviewer-tail-stat-probe.log"
+      }
+    ],
+    "report": "batch2d/INDEPENDENT-REVIEW.md",
+    "hashFileCount": 74,
+    "capacityReuse": "C512 evidence applicable per independent review; streaming paths unchanged and zero-legacy fingerprint representation preserved",
+    "finalSnapshot": "batch2d/authority-fix/final-snapshot-v2.json",
+    "authorityReport": "batch2d/authority-fix/INDEPENDENT-AUTHORITY-REVIEW.md",
+    "finalBlockingFindings": 0,
+    "finalHashFileCount": 77,
+    "finalReport": "batch2d/authority-fix/INDEPENDENT-FENCE-REVIEW.md"
+  },
+  "finalReviewedSnapshot": "D:/项目/pi research/tmp/large-file-512mib-20261025/batch2d/authority-fix/final-snapshot-v2.json",
+  "cleanBuild": {
+    "session": 56689,
+    "status": "passed final isolated output rebuild/typecheck; prior fresh dependency install reused",
+    "summary": ".validation/clean-build-ngwLDD/final-fence-summary.json",
+    "files": 788,
+    "distManifestSha256": "4dcbb64db57f50435e0b53236e0453eef0ead6c09d39ae739d38db55b86b3cdc"
+  },
+  "capacity": "C512 scoped evidence reused after independent applicability review; no512 draft claim",
+  "model": {
+    "implementationRequested": "gpt-6-astra/high",
+    "reviewRequested": "gpt-6-astra/xhigh",
+    "runtimeEcho": false
+  },
+  "evidenceReuse": "unchanged passing full paths reused;4failed files repaired and83/83rerun; finalhost-only fence rerun49/6SDK; original full remains exit1",
+  "notRun": [
+    "external provider",
+    "Docker execution",
+    "browser",
+    "new512MiB workload"
+  ],
+  "mainCheckoutAndService": "untouched"
+}

@@ -50,6 +50,8 @@ export interface ResearchBriefInspection {
     }>;
     blockedReason?: string;
 }
+/** Only a stored intact brief supplies historical acceptance; callers cannot pass frozen arrays as authority. */
+export declare function acceptedResearchBrief(store: Store, pid: string, sessionId: string, id: string, readyOnly?: boolean): Row<ResearchBrief>;
 export declare function fixedResearchBrief(store: Store, projectId: string, ref: ResearchBriefRef, phase?: 'formal'): Row<ResearchBrief>;
 export declare class ResearchBriefService {
     private app;
@@ -61,35 +63,42 @@ export declare class ResearchBriefService {
     captureDevelopmentReference(actor: Actor, projectId: string, sessionId: string): ResearchBriefRef | undefined;
     /** Host-only: validate admission evidence without granting access to brief contents. */
     assertAdmission(projectId: string, ref: ResearchBriefRef, phase?: 'formal'): void;
-    validateReadyDrafts(actor: Actor, projectId: string, sessionId: string, input: unknown): void;
+    private assertFreshActor;
+    validateReadyDrafts(actor: Actor, projectId: string, sessionId: string, input: unknown, approvedActionId?: string): void;
     sourceInputFingerprint(sessionId: string, expectedRevisionId: string | null, status?: 'clarifying' | 'ready'): {
         documentVersionId?: string | undefined;
-        purpose?: "whole-text" | "dataset-reference" | undefined;
-        digest: string;
         path: string;
+        size: number;
+        digest: string;
+        purpose?: "whole-text" | "dataset-reference" | undefined;
         textSourceId?: string | undefined;
         readId: string;
         readProtocol?: "fixed-text-v1" | undefined;
-        size: number;
         workspace: string;
         sourceKind?: "workspace-snapshot" | undefined;
         artifactId?: string;
     }[] | {
         inputs: {
             documentVersionId?: string | undefined;
-            purpose?: "whole-text" | "dataset-reference" | undefined;
-            digest: string;
             path: string;
+            size: number;
+            digest: string;
+            purpose?: "whole-text" | "dataset-reference" | undefined;
             textSourceId?: string | undefined;
             readId: string;
             readProtocol?: "fixed-text-v1" | undefined;
-            size: number;
             workspace: string;
             sourceKind?: "workspace-snapshot" | undefined;
             artifactId?: string;
         }[];
         attachmentSelections: ({
             documentVersionId: string;
+            bindingId: string;
+            version: number;
+        } | {
+            sourceKind: "workspace-legacy";
+            workspace: string;
+            path: string;
             bindingId: string;
             version: number;
         } | {

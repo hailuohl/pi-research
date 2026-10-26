@@ -1168,7 +1168,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("id" | "source" | "digest" | "description" | "resources")[];
+                    readonly required: ("id" | "digest" | "source" | "description" | "resources")[];
                     readonly additionalProperties: false;
                 };
             };

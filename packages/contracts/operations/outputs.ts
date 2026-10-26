@@ -110,7 +110,10 @@ const CORE_OUTPUT_SCHEMAS = {
         }, ['startedAt', 'endedAt', 'metrics'])),
         cursor: integer, hasMore: boolean
     }),
-    workspace_read: object({ path: string, content: string, digest: string, size: integer,draftReadId:string,sourceInputReadBlockedReason:enumeration('BRIEF_SOURCE_PATH_INVALID','BRIEF_SOURCE_ENCODING_INVALID'),draftReadBlockedReason:enumeration('BRIEF_DRAFT_CHANGED','BRIEF_DRAFT_ENCODING_INVALID') },['draftReadId','draftReadBlockedReason','sourceInputReadBlockedReason']),
+    workspace_read: {anyOf:[
+        object({path:string,content:string,digest:string,size:integer,draftReadId:string,sourceInputReadId:string,sourceInputReadBlockedReason:enumeration('BRIEF_SOURCE_PATH_INVALID','BRIEF_SOURCE_ENCODING_INVALID'),draftReadBlockedReason:enumeration('BRIEF_DRAFT_CHANGED','BRIEF_DRAFT_ENCODING_INVALID')},['draftReadId','sourceInputReadId','sourceInputReadBlockedReason','draftReadBlockedReason']),
+        object({path:string,content:string,digest:string,size:integer,readProtocol:enumeration('workspace-text-v1'),readBindingId:string,cursorUnit:enumeration('utf8-byte'),cursor:integer,end:integer,totalBytes:integer,complete:boolean,draftReadId:string,sourceInputReadId:string,writeVersion:integer},['draftReadId','sourceInputReadId','writeVersion'])
+    ]},
     workspace_write: object({ path: string, digest: string, size: integer }),
     change_proposal_prepare: row('change-proposal', {
         baseExperimentId: string, baseRevision: integer, baseSnapshot: snapshot, contractDigest: string,

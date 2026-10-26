@@ -1,3 +1,4 @@
+import {acknowledgeWorkspaceRead} from '../support/workspace-delivery.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {writeFileSync,mkdirSync,chmodSync,readFileSync} from 'node:fs';
@@ -9,7 +10,7 @@ import {digest} from '../../dist/packages/storage/store.js';
 import {captureAcceptance} from '../../dist/packages/evidence/acceptance.js';
 import {OUTPUT_SCHEMAS} from '../../dist/packages/contracts/operations/outputs.js';
 const image=`python@sha256:${'a'.repeat(64)}`,csv='x,y\n1,3\n2,4\n3,5\n4,6\n5,7\n6,8\n',code='def shared_fit_predict(rows):\n    raise RuntimeError("UNIT archives only; no program or fit executed")\n';
-const op=(s,a,name,input,key=crypto.randomUUID())=>{if(a.attemptId)s.app.teams.heartbeat(a.attemptId);return s.app.operations.execute(a,name,input,{projectId:s.project.id,sessionId:a.sessionId??s.session.id,idempotencyKey:key});};
+const op=(s,a,name,input,key=crypto.randomUUID())=>{if(a.attemptId)s.app.teams.heartbeat(a.attemptId);const value=s.app.operations.execute(a,name,input,{projectId:s.project.id,sessionId:a.sessionId??s.session.id,idempotencyKey:key});return name==='workspace_read'?acknowledgeWorkspaceRead(s.app,a,value):value;};
 function rootActor(s){const r=s.app.store.get('session',s.session.id);s.app.store.update('session',r.id,r.version,{state:'running',generation:1,leaseUntil:Date.now()+600000,skillBundleId:s.app.skills.configuration(s.project.id).bundleId});return {type:'agent',role:'coordinator',projectId:s.project.id,sessionId:r.id,generation:1};}
 function write(s,a,path,content){op(s,USER,'workspace_write',{source:'session',path,content,expectedDigest:null});const r=op(s,a,'workspace_read',{source:'session',path});return {path,readId:r.draftReadId};}
 function fixture(s){

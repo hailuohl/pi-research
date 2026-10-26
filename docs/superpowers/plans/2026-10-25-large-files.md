@@ -47,14 +47,14 @@ Resumed after the benchmark chat's explicit completion and delivery at `55187dc`
 - [x] Batch 2A delivered attachment input flow: fixed byte pages, exact SDK ACK, explicit purposes, immutable history/current selection, matching approval fingerprint and normal post-save failure recovery. Actual validation and remaining scope: `docs/acceptance/large-files-batch2a/RESULT.md`.
 - [x] Batch 2B: authorized artifact preparation/read -> receipt-bound exact quote -> verified readback/reopen, preserving legacy authorization and locators. Actual checks and necessary fixture repairs: `docs/acceptance/large-files-batch2b/RESULT.md`.
 - [x] Batch 2C: project workspace fixed snapshot -> actual SDK delivery -> fixed input/reopen. Validation: `docs/acceptance/large-files-batch2c/RESULT.md`.
-- [ ] Batch 2D: bounded managed drafts and legacy project workspace reads -> actual SDK receipts -> ready/history, preserving generated-write budgets.
+- [x] Batch 2D: bounded managed drafts and legacy project workspace reads -> actual SDK receipts -> ready/history, preserving generated-write budgets. Validation: `docs/acceptance/large-files-batch2d/RESULT.md`.
 
 Batch 2B specification: `docs/superpowers/specs/2026-10-26-large-files-batch2b.md`. Public preparation is explicit; the shared builder indexes an existing fixed CAS source without copying it. New single-page quotations retain full-source integrity checks and old locator semantics. Main checkout remains read-only context.
 
-- [ ] Add regression tests for creation character/byte mismatch, workspace page coverage, large artifact exact quotes and failed delivery.
-- [ ] Replace whole-string reader contracts with source/range contracts where required; extend existing exact SDK ACK to relevant read receipts.
-- [ ] Integrate workspace, attachment, artifact, draft and source-input consumers; retain old cursor semantics and bind new records to fixed source/version.
-- [ ] Validate one complete input-freeze flow including partial reads, revocation and reopen. Apply the common integration/review/commit/push gate.
+- [x] Add regression tests for creation character/byte mismatch, workspace page coverage, large artifact exact quotes and failed delivery.
+- [x] Replace whole-string reader contracts with source/range contracts where required; extend existing exact SDK ACK to relevant read receipts.
+- [x] Integrate workspace, attachment, artifact, draft and source-input consumers; retain old cursor semantics and bind new records to fixed source/version.
+- [x] Validate one complete input-freeze flow including partial reads, revocation and reopen. Apply the common integration/review/commit/push gate.
 
 ## Batch 3: fixed input -> run -> archive -> review
 

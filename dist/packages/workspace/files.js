@@ -6,8 +6,9 @@ import { ensure } from '../domain/errors.js';
 import { readStableFile } from './stable-file.js';
 import { assertTextWriteSettled, captureWritePreimage } from './text-write-recovery.js';
 export const MAX_TEXT_BYTES = 2 * 1024 * 1024;
-const EXCLUDED = new Set(['.git', 'node_modules', '.pi', '.env', '.DS_Store', '.pi-research', '.pi-runtime', '.npmrc', '.pypirc']);
-const excluded = (name) => EXCLUDED.has(name) || name.startsWith('.env.') || /^(?:model-connections|environment-variables)\.json(?:\.[\w-]+\.tmp)?$/i.test(name);
+const EXCLUDED = new Set(['.git', 'node_modules', '.pi', '.env', '.DS_Store', '.pi-research', '.pi-runtime', '.npmrc', '.pypirc'].map(name => process.platform === 'win32' ? name.toLowerCase() : name));
+const excluded = (name) => { if (process.platform === 'win32')
+    name = name.toLowerCase(); return EXCLUDED.has(name) || name.startsWith('.env.') || /^(?:model-connections|environment-variables)\.json(?:\.[\w-]+\.tmp)?$/i.test(name); };
 function assertNotSymlink(path) {
     try {
         ensure(!lstatSync(path).isSymbolicLink(), 'PATH_DENIED', '不允许通过符号链接访问文件', 403);
@@ -100,7 +101,7 @@ export function copySourceModes(from, to, files) {
     const modes = process.platform === 'win32' ? readModes(from) : undefined;
     setSourceModes(to, files.map(f => ({ path: f.path, mode: sourceMode(from, f.path, modes) })));
 }
-export function readText(root, path) { const file = safePath(root, path); ensure(existsSync(file) && lstatSync(file).isFile(), 'NOT_FOUND', '文件不存在', 404); ensure(lstatSync(file).size <= MAX_TEXT_BYTES, 'FILE_TOO_LARGE', '文件过大，不能作为文本打开', 413); const raw = readFileSync(file); ensure(!raw.includes(0), 'BINARY_FILE', '不能作为文本读取二进制文件', 415); return { path, content: raw.toString('utf8'), digest: digest(raw), size: raw.length }; }
+export function readText(root, path) { const file = safePath(root, path); ensure(existsSync(file) && lstatSync(file).isFile(), 'NOT_FOUND', '文件不存在', 404); ensure(lstatSync(file).size <= MAX_TEXT_BYTES, 'FILE_TOO_LARGE', '文件过大，不能作为文本打开', 413); const raw = readStableFile(root, path, MAX_TEXT_BYTES); ensure(!raw.includes(0), 'BINARY_FILE', '不能作为文本读取二进制文件', 415); return { path, content: raw.toString('utf8'), digest: digest(raw), size: raw.length }; }
 export function writeText(root, path, content, expectedDigest, store) {
     const write = () => {
         const file = safePath(root, path), bytes = Buffer.from(content);

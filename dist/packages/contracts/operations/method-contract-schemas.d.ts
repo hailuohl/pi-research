@@ -41,7 +41,7 @@ export declare const SYNTHETIC_FIXTURE_REF_SCHEMA: {
             readonly maxLength: number;
         };
     };
-    readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
+    readonly required: ("id" | "size" | "digest" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
     readonly additionalProperties: false;
 };
 export declare const SYNTHETIC_FIXTURE_BINDING_SCHEMA: {
@@ -90,7 +90,7 @@ export declare const SYNTHETIC_FIXTURE_BINDING_SCHEMA: {
                     readonly maxLength: number;
                 };
             };
-            readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
+            readonly required: ("id" | "size" | "digest" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
             readonly additionalProperties: false;
         };
         readonly inputPath: {
@@ -151,7 +151,7 @@ export declare const PROTOCOL_DOCUMENT_SCHEMA: {
             readonly maxLength: number;
         };
     };
-    readonly required: ("digest" | "path" | "compilerVersion")[];
+    readonly required: ("path" | "digest" | "compilerVersion")[];
     readonly additionalProperties: false;
 };
 declare const specificationSchema: {
@@ -202,7 +202,7 @@ declare const specificationSchema: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("digest" | "path" | "recordsPointer" | "recordIdField" | "doiField")[];
+                readonly required: ("path" | "digest" | "recordsPointer" | "recordIdField" | "doiField")[];
                 readonly additionalProperties: false;
             };
             readonly minItems: number;
@@ -628,7 +628,7 @@ declare const specificationSchema: {
                                         readonly maxLength: number;
                                     };
                                 };
-                                readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
+                                readonly required: ("id" | "size" | "digest" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
                                 readonly additionalProperties: false;
                             };
                             readonly inputArgumentIndex: {
@@ -675,7 +675,7 @@ declare const specificationSchema: {
                                         readonly maxLength: number;
                                     };
                                 };
-                                readonly required: ("digest" | "path" | "predictorField" | "outcomeField")[];
+                                readonly required: ("path" | "digest" | "predictorField" | "outcomeField")[];
                                 readonly additionalProperties: false;
                             };
                             readonly models: {
@@ -948,7 +948,7 @@ declare const specificationSchema: {
                                         readonly maxLength: number;
                                     };
                                 };
-                                readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
+                                readonly required: ("id" | "size" | "digest" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
                                 readonly additionalProperties: false;
                             };
                             readonly inputArgumentIndex: {
@@ -995,7 +995,7 @@ declare const specificationSchema: {
                                         readonly maxLength: number;
                                     };
                                 };
-                                readonly required: ("digest" | "path" | "predictorField" | "outcomeField")[];
+                                readonly required: ("path" | "digest" | "predictorField" | "outcomeField")[];
                                 readonly additionalProperties: false;
                             };
                             readonly models: {
@@ -1180,7 +1180,7 @@ declare const frozenSchema: {
                                 readonly maxLength: number;
                             };
                         };
-                        readonly required: ("digest" | "path" | "recordsPointer" | "recordIdField" | "doiField")[];
+                        readonly required: ("path" | "digest" | "recordsPointer" | "recordIdField" | "doiField")[];
                         readonly additionalProperties: false;
                     };
                     readonly minItems: number;
@@ -1445,7 +1445,7 @@ export declare const METHOD_OUTPUT_SCHEMAS: {
                                     readonly maxLength: number;
                                 };
                             };
-                            readonly required: ("digest" | "path" | "recordsPointer" | "recordIdField" | "doiField")[];
+                            readonly required: ("path" | "digest" | "recordsPointer" | "recordIdField" | "doiField")[];
                             readonly additionalProperties: false;
                         };
                         readonly minItems: number;
@@ -1643,7 +1643,7 @@ export declare const METHOD_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
+                readonly required: ("id" | "size" | "digest" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
                 readonly additionalProperties: false;
             };
             readonly inputPath: {

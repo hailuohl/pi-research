@@ -1,7 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 export declare function assertTextWriteSettled(root: string): void;
 export declare function captureWritePreimage(root: string, path: string, metadata?: boolean): {
-    bytes: NonSharedBuffer | null;
+    bytes: Buffer<ArrayBufferLike> | null;
     identity: string | null;
     mode: number;
     parents: {

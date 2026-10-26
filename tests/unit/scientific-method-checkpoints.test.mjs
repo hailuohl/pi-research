@@ -1,3 +1,4 @@
+import {acknowledgeWorkspaceRead} from '../support/workspace-delivery.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {writeFileSync,rmSync,mkdirSync,renameSync,chmodSync} from 'node:fs';
@@ -11,7 +12,7 @@ import {assertWorkingGrantManifest,workingGrantPayload} from '../../dist/package
 const plan=(extra={})=>({expectedRevisionId:null,question:'Compare measurements',scope:'Fixed measured comparison',constraints:[],successCriteria:['Report a finite measured score'],clarificationQuestions:[],literatureSummary:'Sources are separate inputs',hypotheses:[],evidenceIds:[],steps:[{title:'Evaluate',description:'Run the fixed protocol after approval'}],status:'ready',...extra});
 const image=`python@sha256:${'a'.repeat(64)}`;
 function rootActor(s,session=s.session){const current=s.app.store.get('session',session.id);s.app.store.update('session',current.id,current.version,{state:'running',generation:1,leaseUntil:Date.now()+600000});return {type:'agent',projectId:s.project.id,sessionId:session.id,role:'coordinator',generation:1};}
-function op(s,who,name,input,key=crypto.randomUUID(),sessionId=who.sessionId??s.session.id){return s.app.operations.execute(who,name,input,{projectId:s.project.id,sessionId,idempotencyKey:key});}
+function op(s,who,name,input,key=crypto.randomUUID(),sessionId=who.sessionId??s.session.id){const value=s.app.operations.execute(who,name,input,{projectId:s.project.id,sessionId,idempotencyKey:key});return name==='workspace_read'?acknowledgeWorkspaceRead(s.app,who,value):value;}
 function write(s,path,content='draft text',expectedDigest=null,key=crypto.randomUUID(),who=USER){return op(s,who,'workspace_write',{source:'session',path,content,expectedDigest},key);}
 function read(s,who,path,key=crypto.randomUUID()){return op(s,who,'workspace_read',{source:'session',path},key);}
 function draft(path,read){return {path,readId:read.draftReadId};}
@@ -48,7 +49,7 @@ test('new reads bind all written draft files; user/project/foreign reads cannot 
 test('same-hash new writes invalidate old reads while cached reads/writes preserve their original version',()=>{const s=setup();try{
  const who=rootActor(s),written=write(s,'research.md','unchanged',null,'original-write'),original=read(s,who,'research.md','original-read');
  write(s,'research.md','unchanged',written.digest,'new-write');
- assert.deepEqual(read(s,who,'research.md','original-read'),original);
+ assert.throws(()=>read(s,who,'research.md','original-read'),{code:'BRIEF_DRAFT_READ_STALE'});assert.equal(s.app.store.get('workspace-draft-read',original.draftReadId).writeVersion,1);
  assert.throws(()=>op(s,who,'research_brief_save',plan({draftFiles:[draft('research.md',original)]})),{code:'BRIEF_DRAFT_READ_STALE'});
  write(s,'research.md','unchanged',null,'original-write');
  const fresh=read(s,who,'research.md'),saved=op(s,who,'research_brief_save',plan({draftFiles:[draft('research.md',fresh)]}));
@@ -62,7 +63,7 @@ test('external draft mutation stays readable and recovers through managed rewrit
  assert.throws(()=>op(s,who,'research_brief_save',plan({expectedRevisionId:saved.id,draftFiles:[draft('research.md',original)]})),{code:'BRIEF_DRAFT_CHANGED'});
  assert.throws(()=>s.app.researchBriefs.confirm(USER,s.project.id,s.session.id,{briefId:saved.id,expectedVersion:saved.version}),{code:'BRIEF_DRAFT_CHANGED'});
  write(s,'research.md',current.content,current.digest,'managed-recovery',who);
- assert.deepEqual(read(s,who,'research.md','before-external-change'),original);assert.deepEqual(read(s,who,'research.md','changed-draft-read'),current);
+ assert.throws(()=>read(s,who,'research.md','before-external-change'),{code:'BRIEF_DRAFT_READ_STALE'});assert.deepEqual(read(s,who,'research.md','changed-draft-read'),current);assert.equal(s.app.store.get('workspace-draft-read',original.draftReadId).writeVersion,1);
  assert.throws(()=>op(s,who,'research_brief_save',plan({expectedRevisionId:saved.id,draftFiles:[draft('research.md',original)]})),{code:'BRIEF_DRAFT_READ_STALE'});
  const fresh=read(s,who,'research.md','fresh-managed-read');assert.ok(fresh.draftReadId);assert.notEqual(fresh.draftReadId,original.draftReadId);assert.equal(fresh.draftReadBlockedReason,undefined);
  const ready=op(s,who,'research_brief_save',plan({expectedRevisionId:saved.id,draftFiles:[draft('research.md',fresh)]}));assert.equal(ready.draftFiles[0].writeVersion,2);assert.equal(ready.draftFiles[0].digest,current.digest);assert.doesNotThrow(()=>s.app.researchBriefs.confirm(USER,s.project.id,s.session.id,{briefId:ready.id,expectedVersion:ready.version}));

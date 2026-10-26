@@ -520,7 +520,7 @@ export declare const EXPERIMENT_PLAN_SCHEMA: {
                         };
                     };
                 };
-                readonly required: ("artifactId" | "digest" | "size")[];
+                readonly required: ("artifactId" | "size" | "digest")[];
                 readonly additionalProperties: false;
             };
         };
@@ -826,7 +826,7 @@ export declare const RESEARCH_PLAN_INSPECTION_SCHEMA: {
                                 };
                             };
                         };
-                        readonly required: ("artifactId" | "digest" | "size")[];
+                        readonly required: ("artifactId" | "size" | "digest")[];
                         readonly additionalProperties: false;
                     };
                 };
@@ -1293,7 +1293,7 @@ export declare const RESEARCH_COMPARISON_SCHEMA: {
                                             };
                                         };
                                     };
-                                    readonly required: ("artifactId" | "digest" | "size")[];
+                                    readonly required: ("artifactId" | "size" | "digest")[];
                                     readonly additionalProperties: false;
                                 };
                             };
@@ -1898,7 +1898,7 @@ export declare const RESEARCH_PLAN_OUTPUT_SCHEMAS: {
                                     };
                                 };
                             };
-                            readonly required: ("artifactId" | "digest" | "size")[];
+                            readonly required: ("artifactId" | "size" | "digest")[];
                             readonly additionalProperties: false;
                         };
                     };
@@ -2615,7 +2615,7 @@ export declare const RESEARCH_PLAN_OUTPUT_SCHEMAS: {
                                                 };
                                             };
                                         };
-                                        readonly required: ("artifactId" | "digest" | "size")[];
+                                        readonly required: ("artifactId" | "size" | "digest")[];
                                         readonly additionalProperties: false;
                                     };
                                 };

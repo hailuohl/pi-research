@@ -11,6 +11,7 @@ interface Active {
         resultDigest: string;
         actor: Actor;
         readId: string;
+        workspaceKind?: 'draft' | 'source';
         permission: PermissionReference;
         epoch: number;
     }>;
@@ -21,6 +22,7 @@ interface Active {
     generation: number;
     actor: Actor;
     currentMessageId?: string | null;
+    continuationHumanInputConsumed?: boolean;
     callIdActors?: Map<string, {
         tool: string;
         actor: Actor;

@@ -1,15 +1,17 @@
-import { randomUUID } from 'node:crypto';
 import { relative, resolve, sep } from 'node:path';
 import { DomainError, ensure } from '../domain/errors.js';
 import { object, text } from '../contracts/validation.js';
 import { digest } from '../storage/store.js';
 import { readText, safePath } from '../workspace/files.js';
+import { acceptedResearchBrief } from './briefs.js';
+import { assertWorkspaceReadActor, assertWorkspaceReadBytes, draftReaderCandidate, deliverWorkspaceRead, hasWorkspaceCoverage, offerWorkspaceRead, readBinding, recordWorkspaceRead, replayWorkspaceRead } from './workspace-read-delivery.js';
 /** Host receipts are deliberately separate from the model's workspace and cached tool responses. */
 export class DraftReadService {
-    store;
-    constructor(store) {
-        this.store = store;
+    app;
+    constructor(app) {
+        this.app = app;
     }
+    get store() { return this.app.store; }
     workspace(s) {
         return { sessionId: s.id, workspace: s.workspace };
     }
@@ -29,22 +31,32 @@ export class DraftReadService {
         else
             this.store.create('workspace-draft-write', s.projectId, value, id);
     }
-    recordRead(actor, s, file, callId) {
-        if (actor.type !== 'agent' || actor.sessionId !== s.id || actor.role !== 'coordinator' || actor.taskId || s.role !== 'coordinator' || s.taskId || s.teamId)
+    recordRead(actor, s, file, callId, requestedBindingId) {
+        if (!draftReaderCandidate(actor) || actor.sessionId !== s.id || s.role !== 'coordinator' || s.taskId || s.teamId)
             return;
         const binding = this.workspace(s), pathKey = this.path(s, file.path), writeId = digest({ ...binding, pathKey }), write = this.store.maybe('workspace-draft-write', writeId);
-        if (!write)
+        if (!write) {
+            ensure(!file.readProtocol, 'BRIEF_DRAFT_READ_REQUIRED', '分页草稿必须先经受管workspace_write');
             return;
+        }
         const shown = Buffer.from(file.content);
-        if (shown.length !== file.size || digest(shown) !== file.digest)
+        if (!file.readProtocol && (shown.length !== file.size || digest(shown) !== file.digest))
             return { draftReadBlockedReason: 'BRIEF_DRAFT_ENCODING_INVALID' };
-        if (write.digest !== file.digest || write.size !== file.size)
+        if (write.digest !== file.digest || write.size !== file.size) {
+            ensure(!file.readProtocol, 'BRIEF_DRAFT_CHANGED', '草稿已改变，请先受管写入再读取');
             return { draftReadBlockedReason: 'BRIEF_DRAFT_CHANGED' };
-        const id = randomUUID();
-        this.store.create('workspace-draft-read', s.projectId, { ...binding, path: file.path, digest: file.digest, size: file.size, pathKey, callId, writeId, writeVersion: write.writeVersion }, id);
-        return { draftReadId: id };
+        }
+        if (requestedBindingId) {
+            const old = this.store.get('workspace-draft-read', requestedBindingId, s.projectId);
+            ensure(old.writeId === writeId && old.writeVersion === write.writeVersion, 'BRIEF_DRAFT_READ_STALE', '草稿已再次写入，请新建读取绑定');
+        }
+        const read = recordWorkspaceRead(this.app, 'workspace-draft-read', actor, s, { ...binding, path: file.path, digest: file.digest, size: file.size, pathKey, callId, writeId, writeVersion: write.writeVersion }, file, requestedBindingId);
+        return { draftReadId: read.id, ...(file.readProtocol ? { readBindingId: read.bindingId, writeVersion: read.writeVersion } : {}) };
     }
     validate(s, value) {
+        return this.validateFiles(s, value);
+    }
+    validateFiles(s, value, accepted) {
         const raw = value ?? [];
         ensure(Array.isArray(raw) && raw.length <= 5000, 'INVALID_INPUT', 'draftFiles 必须是最多5000项的数组', 400);
         const requested = raw.map(v => { const x = object(v); ensure(Object.keys(x).length === 2 && Object.hasOwn(x, 'path') && Object.hasOwn(x, 'readId'), 'INVALID_INPUT', 'draftFiles 只接受 path/readId', 400); return { path: text(x.path, 'draftFiles.path', 1000), readId: text(x.readId, 'draftFiles.readId', 100) }; });
@@ -61,6 +73,8 @@ export class DraftReadService {
         return requested.map((f, i) => {
             const write = writes.find(w => w.pathKey === keys[i]), read = this.store.maybe('workspace-draft-read', f.readId);
             ensure(write && read && read.projectId === s.projectId && read.sessionId === s.id && read.workspace === binding.workspace && read.pathKey === write.pathKey && read.writeId === write.id && read.writeVersion === write.writeVersion && read.digest === write.digest && read.size === write.size, 'BRIEF_DRAFT_READ_STALE', '草稿回读凭据不属于当前会话的最新写入，请重新 workspace_read');
+            const historical = read.protocolVersion === undefined && accepted?.some(old => old.readId === read.id && old.path === write.path && old.workspace === write.workspace && old.sessionId === s.id && old.writeVersion === write.writeVersion && old.digest === write.digest && old.size === write.size);
+            ensure(historical || hasWorkspaceCoverage(this.store, 'workspace-draft-read', read), 'BRIEF_DRAFT_READ_REQUIRED', 'ready需要完整SDK已送达草稿，请用新callId读取并等待实际交付');
             let actual;
             try {
                 actual = readText(this.store.paths.physical(s.workspace), write.path);
@@ -72,11 +86,20 @@ export class DraftReadService {
             return { ...binding, path: write.path, digest: write.digest, size: write.size, readId: read.id, writeVersion: write.writeVersion };
         }).sort((a, b) => a.path.localeCompare(b.path));
     }
-    assertCurrent(s, files) {
+    assertAcceptedCurrent(s, briefId) {
+        const files = acceptedResearchBrief(this.store, s.projectId, s.id, briefId).draftFiles;
         if (files === undefined)
             return;
-        const current = this.validate(s, files.map(f => ({ path: f.path, readId: f.readId })));
+        const current = this.validateFiles(s, files.map(f => ({ path: f.path, readId: f.readId })), files);
         ensure(digest(current) === digest(files), 'BRIEF_DRAFT_CHANGED', '固定研究计划草稿已改变，请重新保存 ready 修订');
     }
+    check(read) {
+        const r = read, binding = r.protocolVersion ? readBinding(this.store, 'workspace-draft-read', r) : r, s = this.store.get('session', r.sessionId, r.projectId), write = this.store.get('workspace-draft-write', r.writeId, r.projectId);
+        ensure(s.workspace === r.workspace && binding.writeId === r.writeId && binding.writeVersion === r.writeVersion && write.writeVersion === r.writeVersion && write.pathKey === r.pathKey && write.digest === r.digest && write.size === r.size, 'BRIEF_DRAFT_READ_STALE', '草稿写入绑定已变化');
+        assertWorkspaceReadBytes(this.store, r);
+    }
+    offer(actor, id, callId) { return offerWorkspaceRead(this.app, actor, 'workspace-draft-read', id, callId, r => this.check(r)); }
+    deliver(actor, id, callId) { return deliverWorkspaceRead(this.app, actor, 'workspace-draft-read', id, callId, r => this.check(r)); }
+    replay(actor, id) { const r = this.store.get('workspace-draft-read', id, actor.projectId); assertWorkspaceReadActor(this.app, actor, 'workspace-draft-read', r); this.check(r); replayWorkspaceRead(this.store, 'workspace-draft-read', id, actor.projectId); }
 }
 //# sourceMappingURL=draft-reads.js.map

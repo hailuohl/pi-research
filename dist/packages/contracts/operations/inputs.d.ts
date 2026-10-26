@@ -1072,6 +1072,67 @@ export declare const INPUT_SCHEMAS: {
         readonly additionalProperties: false;
     };
     readonly workspace_read: {
+        readonly anyOf: readonly [{
+            readonly type: "object";
+            readonly properties: {
+                readonly path: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly source: {
+                    readonly anyOf: readonly [{
+                        readonly enum: readonly ["session", "project"];
+                    }, {
+                        readonly type: "null";
+                    }];
+                };
+            };
+            readonly required: readonly ["path"];
+            readonly additionalProperties: false;
+        }, {
+            readonly type: "object";
+            readonly properties: {
+                readonly path: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly source: {
+                    readonly anyOf: readonly [{
+                        readonly enum: readonly ["session", "project"];
+                    }, {
+                        readonly type: "null";
+                    }];
+                };
+                readonly readProtocol: {
+                    readonly const: "workspace-text-v1";
+                };
+                readonly readBindingId: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly cursor: {
+                    readonly type: "integer";
+                    readonly minimum: number;
+                    readonly maximum: number;
+                };
+                readonly limit: {
+                    readonly type: "integer";
+                    readonly minimum: number;
+                    readonly maximum: number;
+                };
+            };
+            readonly required: readonly ["path", "readProtocol"];
+            readonly additionalProperties: false;
+        }];
         readonly type: "object";
         readonly properties: {
             readonly path: {
@@ -1087,6 +1148,26 @@ export declare const INPUT_SCHEMAS: {
                 }, {
                     readonly type: "null";
                 }];
+            };
+            readonly readProtocol: {
+                readonly const: "workspace-text-v1";
+            };
+            readonly readBindingId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly cursor: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly limit: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
             };
         };
         readonly required: readonly ["path"];

@@ -9,6 +9,8 @@ import { digest } from '../storage/store.js';
 import type {DraftFile} from './draft-reads.js';
 import {assertSourceInputs,type ResearchSourceInput} from './source-inputs.js';
 import type {Store} from '../storage/store.js';
+import {ordinaryWorkspaceReader} from './workspace-inputs.js';
+import {assertWorkspaceReader} from './workspace-read-delivery.js';
 import {verifyEvidence} from '../evidence/service.js';
 import {assertFrozenMethod,validateProtocolRoles,type FrozenMethodContract,type MethodRequirement,type DraftRole,type ProtocolDocument} from './method-contracts.js';
 
@@ -107,6 +109,11 @@ function payload(brief: ResearchBrief) {
 }
 
 function isIntact(brief: ResearchBrief) { return brief.digest === digest(payload(brief)); }
+/** Only a stored intact brief supplies historical acceptance; callers cannot pass frozen arrays as authority. */
+export function acceptedResearchBrief(store:Store,pid:string,sessionId:string,id:string,readyOnly=true) {
+    const row=store.get<ResearchBrief>('research-brief',id,pid);
+    ensure(row.rootSessionId===sessionId&&isIntact(row)&&(!readyOnly||row.status==='ready'||row.status==='confirmed'),'BRIEF_CORRUPTED','历史接受上下文必须来自原完整研究计划');return row;
+}
 function assertBriefMethods(store:Store,pid:string,brief:ResearchBrief,phase?:'formal') {assertFrozenMethod(store,pid,brief.methodContract,brief.sourceInputs,brief.rootSessionId,phase);if(brief.methodContract?.compilerVersion==='method-contract-v3'){validateProtocolRoles(brief.methodContract,brief.draftFiles,brief.draftRoles);ensure(digest(brief.protocolDocument)===digest({path:brief.methodContract.protocolPath,digest:brief.methodContract.protocolDigest,compilerVersion:brief.methodContract.compilerVersion}),'METHOD_PROTOCOL_ROLE_INVALID','唯一完整protocolDocument绑定缺失或已改变');}}
 
 export function fixedResearchBrief(store:Store,projectId:string,ref:ResearchBriefRef,phase?:'formal') {
@@ -162,7 +169,7 @@ export class ResearchBriefService {
         this.checkEvidence(actor, projectId, row.evidenceIds);
         assertSourceInputs(this.app.store,projectId,root.id,row.sourceInputs);
         assertBriefMethods(this.app.store,projectId,row,phase);
-        this.app.draftReads.assertCurrent(root,row.draftFiles);
+        this.app.draftReads.assertAcceptedCurrent(root,row.id);
         return { id: row.id, digest: row.digest, revision: row.revision, rootSessionId: row.rootSessionId };
     }
 
@@ -190,7 +197,16 @@ export class ResearchBriefService {
         fixedResearchBrief(this.app.store,projectId,ref,phase);
     }
 
-    validateReadyDrafts(actor:Actor,projectId:string,sessionId:string,input:unknown) {
+    private assertFreshActor(actor:Actor,sessionId:string,input:unknown,approvedActionId?:string) {
+        if(actor.type!=='agent'||ordinaryWorkspaceReader(actor))return;
+        if(this.app.automaticApprovals.isContinuation(actor)){assertWorkspaceReader(this.app,actor,this.app.store.get<Session>('session',sessionId,actor.projectId),'workspace-draft-read');return;}
+        const actionId=actor.permissionActionId??approvedActionId;
+        ensure(actionId&&!actor.taskId&&!actor.attemptId&&!actor.wakeupId&&!actor.continuationId&&!actor.approvalResumeId&&!actor.workflowContinuationId,'TASK_SCOPE_DENIED','新研究计划只能使用普通主会话读取事实或准确批准动作',403);
+        if(!actor.permissionActionId)ensure(this.app.sessionPermissions.boundNoticeAction(actor,sessionId)===actionId,'SESSION_ACTION_EXECUTION_DENIED','恢复必须属于当前准确批准通知',403);
+        this.app.sessionPermissions.validate(actor.permission??this.app.sessionPermissions.capture(sessionId),sessionId,'research_brief_save',object(input),actionId);
+    }
+    validateReadyDrafts(actor:Actor,projectId:string,sessionId:string,input:unknown,approvedActionId?:string) {
+        this.assertFreshActor(actor,sessionId,input,approvedActionId);
         const parsed=parseContent(input);
         const root=this.root(actor,projectId,sessionId,true),drafts=parsed.status==='ready'&&(actor.type==='agent'||parsed.draftFiles!==undefined)?this.app.draftReads.validate(root,parsed.draftFiles):undefined;
         this.sourceInputFingerprint(sessionId,parsed.expectedRevisionId,parsed.status);const previous=root.researchBriefId?this.app.store.get<ResearchBrief>('research-brief',root.researchBriefId,projectId):undefined;
@@ -207,6 +223,7 @@ export class ResearchBriefService {
     }
 
     save(actor: Actor, projectId: string, sessionId: string, input: unknown): Row<ResearchBrief> {
+        this.assertFreshActor(actor,sessionId,input);
         const { content, status, expectedRevisionId, draftFiles:requestedDraftFiles,methodContract:requestedMethodContract,draftRoles:requestedRoles } = parseContent(input);
         return this.app.store.transaction(() => {
             const root = this.root(actor, projectId, sessionId, true), previousId = root.researchBriefId ?? null;
@@ -278,7 +295,7 @@ export class ResearchBriefService {
             this.checkEvidence(actor, projectId, row.evidenceIds);
             assertSourceInputs(this.app.store,projectId,root.id,row.sourceInputs);
             assertBriefMethods(this.app.store,projectId,row);
-            this.app.draftReads.assertCurrent(root,row.draftFiles);
+            this.app.draftReads.assertAcceptedCurrent(root,row.id);
             const next = this.app.store.update<ResearchBrief>('research-brief', row.id, row.version, { status: 'confirmed' });
             this.app.store.event(projectId, 'session.research_brief_confirmed', { sessionId: root.id, briefId: row.id, revision: row.revision, digest: row.digest });
             return next;

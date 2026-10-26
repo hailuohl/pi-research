@@ -138,7 +138,7 @@ export class ResearchApp {
         this.projects = new ProjectService(this.context);
         this.approvals = new ApprovalService(this.context);
         this.evidence = new EvidenceService(this.context);
-        this.draftReads = new DraftReadService(this.store);
+        this.draftReads = new DraftReadService(this);
         this.sourceInputs = new SourceInputService(this);
         this.methodContracts = new MethodContractService(this);
         this.syntheticFixtures = new SyntheticFixtureService(this);

@@ -1,6 +1,7 @@
 import type { Actor, Row, Session } from '../domain/types.js';
 import type { ResearchApp } from '../research-app.js';
 import { type Store } from '../storage/store.js';
+import { type WorkspaceText } from './workspace-read-delivery.js';
 export interface ResearchSourceInput {
     path: string;
     workspace: string;
@@ -18,17 +19,23 @@ export declare function assertSourceInputs(store: Store, pid: string, sessionId:
 export declare class SourceInputService {
     private app;
     constructor(app: ResearchApp);
-    recordRead(actor: Actor, selectedSession: Row<Session> | undefined, file: {
-        path: string;
-        content: string;
-        digest: string;
-        size: number;
-    }, callId: string): {
+    recordRead(actor: Actor, selectedSession: Row<Session> | undefined, file: WorkspaceText, callId: string, requestedBindingId?: string): {
         sourceInputReadBlockedReason: string;
+    } | {
+        readBindingId?: string | undefined;
+        sourceInputReadId: string;
+        sourceInputReadBlockedReason?: undefined;
     } | undefined;
+    private selections;
     private collect;
     selectionFingerprint(session: Row<Session>): ({
         documentVersionId: string;
+        bindingId: string;
+        version: number;
+    } | {
+        sourceKind: "workspace-legacy";
+        workspace: string;
+        path: string;
         bindingId: string;
         version: number;
     } | {
@@ -45,13 +52,13 @@ export declare class SourceInputService {
     })[];
     preview(session: Row<Session>, anchorBriefId: string | null, inherited: ResearchSourceInput[], status?: 'clarifying' | 'ready'): {
         documentVersionId?: string | undefined;
-        purpose?: "whole-text" | "dataset-reference" | undefined;
-        digest: string;
         path: string;
+        size: number;
+        digest: string;
+        purpose?: "whole-text" | "dataset-reference" | undefined;
         textSourceId?: string | undefined;
         readId: string;
         readProtocol?: "fixed-text-v1" | undefined;
-        size: number;
         workspace: string;
         sourceKind?: "workspace-snapshot" | undefined;
         artifactId?: string;
@@ -60,29 +67,33 @@ export declare class SourceInputService {
         bytes: undefined;
         verifiedReference: true;
         documentVersionId?: string | undefined;
-        purpose?: "whole-text" | "dataset-reference" | undefined;
-        digest: string;
         path: string;
+        size: number;
+        digest: string;
+        purpose?: "whole-text" | "dataset-reference" | undefined;
         textSourceId?: string | undefined;
         readId: string;
         readProtocol?: "fixed-text-v1" | undefined;
-        size: number;
         workspace: string;
         sourceKind?: "workspace-snapshot" | undefined;
         artifactId?: string;
     } | {
         bytes: Buffer<ArrayBufferLike>;
         documentVersionId?: string | undefined;
-        purpose?: "whole-text" | "dataset-reference" | undefined;
-        digest: string;
         path: string;
+        size: number;
+        digest: string;
+        purpose?: "whole-text" | "dataset-reference" | undefined;
         textSourceId?: string | undefined;
         readId: string;
         readProtocol?: "fixed-text-v1" | undefined;
-        size: number;
         workspace: string;
         sourceKind?: "workspace-snapshot" | undefined;
         artifactId?: string;
     })[];
     freeze(session: Row<Session>, anchorBriefId: string | null, inherited: ResearchSourceInput[], status?: 'clarifying' | 'ready'): ResearchSourceInput[];
+    private check;
+    offer(actor: Actor, id: string, callId: string): boolean;
+    deliver(actor: Actor, id: string, callId: string): void;
+    replay(actor: Actor, id: string): void;
 }

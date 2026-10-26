@@ -1,7 +1,9 @@
 import { createHmac, randomBytes, randomUUID } from 'node:crypto';
-import { chmodSync, closeSync, existsSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve, sep } from 'node:path';
+import { chmodSync, closeSync, constants, existsSync, fstatSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, readSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join, resolve, sep } from 'node:path';
 import { ensure } from '../domain/errors.js';
+import { readStableFile } from './stable-file.js';
+import { MAX_TEXT_BYTES } from './files.js';
 const active = new Map();
 const marker = (root) => resolve(root) + '.text-write-pending';
 export function assertTextWriteSettled(root) {
@@ -15,8 +17,42 @@ catch (error) {
     if (error.code !== 'ENOENT')
         throw error;
 } }
+const fileStatIdentity = (s) => `${s.dev}:${s.ino}:${s.birthtimeMs}:${s.mode}:${s.mtimeMs}`;
 function fileIdentity(path) { plainFile(path); if (!existsSync(path))
-    return null; const s = lstatSync(path); return `${s.dev}:${s.ino}:${s.birthtimeMs}:${s.mode}:${s.mtimeMs}`; }
+    return null; return fileStatIdentity(lstatSync(path)); }
+const sameFile = (a, b) => a.isFile() && b.isFile() && !a.isSymbolicLink() && !b.isSymbolicLink() && a.dev === b.dev && a.ino === b.ino && a.size === b.size && a.mode === b.mode && a.mtimeMs === b.mtimeMs && a.ctimeMs === b.ctimeMs;
+/** Compare live bytes without allocating the live file, including during legacy-journal recovery. */
+function matchesBytes(path, expected, expectedIdentity, expectedMode) {
+    if (!existsSync(path))
+        return expected === null && expectedIdentity === null;
+    if (expected === null)
+        return false;
+    plainFile(path);
+    const before = lstatSync(path);
+    if (before.size !== expected.length)
+        return false;
+    const fd = openSync(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+    try {
+        const opened = fstatSync(fd);
+        if (!sameFile(opened, before))
+            return false;
+        const block = Buffer.alloc(Math.min(64 * 1024, expected.length + 1));
+        let offset = 0;
+        while (offset < expected.length) {
+            const n = readSync(fd, block, 0, Math.min(block.length, expected.length - offset), offset);
+            if (!n || !block.subarray(0, n).equals(expected.subarray(offset, offset + n)))
+                return false;
+            offset += n;
+        }
+        if (readSync(fd, block, 0, 1, offset) !== 0)
+            return false;
+        const after = fstatSync(fd), named = lstatSync(path);
+        return sameFile(after, opened) && sameFile(named, after) && fileStatIdentity(named) === expectedIdentity && (expectedMode === undefined || (named.mode & 0o777) === expectedMode);
+    }
+    finally {
+        closeSync(fd);
+    }
+}
 export function captureWritePreimage(root, path, metadata = false) {
     root = resolve(root);
     const target = metadata ? root + '.source-modes.json' : resolve(root, path), parents = [];
@@ -30,7 +66,7 @@ export function captureWritePreimage(root, path, metadata = false) {
         ensure(next !== parent, 'PATH_DENIED', '写入路径越界', 403);
         parent = next;
     }
-    const beforeIdentity = fileIdentity(target), bytes = beforeIdentity === null ? null : readFileSync(target), mode = beforeIdentity === null ? 0o600 : lstatSync(target).mode & 0o777;
+    const beforeIdentity = fileIdentity(target), bytes = beforeIdentity === null ? null : readStableFile(dirname(target), basename(target), metadata ? 8 * 1024 * 1024 : MAX_TEXT_BYTES), mode = beforeIdentity === null ? 0o600 : lstatSync(target).mode & 0o777;
     ensure(fileIdentity(target) === beforeIdentity, 'FILE_VERSION_CONFLICT', '读取期间文件已变化', 409);
     return { bytes, identity: beforeIdentity, mode, parents };
 }
@@ -89,7 +125,7 @@ export class TextWriteRecovery {
         mkdirSync(this.directory, { recursive: true, mode: 0o700 });
         const target = metadata ? root + '.source-modes.json' : resolve(root, path);
         plainFile(target);
-        const unchanged = () => fileIdentity(target) === preimage.identity && (preimage.bytes === null ? !existsSync(target) : readFileSync(target).equals(preimage.bytes));
+        const unchanged = () => fileIdentity(target) === preimage.identity && matchesBytes(target, preimage.bytes, preimage.identity);
         for (const parent of preimage.parents)
             ensure(identity(parent.path) === parent.identity, 'TEXT_WRITE_RECOVERY_CONFLICT', '写入前目录已变化', 409);
         ensure(unchanged(), 'FILE_VERSION_CONFLICT', '写入前文件已变化', 409);
@@ -151,15 +187,15 @@ export class TextWriteRecovery {
         const roots = journal.roots;
         for (const entry of [...journal.entries].reverse()) {
             if (!committed) {
-                const target = this.target(entry), current = existsSync(target) ? readFileSync(target).toString('base64') : null;
+                const target = this.target(entry), before = entry.before === null ? null : Buffer.from(entry.before, 'base64'), after = Buffer.from(entry.after, 'base64');
                 // A manually restored prewrite value needs no mutation, even if its inode changed.
-                const currentIdentity = fileIdentity(target), original = current === entry.before && (current === null || (lstatSync(target).mode & 0o777) === entry.mode);
-                ensure(original || (current === entry.after && currentIdentity === entry.afterIdentity), 'TEXT_WRITE_RECOVERY_CONFLICT', '事务外文件或权限修改需要人工恢复', 409);
+                const currentIdentity = fileIdentity(target), original = matchesBytes(target, before, currentIdentity, entry.mode);
+                ensure(original || (currentIdentity === entry.afterIdentity && matchesBytes(target, after, currentIdentity)), 'TEXT_WRITE_RECOVERY_CONFLICT', '事务外文件或权限修改需要人工恢复', 409);
                 if (!original) {
                     if (entry.before === null)
                         unlinkSync(target);
                     else {
-                        ensure(fileIdentity(entry.backup) === entry.beforeIdentity && readFileSync(entry.backup).toString('base64') === entry.before, 'TEXT_WRITE_RECOVERY_CONFLICT', '恢复备份已变化', 409);
+                        ensure(fileIdentity(entry.backup) === entry.beforeIdentity && matchesBytes(entry.backup, before, entry.beforeIdentity), 'TEXT_WRITE_RECOVERY_CONFLICT', '恢复备份已变化', 409);
                         renameSync(entry.backup, target);
                     }
                 }

@@ -1,5 +1,6 @@
 import type { Actor, Row, Session } from '../domain/types.js';
-import { type Store } from '../storage/store.js';
+import type { ResearchApp } from '../research-app.js';
+import { type WorkspaceText } from './workspace-read-delivery.js';
 interface WorkspaceDraft {
     sessionId: string;
     workspace: string;
@@ -17,8 +18,9 @@ export interface DraftFileInput {
 }
 /** Host receipts are deliberately separate from the model's workspace and cached tool responses. */
 export declare class DraftReadService {
-    private store;
-    constructor(store: Store);
+    private app;
+    constructor(app: ResearchApp);
+    private get store();
     private workspace;
     private path;
     private writes;
@@ -27,17 +29,20 @@ export declare class DraftReadService {
         digest: string;
         size: number;
     }, callId: string): void;
-    recordRead(actor: Actor, s: Row<Session>, file: {
-        path: string;
-        digest: string;
-        size: number;
-        content: string;
-    }, callId: string): {
-        draftReadId: string;
+    recordRead(actor: Actor, s: Row<Session>, file: WorkspaceText, callId: string, requestedBindingId?: string): {
+        draftReadBlockedReason: string;
     } | {
-        draftReadBlockedReason: 'BRIEF_DRAFT_CHANGED' | 'BRIEF_DRAFT_ENCODING_INVALID';
+        readBindingId?: string | undefined;
+        writeVersion?: number | undefined;
+        draftReadId: string;
+        draftReadBlockedReason?: undefined;
     } | undefined;
     validate(s: Row<Session>, value: unknown): DraftFile[];
-    assertCurrent(s: Row<Session>, files: DraftFile[] | undefined): void;
+    private validateFiles;
+    assertAcceptedCurrent(s: Row<Session>, briefId: string): void;
+    private check;
+    offer(actor: Actor, id: string, callId: string): boolean;
+    deliver(actor: Actor, id: string, callId: string): void;
+    replay(actor: Actor, id: string): void;
 }
 export {};

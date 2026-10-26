@@ -485,7 +485,7 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "requestDigest" | "error" | "source" | "httpStatus" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "bytes" | "retryAfter")[];
+                readonly required: ("kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "bytes" | "requestDigest" | "error" | "source" | "httpStatus" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "retryAfter")[];
                 readonly additionalProperties: false;
             };
             readonly minItems: number;
@@ -1011,7 +1011,7 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
             readonly maxLength: number;
         };
     };
-    readonly required: ("sessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "state" | "sources" | "model" | "usage" | "digest" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "expiresAt" | "effectiveState" | "validity" | "reasons" | "calls" | "searchResults" | "papers")[];
+    readonly required: ("sessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "digest" | "state" | "sources" | "model" | "usage" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "expiresAt" | "effectiveState" | "validity" | "reasons" | "calls" | "searchResults" | "papers")[];
     readonly additionalProperties: false;
 };
 export declare const DISCOVERY_GRANT_INPUT_SCHEMAS: {
@@ -1707,7 +1707,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "requestDigest" | "error" | "source" | "httpStatus" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "bytes" | "retryAfter")[];
+                    readonly required: ("kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "bytes" | "requestDigest" | "error" | "source" | "httpStatus" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -2233,7 +2233,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("sessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "state" | "sources" | "model" | "usage" | "digest" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "expiresAt" | "effectiveState" | "validity" | "reasons" | "calls" | "searchResults" | "papers")[];
+        readonly required: ("sessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "digest" | "state" | "sources" | "model" | "usage" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "expiresAt" | "effectiveState" | "validity" | "reasons" | "calls" | "searchResults" | "papers")[];
         readonly additionalProperties: false;
     };
     readonly discovery_grant_inspect: {
@@ -2723,7 +2723,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "requestDigest" | "error" | "source" | "httpStatus" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "bytes" | "retryAfter")[];
+                    readonly required: ("kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "bytes" | "requestDigest" | "error" | "source" | "httpStatus" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -3249,7 +3249,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("sessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "state" | "sources" | "model" | "usage" | "digest" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "expiresAt" | "effectiveState" | "validity" | "reasons" | "calls" | "searchResults" | "papers")[];
+        readonly required: ("sessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "digest" | "state" | "sources" | "model" | "usage" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "expiresAt" | "effectiveState" | "validity" | "reasons" | "calls" | "searchResults" | "papers")[];
         readonly additionalProperties: false;
     };
     readonly discovery_grant_activate: {
@@ -3739,7 +3739,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "requestDigest" | "error" | "source" | "httpStatus" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "bytes" | "retryAfter")[];
+                    readonly required: ("kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "bytes" | "requestDigest" | "error" | "source" | "httpStatus" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -4265,7 +4265,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("sessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "state" | "sources" | "model" | "usage" | "digest" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "expiresAt" | "effectiveState" | "validity" | "reasons" | "calls" | "searchResults" | "papers")[];
+        readonly required: ("sessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "digest" | "state" | "sources" | "model" | "usage" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "expiresAt" | "effectiveState" | "validity" | "reasons" | "calls" | "searchResults" | "papers")[];
         readonly additionalProperties: false;
     };
     readonly discovery_grant_revoke: {
@@ -4755,7 +4755,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "requestDigest" | "error" | "source" | "httpStatus" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "bytes" | "retryAfter")[];
+                    readonly required: ("kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "bytes" | "requestDigest" | "error" | "source" | "httpStatus" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -5281,7 +5281,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("sessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "state" | "sources" | "model" | "usage" | "digest" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "expiresAt" | "effectiveState" | "validity" | "reasons" | "calls" | "searchResults" | "papers")[];
+        readonly required: ("sessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "digest" | "state" | "sources" | "model" | "usage" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "expiresAt" | "effectiveState" | "validity" | "reasons" | "calls" | "searchResults" | "papers")[];
         readonly additionalProperties: false;
     };
 };

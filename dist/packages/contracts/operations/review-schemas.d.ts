@@ -414,7 +414,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("digest" | "path" | "compilerVersion")[];
+                readonly required: ("path" | "digest" | "compilerVersion")[];
                 readonly additionalProperties: false;
             };
             readonly protocolVersion: {
@@ -452,7 +452,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
+                readonly required: ("rootSessionId" | "id" | "digest" | "revision")[];
                 readonly additionalProperties: false;
             };
             readonly sourceInputs: {
@@ -525,7 +525,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("artifactId" | "digest" | "path" | "readId" | "size" | "workspace")[];
+                    readonly required: ("artifactId" | "path" | "size" | "digest" | "readId" | "workspace")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -978,7 +978,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("digest" | "path" | "compilerVersion")[];
+                readonly required: ("path" | "digest" | "compilerVersion")[];
                 readonly additionalProperties: false;
             };
             readonly protocolVersion: {
@@ -1016,7 +1016,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
+                readonly required: ("rootSessionId" | "id" | "digest" | "revision")[];
                 readonly additionalProperties: false;
             };
             readonly sourceInputs: {
@@ -1089,7 +1089,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("artifactId" | "digest" | "path" | "readId" | "size" | "workspace")[];
+                    readonly required: ("artifactId" | "path" | "size" | "digest" | "readId" | "workspace")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;

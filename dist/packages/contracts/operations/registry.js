@@ -1,5 +1,6 @@
 import { filePolicy } from '../../storage/file-policy.js';
 import { recordAttachmentRead } from '../../research-workflows/attachment-inputs.js';
+import { workspaceText, assertWorkspaceReader } from '../../research-workflows/workspace-read-delivery.js';
 import { prepareTaskModels, inspectThinkingPolicy } from '../../pi-adapter/thinking-policy.js';
 import { readCatalog, readSkill, inspectSessionSkills, selectSessionSkills } from '../../skills/runtime.js';
 import { attachmentScope, readAttachment } from '../../pi-adapter/attachments.js';
@@ -11,7 +12,7 @@ import { text, object, integer } from '../validation.js';
 import { APPROVAL_RESUME_TOOLS } from '../../policy/research-automation.js';
 import { interactiveCoordinator, scope, userOnly, toolAllowed, AUTOMATION_TOOLS } from '../../policy/permissions.js';
 import { assertProjectWritable, assertProjectReadable } from '../../policy/lifecycle.js';
-import { readText, writeText, listFiles } from '../../workspace/files.js';
+import { writeText, listFiles } from '../../workspace/files.js';
 import { settleSourcePreparationReceipt } from '../../workspace/source-prepare-recovery.js';
 import { INPUT_SCHEMAS } from './inputs.js';
 import { OUTPUT_SCHEMAS } from './outputs.js';
@@ -464,10 +465,13 @@ const SPECS = [
         execute: (c, x) => c.app.runs.submit(c.actor, x.intentId) }),
     make('workspace_read', { idempotencyPolicy: 'read-only', authorize: workspaceScope, preconditions: noPrecondition,
         execute: (c, x) => {
-            if (x.source === 'project')
+            const current = c.session ? c.app.store.get('session', c.session.id, c.projectId) : undefined;
+            if (x.readProtocol)
+                assertWorkspaceReader(c.app, c.actor, current, x.source === 'project' ? 'research-input-read' : 'workspace-draft-read');
+            if (x.source === 'project' && !x.readProtocol)
                 return c.app.projects.readFile(c.actor, c.projectId, x.path);
-            const file = readText(c.app.store.paths.physical(c.session.workspace), x.path);
-            return { ...file, ...c.app.draftReads.recordRead(c.actor, c.session, file, c.idempotencyKey) };
+            const workspace = x.source === 'project' ? c.app.projects.read(c.actor, c.projectId).workspace : current.workspace;
+            return workspaceText(c.app.store.paths.physical(workspace), x);
         } }),
     make('workspace_write', { idempotencyPolicy: 'key-required', authorize: (c, x) => {
             workspaceScope(c, x);
@@ -596,6 +600,7 @@ export class OperationRegistry {
                 (actor.taskId ? this.app.teams : this.app.wakeups).assertResource(actor, kind, input[field]);
         }
         spec.authorize(context, input);
+        const noticeActionId = id === 'research_brief_save' && actor.type === 'agent' && actor.approvalNoticeMessageId ? this.app.sessionPermissions.boundNoticeAction(actor, session.id) : undefined;
         if (id === 'development_prepare')
             this.app.development.validateSyntheticPreparation(actor, pid, session.id, input);
         if (id === 'research_brief_save') {
@@ -603,7 +608,7 @@ export class OperationRegistry {
             const receiptRequest = { name: id, input }, receiptKeys = [key, ...(mapped ? [`permission-action:${mapped.actionId}`] : [])];
             const replay = receiptKeys.some(receiptKey => actor.type === 'agent' ? this.app.store.agentOperationResult(session.id, receiptKey, receiptRequest).found : this.app.store.operationResult(`operation:user:${pid}:${session.id}`, receiptKey, receiptRequest).found);
             if (!replay)
-                this.app.researchBriefs.validateReadyDrafts(actor, pid, session.id, input);
+                this.app.researchBriefs.validateReadyDrafts(actor, pid, session.id, input, options.approvedActionId ?? noticeActionId);
         }
         if (id === 'evidence_register' && actor.type === 'agent' && actor.role === 'coordinator' && !actor.taskId && !actor.wakeupId && !options.approvedActionId)
             ensure(typeof input.exactQuote === 'string', 'EVIDENCE_EXACT_QUOTE_REQUIRED', '请从实际读取的正文复制 exactQuote；不接受猜测位置与自由描述。解释和研究断言另行提出，不作为已验证证据', 400);
@@ -627,6 +632,8 @@ export class OperationRegistry {
         }
         else
             permission = this.app.sessionPermissions.guard(actor, id, input, key);
+        if (noticeActionId)
+            ensure(permission?.actionId === noticeActionId, 'SESSION_ACTION_EXECUTION_DENIED', '实际批准动作必须属于当前通知', 403);
         if (permission?.key) {
             key = permission.key;
             context.idempotencyKey = key;
@@ -701,7 +708,14 @@ export class OperationRegistry {
         };
         const preparedAfter = Number(this.app.store.db.prepare('SELECT COALESCE(MAX(rowid),0) n FROM records').get().n);
         const save = (value, fresh = true) => {
-            let result = output(fresh ? this.app.automaticApprovals.postPrepare(actor, id, input, value, preparedAfter) : value);
+            let raw = fresh ? this.app.automaticApprovals.postPrepare(actor, id, input, value, preparedAfter) : value;
+            if (fresh && id === 'workspace_read' && actor.type === 'agent') {
+                context.validate();
+                const current = this.app.store.get('session', session.id, pid), extra = input.source === 'project' ? this.app.sourceInputs.recordRead(actor, current, raw, key, input.readBindingId) : this.app.draftReads.recordRead(actor, current, raw, key, input.readBindingId);
+                if (extra)
+                    raw = { ...raw, ...extra };
+            }
+            let result = output(raw);
             if (fresh && id === 'session_attachment_read' && actor.type === 'agent') {
                 context.validate();
                 const extra = recordAttachmentRead(this.app.store, actor, session, result, key, input.attachmentBindingId);
@@ -716,9 +730,9 @@ export class OperationRegistry {
                 context.validate();
                 this.app.methodContracts.recordSkillRead(actor, session, result);
             }
-            if (fresh && !(id === 'artifact_read' && input.readProtocol === 'fixed-text-v1') && actor.type === 'agent' && ['workspace_read', 'artifact_read', 'development_review_source_read', 'run_source_read', 'formal_report_review_source_read'].includes(id)) {
+            if (fresh && !(id === 'artifact_read' && input.readProtocol === 'fixed-text-v1') && actor.type === 'agent' && ['artifact_read', 'development_review_source_read', 'run_source_read', 'formal_report_review_source_read'].includes(id)) {
                 context.validate();
-                let extra = id === 'workspace_read' && input.source === 'project' ? this.app.sourceInputs.recordRead(actor, session, result, key) : id === 'artifact_read' || id === 'development_review_source_read' ? this.app.developmentReviews.recordReading(actor, pid, id, input, result, key) : undefined;
+                let extra = id === 'artifact_read' || id === 'development_review_source_read' ? this.app.developmentReviews.recordReading(actor, pid, id, input, result, key) : undefined;
                 if (['artifact_read', 'run_source_read', 'formal_report_review_source_read'].includes(id))
                     extra = this.app.formalReportReviews.recordReading(actor, pid, id, input, result, key) ?? extra;
                 if (extra)
@@ -911,6 +925,20 @@ export class OperationRegistry {
                     spec.authorize(context, input);
                 const previous = lookup();
                 if (previous) {
+                    if (id === 'workspace_read') {
+                        context.validate();
+                        spec.authorize(context, input);
+                        const prior = previous.value;
+                        if (prior.draftReadId)
+                            this.app.draftReads.replay(actor, prior.draftReadId);
+                        else if (prior.sourceInputReadId)
+                            this.app.sourceInputs.replay(actor, prior.sourceInputReadId);
+                        else {
+                            const fresh = spec.execute(context, input);
+                            ensure(fresh.digest === prior.digest && fresh.size === prior.size && fresh.content === prior.content, 'WORKSPACE_READ_STALE', '缓存工作区内容已变化');
+                        }
+                        return output(previous.value);
+                    }
                     if (id === 'artifact_read' && input.readProtocol === 'fixed-text-v1') {
                         context.validate();
                         const fresh = spec.execute(context, input);

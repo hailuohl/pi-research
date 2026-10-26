@@ -1,5 +1,6 @@
 import {filePolicy} from '../../storage/file-policy.js';
 import {recordAttachmentRead} from '../../research-workflows/attachment-inputs.js';
+import {workspaceText,assertWorkspaceReader,type WorkspaceTextInput,type WorkspaceText} from '../../research-workflows/workspace-read-delivery.js';
 import {prepareTaskModels,inspectThinkingPolicy,type PreparedTaskModels} from '../../pi-adapter/thinking-policy.js';
 import {readCatalog,readSkill,inspectSessionSkills,selectSessionSkills} from '../../skills/runtime.js';
 import {attachmentScope,readAttachment} from '../../pi-adapter/attachments.js';
@@ -409,9 +410,11 @@ const SPECS: OperationSpec[] = [
         execute: (c, x) => c.app.runs.submit(c.actor, x.intentId as string)}),
     make('workspace_read', {idempotencyPolicy: 'read-only', authorize: workspaceScope, preconditions: noPrecondition,
         execute: (c, x) => {
-            if(x.source==='project')return c.app.projects.readFile(c.actor,c.projectId,x.path as string);
-            const file=readText(c.app.store.paths.physical(c.session!.workspace),x.path as string);
-            return {...file,...c.app.draftReads.recordRead(c.actor,c.session!,file,c.idempotencyKey!)};
+            const current=c.session?c.app.store.get<Session>('session',c.session.id,c.projectId):undefined;
+            if(x.readProtocol)assertWorkspaceReader(c.app,c.actor,current!,x.source==='project'?'research-input-read':'workspace-draft-read');
+            if(x.source==='project'&&!x.readProtocol)return c.app.projects.readFile(c.actor,c.projectId,x.path as string);
+            const workspace=x.source==='project'?c.app.projects.read(c.actor,c.projectId).workspace:current!.workspace;
+            return workspaceText(c.app.store.paths.physical(workspace),x as unknown as WorkspaceTextInput);
         }}),
     make('workspace_write', {idempotencyPolicy: 'key-required', authorize: (c, x) => {
         workspaceScope(c, x);
@@ -505,12 +508,13 @@ export class OperationRegistry {
             if (actor.taskId || actor.wakeupId) (actor.taskId ? this.app.teams : this.app.wakeups).assertResource(actor, kind, input[field] as string);
         }
         spec.authorize(context, input);
+        const noticeActionId=id==='research_brief_save'&&actor.type==='agent'&&actor.approvalNoticeMessageId?this.app.sessionPermissions.boundNoticeAction(actor,session!.id):undefined;
         if(id==='development_prepare')this.app.development.validateSyntheticPreparation(actor,pid,session!.id,input);
         if(id==='research_brief_save') {
             const mapped=actor.type==='agent'?this.app.store.maybe<{actionId:string}>('permission-call',digest({sessionId:session!.id,callId:key})):undefined;
             const receiptRequest={name:id,input},receiptKeys=[key!,...(mapped?[`permission-action:${mapped.actionId}`]:[])];
             const replay=receiptKeys.some(receiptKey=>actor.type==='agent'?this.app.store.agentOperationResult(session!.id,receiptKey,receiptRequest).found:this.app.store.operationResult(`operation:user:${pid}:${session!.id}`,receiptKey,receiptRequest).found);
-            if(!replay)this.app.researchBriefs.validateReadyDrafts(actor,pid,session!.id,input);
+            if(!replay)this.app.researchBriefs.validateReadyDrafts(actor,pid,session!.id,input,options.approvedActionId??noticeActionId);
         }
         if(id==='evidence_register'&&actor.type==='agent'&&actor.role==='coordinator'&&!actor.taskId&&!actor.wakeupId&&!options.approvedActionId)ensure(typeof input.exactQuote==='string','EVIDENCE_EXACT_QUOTE_REQUIRED','请从实际读取的正文复制 exactQuote；不接受猜测位置与自由描述。解释和研究断言另行提出，不作为已验证证据',400);
         if(options.approvedActionId){
@@ -527,6 +531,7 @@ export class OperationRegistry {
                 return fixed;
             });
         }else permission=this.app.sessionPermissions.guard(actor,id,input,key);
+        if(noticeActionId)ensure(permission?.actionId===noticeActionId,'SESSION_ACTION_EXECUTION_DENIED','实际批准动作必须属于当前通知',403);
         if(permission?.key){key=permission.key;context.idempotencyKey=key;}
         const proposalOwner = id === 'change_proposal_prepare' ? session?.id : undefined;
         const intentOwner = id === 'run_prepare' ? session?.id : undefined;
@@ -569,13 +574,18 @@ export class OperationRegistry {
         };
         const preparedAfter=Number(this.app.store.db.prepare('SELECT COALESCE(MAX(rowid),0) n FROM records').get()!.n);
         const save = (value: unknown,fresh=true) => {
-            let result = output(fresh?this.app.automaticApprovals.postPrepare(actor,id,input,value,preparedAfter):value);
+            let raw=fresh?this.app.automaticApprovals.postPrepare(actor,id,input,value,preparedAfter):value;
+            if(fresh&&id==='workspace_read'&&actor.type==='agent'){
+                context.validate();const current=this.app.store.get<Session>('session',session!.id,pid),extra=input.source==='project'?this.app.sourceInputs.recordRead(actor,current,raw as WorkspaceText,key!,input.readBindingId as string|undefined):this.app.draftReads.recordRead(actor,current,raw as WorkspaceText,key!,input.readBindingId as string|undefined);
+                if(extra)raw={...raw as object,...extra};
+            }
+            let result = output(raw);
             if(fresh&&id==='session_attachment_read'&&actor.type==='agent'){context.validate();const extra=recordAttachmentRead(this.app.store,actor,session!,result as Parameters<typeof recordAttachmentRead>[3],key!,input.attachmentBindingId as string|undefined);if(extra)result=output({...result as object,...extra});}
             if(fresh&&id==='artifact_read'&&input.readProtocol==='fixed-text-v1'){const extra=this.app.artifactTexts.record(actor,pid,result as ReturnType<ResearchApp['artifactTexts']['page']>,key??'owner-read');result=output({...result as object,...extra});}
             if(fresh&&id==='research_skill_read'&&actor.type==='agent'){context.validate();this.app.methodContracts.recordSkillRead(actor,session,result);}
-            if(fresh&&!(id==='artifact_read'&&input.readProtocol==='fixed-text-v1')&&actor.type==='agent'&&['workspace_read','artifact_read','development_review_source_read','run_source_read','formal_report_review_source_read'].includes(id)) {
+            if(fresh&&!(id==='artifact_read'&&input.readProtocol==='fixed-text-v1')&&actor.type==='agent'&&['artifact_read','development_review_source_read','run_source_read','formal_report_review_source_read'].includes(id)) {
                 context.validate();
-                let extra=id==='workspace_read'&&input.source==='project'?this.app.sourceInputs.recordRead(actor,session,result as {path:string;content:string;digest:string;size:number},key!):id==='artifact_read'||id==='development_review_source_read'?this.app.developmentReviews.recordReading(actor,pid,id,input,result as Record<string,unknown>,key!):undefined;
+                let extra=id==='artifact_read'||id==='development_review_source_read'?this.app.developmentReviews.recordReading(actor,pid,id,input,result as Record<string,unknown>,key!):undefined;
                 if(['artifact_read','run_source_read','formal_report_review_source_read'].includes(id))extra=this.app.formalReportReviews.recordReading(actor,pid,id,input,result as Record<string,unknown>,key!)??extra;
                 if(extra)result=output({...result as object,...extra});
             }
@@ -700,6 +710,12 @@ export class OperationRegistry {
             if(['publication_citation_check','text_evidence_search','artifact_read','evidence_register','evidence_read','run_submit','session_attachment_read'].includes(id))spec.authorize(context,input);
             const previous = lookup();
             if (previous) {
+                if(id==='workspace_read'){
+                    context.validate();spec.authorize(context,input);const prior=previous.value as WorkspaceText&{draftReadId?:string;sourceInputReadId?:string};
+                    if(prior.draftReadId)this.app.draftReads.replay(actor,prior.draftReadId);else if(prior.sourceInputReadId)this.app.sourceInputs.replay(actor,prior.sourceInputReadId);
+                    else {const fresh=spec.execute(context,input) as WorkspaceText;ensure(fresh.digest===prior.digest&&fresh.size===prior.size&&fresh.content===prior.content,'WORKSPACE_READ_STALE','缓存工作区内容已变化');}
+                    return output(previous.value);
+                }
                 if(id==='artifact_read'&&input.readProtocol==='fixed-text-v1'){context.validate();const fresh=spec.execute(context,input);const {artifactReadId,...original}=previous.value as Record<string,unknown>;ensure(digest(fresh)===digest(original),'ARTIFACT_SOURCE_CHANGED','缓存固定页来源改变',409);this.app.artifactTexts.markReplay(actor,pid,artifactReadId as string);return output(previous.value);}
                 if(id==='evidence_register'&&input.readProtocol==='fixed-text-v1'){const evidenceId=(previous.value as {id:string}).id,replayActor=permission?.actionId?this.app.sessionPermissions.evidenceReplayActor(actor,input,permission.actionId,evidenceId):actor;return output(this.app.artifactTexts.replayQuote(replayActor,pid,input as unknown as Parameters<ResearchApp['artifactTexts']['replayQuote']>[2],evidenceId));}
                 if(id==='evidence_read'){const e=this.app.store.get<import('../../domain/types.js').Evidence>('evidence',input.evidenceId as string,pid);if(e.fixedText){this.app.artifactTexts.authorize(actor,pid,e.artifactId);return output(this.app.evidence.verify(pid,e.id,false));}}

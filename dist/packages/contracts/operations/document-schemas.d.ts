@@ -1032,7 +1032,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("documentVersionId" | "kind" | "digest" | "bytes" | "parseResultId" | "actionId" | "pageNumber" | "width" | "height" | "firstPage" | "lastPage")[];
+                readonly required: ("documentVersionId" | "kind" | "bytes" | "digest" | "parseResultId" | "actionId" | "pageNumber" | "width" | "height" | "firstPage" | "lastPage")[];
                 readonly additionalProperties: false;
             };
             readonly mimeType: {
@@ -3121,7 +3121,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("artifactId" | "digest" | "size" | "mediaType")[];
+                readonly required: ("artifactId" | "size" | "digest" | "mediaType")[];
                 readonly additionalProperties: false;
             };
             readonly derivedText: {
@@ -3140,7 +3140,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("artifactId" | "digest" | "size" | "mediaType")[];
+                readonly required: ("artifactId" | "size" | "digest" | "mediaType")[];
                 readonly additionalProperties: false;
             };
             readonly source: {
@@ -3314,7 +3314,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("artifactId" | "digest" | "size" | "mediaType")[];
+                readonly required: ("artifactId" | "size" | "digest" | "mediaType")[];
                 readonly additionalProperties: false;
             };
             readonly derivedText: {
@@ -3333,7 +3333,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("artifactId" | "digest" | "size" | "mediaType")[];
+                readonly required: ("artifactId" | "size" | "digest" | "mediaType")[];
                 readonly additionalProperties: false;
             };
             readonly source: {
@@ -3507,7 +3507,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("artifactId" | "digest" | "size" | "mediaType")[];
+                readonly required: ("artifactId" | "size" | "digest" | "mediaType")[];
                 readonly additionalProperties: false;
             };
             readonly derivedText: {
@@ -3526,7 +3526,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("artifactId" | "digest" | "size" | "mediaType")[];
+                readonly required: ("artifactId" | "size" | "digest" | "mediaType")[];
                 readonly additionalProperties: false;
             };
             readonly source: {
@@ -3705,7 +3705,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("artifactId" | "digest" | "size" | "mediaType")[];
+                            readonly required: ("artifactId" | "size" | "digest" | "mediaType")[];
                             readonly additionalProperties: false;
                         };
                         readonly derivedText: {
@@ -3724,7 +3724,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("artifactId" | "digest" | "size" | "mediaType")[];
+                            readonly required: ("artifactId" | "size" | "digest" | "mediaType")[];
                             readonly additionalProperties: false;
                         };
                         readonly source: {
@@ -4822,7 +4822,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("artifactId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "type" | "document" | "digest" | "description" | "quote" | "locator")[];
+        readonly required: ("artifactId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "digest" | "type" | "document" | "description" | "quote" | "locator")[];
         readonly additionalProperties: false;
     };
 };

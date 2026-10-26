@@ -1,3 +1,4 @@
+import {acknowledgeWorkspaceRead} from '../support/workspace-delivery.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {writeFileSync,renameSync,appendFileSync,chmodSync,openSync,writeSync,closeSync} from 'node:fs';
@@ -8,7 +9,7 @@ import {digest} from '../../dist/packages/storage/store.js';
 import {ResearchApp} from '../../dist/packages/research-app.js';
 import {assertSourceInputs} from '../../dist/packages/research-workflows/source-inputs.js';
 function fixture(){const s=setup();const row=s.app.store.get('session',s.session.id);s.app.store.update('session',row.id,row.version,{state:'running',generation:1,leaseUntil:Date.now()+120000});s.actor={type:'agent',projectId:s.project.id,sessionId:s.session.id,role:'coordinator',generation:1};s.path=join(s.app.store.paths.physical(s.project.workspace),'input.txt');return s;}
-const op=(s,name,input,key=name,actor=s.actor)=>s.app.operations.execute(actor,name,input,{projectId:s.project.id,sessionId:s.session.id,idempotencyKey:key});
+const op=(s,name,input,key=name,actor=s.actor)=>{const value=s.app.operations.execute(actor,name,input,{projectId:s.project.id,sessionId:s.session.id,idempotencyKey:key});return name==='workspace_read'?acknowledgeWorkspaceRead(s.app,actor,value):value;};
 const permission=(s,mode)=>s.app.sessionPermissions.set(USER,s.session.id,{mode,expectedVersion:s.app.sessionPermissions.status(USER,s.session.id).version});
 const prepare=(s,purpose='dataset-reference',key='prepare')=>op(s,'workspace_text_prepare',{path:'input.txt',purpose},key);
 const read=(s,p,extra={},key='page',actor=s.actor)=>op(s,'artifact_read',{artifactId:p.artifactId,sourceDigest:p.sourceDigest,textSourceId:p.textSourceId,readProtocol:'fixed-text-v1',limit:4,...extra},key,actor);

@@ -1,3 +1,4 @@
+import {acknowledgeWorkspaceRead} from '../support/workspace-delivery.mjs';
 import {FORMAL_REPORT_OUTPUT_SCHEMAS} from '../../dist/packages/contracts/operations/formal-report-review-schemas.js';
 import {RUN_GRANT_INPUT_SCHEMAS} from '../../dist/packages/contracts/operations/run-grant-schemas.js';
 import {WORKING_GRANT_INPUT_SCHEMAS} from '../../dist/packages/contracts/operations/working-grant-schemas.js';
@@ -78,7 +79,7 @@ test('all existing public tools have closed, literal success contracts exercised
   const root={type:'agent',projectId:s.project.id,sessionId:s.session.id,generation:1,role:'coordinator'}, tools=new ToolDispatcher(s.app);
   let serial=0;
   const check=(name,value)=>{validateSchema(OUTPUT_SCHEMAS[name],value,'output');seen.add(name);return value;};
-  const call=async(name,input={},a=root)=>check(name,await tools.execute(a,name,input,`schema-${++serial}`));
+  const call=async(name,input={},a=root)=>{const value=check(name,await tools.execute(a,name,input,`schema-${++serial}`));return name==='workspace_read'?acknowledgeWorkspaceRead(s.app,a,value):value;};
   const fixedSession=s.app.sessions.create(USER,s.project.id,{title:'Fixed approval schema'});s.app.sessionPermissions.initialize(fixedSession.id,'confirm');
   s.app.store.update('session',fixedSession.id,fixedSession.version,{state:'running',generation:1,leaseUntil:Date.now()+120000});
   const fixedActor={...root,sessionId:fixedSession.id},fixedInput={path:'fixed.txt',content:'Approved exact input',expectedDigest:null};
