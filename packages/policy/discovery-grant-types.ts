@@ -13,6 +13,7 @@ export interface DiscoveryGrant {
 export interface DiscoveryCall {
  source:SourceId;host:string;status:'reserved'|'succeeded'|'failed-or-unknown';startedAt:string;
  discoveryGrant?:DiscoveryGrantReference;scopeSessionId?:string;scopeTaskId?:string;scopeAttemptId?:string;scopeGeneration?:number;requestDigest?:string;operationKeyDigest?:string;requestUrlDigest?:string;
+ sentAt?:string;headersAt?:string;finishedAt?:string;receivedBytes?:number;failureStage?:'queue'|'rate-limit'|'headers'|'body'|'validation';
  bytes?:number;httpStatus?:number;retryAfter?:string|null;error?:string;
 }
 export interface DiscoveryPaper {

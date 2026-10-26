@@ -1,0 +1,101 @@
+{
+  "batch": 1,
+  "scope": "文献检索的有界期限、回执和安全诊断",
+  "baseline": "af3cb38e6343b9a789b3f6e3b678d66c548ca6f4",
+  "changes": {
+    "files": 37,
+    "searchNetworkSeconds": 30,
+    "searchOperationSeconds": 65,
+    "searchRpcSeconds": 75,
+    "resumeRpcSeconds": 80,
+    "ordinaryTransportSeconds": 12,
+    "paperReadSeconds": 60,
+    "preserved": [
+      "来源/权限/租约/预算/幂等",
+      "旧记录与paper读取契约",
+      "无透明重试",
+      "前端布局"
+    ]
+  },
+  "verification": {
+    "initialFullRegression": {
+      "exitCode": 1,
+      "tests": 2847,
+      "passed": 2820,
+      "failed": 1,
+      "skipped": 26,
+      "failedTest": "all-source failure retains per-source sanitized diagnostics",
+      "log": "task-1-full-regression.log",
+      "snapshot": "task-1-review-manifest.json"
+    },
+    "necessaryFixes": {
+      "authorizationObservationBoundary": "review B1 fixed; actual dispatch timestamp P2 fixed",
+      "failureContract": "restored prior sanitized details.sources without body/messages",
+      "postFixFocused": {
+        "tests": 37,
+        "passed": 37,
+        "failed": 0,
+        "skipped": 0,
+        "log": "task-1-delivery-focused.log"
+      },
+      "note": "原全量退出码仍为1；修复后仅重验受影响部分，不将原失败记录改写为通过。其余未受影响回归结果复用。"
+    },
+    "cleanBuild": {
+      "status": "passed",
+      "steps": "fresh npm ci, build, typecheck, exact dist identity",
+      "summary": "clean-build-H7U8tc/summary.json"
+    },
+    "live": {
+      "status": "passed on initial reviewed implementation, unchanged valid-success behavior",
+      "realPiControlledRetrievalMs": 13042,
+      "publicCrossrefHits": 1,
+      "credentialsPersisted": false
+    },
+    "independentReview": {
+      "requestedModel": "gpt-6-astra",
+      "requestedReasoning": "xhigh",
+      "runtimeEcho": "未回显",
+      "status": "initial B1 and followupP2 resolved; scoped safe failure contract restoration passed"
+    }
+  },
+  "finalFileSha256": {
+    "apps/agent-worker/index.ts": "65433f3212ea8b4f72f2afdd76a70cfdf229e072f97957ee864c3dd7175ba309",
+    "dist/apps/agent-worker/index.js": "63864e273df1b4f1740b9888ee9da3b884ee41cacbdb7c6fa5ef50897bee9c2f",
+    "dist/apps/agent-worker/index.js.map": "84c551d5b9aa72d0b8de5b62691e883f8cb520bca25d9ac6a7602d98965356a0",
+    "dist/packages/connectors/service.d.ts": "4e6532fae410aa83aab5dc12eae29526dc6485c8119bfc5a7d8b9a0702c66984",
+    "dist/packages/connectors/service.js": "2452e9e87765ab9ea556e90fda1070de7da2c87edb8148900ea394fc4d8d6db6",
+    "dist/packages/connectors/service.js.map": "46ba91cc1083fa522f79c03eb9b8d90b6413714c227d13be687ec52961d5af06",
+    "dist/packages/connectors/transport.d.ts": "954597ec652ea47f238c0bc85e7e19bc7a22e15ca672a6c8c161b27b578450d8",
+    "dist/packages/connectors/transport.js": "ed1626bfac4f143df477f064ec06891ca86f27ac03336d5b1db33ca3d381b7bf",
+    "dist/packages/connectors/transport.js.map": "3b47d242794b063c7fcebb4536f5678ed5451286a45ee757c3ef26a78a771743",
+    "dist/packages/contracts/operations/discovery-grant-schemas.d.ts": "d03b37caf95312bfaec4e8a99dacb96b31b84d3b89a54f18d33a42cc636d0905",
+    "dist/packages/contracts/operations/discovery-grant-schemas.js": "a07d9694063d2c4a5b623e83e1e7af5ef48c1c04c8231fb009a72fa4fd8c8b2d",
+    "dist/packages/contracts/operations/discovery-grant-schemas.js.map": "a8c8f9b7e30a2e0987052548c8be531d47526ff76389d747db35e5f76bd16eb2",
+    "dist/packages/contracts/operations/outputs.d.ts": "3e07d918d21d08c8be2dd8f009b95d3869b1ca0114f7d22f081b1987fc1e6e61",
+    "dist/packages/contracts/operations/outputs.js": "5d981bc342327778e589703423324b6876412d40885599c8931fe7c21fc2bdc7",
+    "dist/packages/contracts/operations/outputs.js.map": "98d1eaf3d64b6335e9ebbfd4526b45452bc701ed4fed203c9fa4f1e2064df00d",
+    "dist/packages/contracts/operations/registry.js": "56c1ffa062796070419c34435943e6ecf8aa001499da543fbbaf91df095b8363",
+    "dist/packages/contracts/operations/registry.js.map": "d068aa073c68b6438319018c57b3cc12322590ba5aca63e29b043f4fc300c237",
+    "dist/packages/contracts/operations/research-plan-schemas.d.ts": "0df192acb46cbc3b403d8db4ddd1adbdf275035844366109cf24450173d298c2",
+    "dist/packages/literature/service.d.ts": "40e0d7250fcf94f5a4ecc01ebc01748a5812608e6327aacdf1f996b827d31799",
+    "dist/packages/literature/service.js": "112c7bfe471cdcfefa71b430c2ad8eed86e90a3dc2fee156141c6dd31d330ce0",
+    "dist/packages/literature/service.js.map": "45754eb54100ffb17baa170b93e8cff0e12562d2a266d47db42ab1449489581f",
+    "dist/packages/pi-adapter/tool-diagnostic.d.ts": "10c1234e542558d457aa72900f365c6b88804b4b99e9abe68a3d0fab02add84d",
+    "dist/packages/pi-adapter/tool-diagnostic.js": "035c139ab200918194fefb5c9c2971e42fb8482dea11693aa4b4babbee3daf01",
+    "dist/packages/pi-adapter/tool-diagnostic.js.map": "5754a3253a3843622bb21031926afa90028a814eb2ec400bc19307e401d3de87",
+    "dist/packages/policy/discovery-grant-types.d.ts": "f236fbd9818b7303688c424687536bf9fbeedbb31a3f120e380c8c033f5dd9c8",
+    "packages/connectors/service.ts": "07a3b62e61c0e6749660aa4e8d9bd01a2223c4305285335d110dd7ca3ee2e0b5",
+    "packages/connectors/transport.ts": "81464ebfb50294efd183028cd3c39bada68fea2ebf1a76aff7fe208fcae5f1f9",
+    "packages/contracts/operations/discovery-grant-schemas.ts": "0b7cc1dff0a06f51059afc9b20a774c07a961b20f5b13112b7b421126d88f486",
+    "packages/contracts/operations/outputs.ts": "9da0d2a5d3d42335ef21a781553045eaa3ce022a19e4471f6f6fe4f79f5f2990",
+    "packages/contracts/operations/registry.ts": "e1490eaef7cc8d7946691c3e9b8a541fb723c54a1be3bb987c37ef0566681116",
+    "packages/literature/service.ts": "be8aa70cb7e22891747d35d8653fc2813efff12ba6fd02f7b4b593fa4d59429c",
+    "packages/pi-adapter/tool-diagnostic.ts": "d60e59fc16ef97dac6ca7b00a0b74e7080c0b5ec4112aa969368cf54564fc63c",
+    "packages/policy/discovery-grant-types.ts": "fd17976273253b89ffcd2f30503ee3b952b94a9a8e09529e6d90f4f14b7a3d0b",
+    "tests/fixtures/tool-rpc-clock-worker.mjs": "5f8ee8a1fad68cd85cb7e57cff51178d306d7ea186ee4b310568e0f8697d2a72",
+    "tests/integration/tool-rpc-timeout.test.mjs": "184829338909c0ee7f0ec0fb13481b70db1f7fb99bcd9136831d04dcff30c959",
+    "tests/unit/paper-read-resilience.test.mjs": "ac61c7c8897421dbfee732e16d1b3c1d745853ef601acaf6a333aa04573179b0",
+    "tests/unit/tool-error-diagnostics.test.mjs": "688356b49f6534426062ff03d6d437e7bc2ceca01a36cb5b36266503761378d5"
+  },
+  "notIncluded": "密钥、.env、运行数据库、原生对话、研究数据和原始大日志；原根其他在途改动"
+}

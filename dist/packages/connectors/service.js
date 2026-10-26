@@ -6,7 +6,7 @@ import { ensure, DomainError } from '../domain/errors.js';
 import { object, integer, text, bool } from '../contracts/validation.js';
 import { digest } from '../storage/store.js';
 import { SOURCES, parseSearch, routePaperId, deduplicate } from './contracts.js';
-import { ConnectorTransport, DEFAULT_CONNECTOR_TIMEOUT_MS, PAPER_READ_TIMEOUT_MS } from './transport.js';
+import { ConnectorTransport, DEFAULT_CONNECTOR_TIMEOUT_MS, PAPER_READ_TIMEOUT_MS, SEARCH_NETWORK_POLICY, searchDeadline } from './transport.js';
 import { searchProvider, searchOpenAlexPage, searchPubmedPage, searchCrossrefPage, readProvider, pdfTarget, ncbiParams } from './providers.js';
 import { parsePubmedPmcid, parsePmcFullText } from './pmc.js';
 import { connectorSettings, assertSourceEnabled } from './settings.js';
@@ -31,7 +31,7 @@ export class ConnectorService {
         this.credentials = options.credentials ?? (() => envCredentials(c.dataDir));
     }
     settings(actor, pid) { scope(actor, pid); this.c.store.get('project', pid); const cfg = connectorSettings(this.c.store, pid), creds = this.credentials(); return { ...cfg, requestsUsed: this.c.store.list('connector-call', pid).length, credentials: { openalexKeyConfigured: !!creds.openalexKey, ncbiKeyConfigured: !!creds.ncbiKey, ncbiEmailConfigured: !!creds.email }, capabilities: CONNECTOR_CAPABILITIES, budgetUnit: 'HTTP request attempts; not currency', defaults: 'All literature sources enabled by default; saved preferences retained' }; }
-    observations(actor, pid) { scope(actor, pid); this.c.store.get('project', pid); return this.c.store.db.prepare("SELECT data FROM records WHERE kind='connector-call' AND project_id=? ORDER BY rowid DESC LIMIT 50").all(pid).map(r => { const x = JSON.parse(r.data); return { id: x.id, source: x.source, host: x.host, status: x.status, startedAt: x.startedAt, httpStatus: x.httpStatus ?? null, retryAfter: x.retryAfter ?? null, error: x.error ?? null }; }); }
+    observations(actor, pid) { scope(actor, pid); this.c.store.get('project', pid); return this.c.store.db.prepare("SELECT data FROM records WHERE kind='connector-call' AND project_id=? ORDER BY rowid DESC LIMIT 50").all(pid).map(r => { const x = JSON.parse(r.data); return { id: x.id, source: x.source, host: x.host, status: x.status, startedAt: x.startedAt, httpStatus: x.httpStatus ?? null, retryAfter: x.retryAfter ?? null, error: x.error ?? null, sentAt: x.sentAt ?? null, headersAt: x.headersAt ?? null, finishedAt: x.finishedAt ?? null, receivedBytes: x.receivedBytes ?? null, failureStage: x.failureStage ?? null }; }); }
     configure(actor, pid, value) { userOnly(actor); scope(actor, pid); const x = object(value); return this.c.store.transaction(() => { assertProjectWritable(this.c.store, pid); const current = connectorSettings(this.c.store, pid); ensure(integer(x.expectedVersion, 'expectedVersion', 0) === current.version, 'VERSION_CONFLICT', '连接器设置已经变更'); const enabled = { ...current.enabled }; if (x.enabled !== undefined)
         for (const [key, v] of Object.entries(object(x.enabled))) {
             ensure(SOURCES.includes(key), 'INVALID_INPUT', '未知来源', 400);
@@ -82,51 +82,85 @@ export class ConnectorService {
     finally {
         this.inFlight.delete(k);
     } }
-    async discover(actor, pid, value, key, callback = () => { }, signal) { signal = AbortSignal.any([AbortSignal.timeout(18000), ...(signal ? [signal] : [])]); this.assertAuthorized(actor, pid); const parsed = parseSearch(value), ctx = discoveryContext(this.c.store, pid, actor, { kind: 'search', search: parsed }, key), q = ctx?.operation.kind === 'search' ? ctx.operation.search : parsed, cfg = connectorSettings(this.c.store, pid); ensure(q.sources.some(s => cfg.enabled[s]), 'SOURCE_DISABLED', '所选来源全部禁用；需要用户启用', 403); const validate = this.bound(actor, pid, cfg.version, () => { ensure(!signal?.aborted, 'CONNECTOR_CANCELLED', '连接请求已取消或超时；不登记未完成结果', 409); callback(); }, ctx); validate(); const operationScope = discoveryScope(`connector-search:${pid}:${actor.sessionId ?? 'user'}:${actor.attemptId ?? 'root'}`, ctx); if (ctx && !this.c.store.operationResult(operationScope, key, q).found)
-        assertDiscoveryContext(this.c.store, pid, ctx, true); return this.once(operationScope, key, q, async () => { const results = await Promise.all(q.sources.map(async (source) => { if (!cfg.enabled[source])
-        return { source, status: 'disabled', count: 0, hits: [], error: 'SOURCE_DISABLED' }; try {
-        const hits = await searchProvider(source, q, this.request(pid, source, validate, signal, undefined, ctx), this.credentials());
-        return { source, status: 'succeeded', count: hits.length, hits };
+    async discover(actor, pid, value, key, callback = () => { }, signal) {
+        const deadline = searchDeadline(signal);
+        try {
+            this.assertAuthorized(actor, pid);
+            const parsed = parseSearch(value), ctx = discoveryContext(this.c.store, pid, actor, { kind: 'search', search: parsed }, key), q = ctx?.operation.kind === 'search' ? ctx.operation.search : parsed, cfg = connectorSettings(this.c.store, pid);
+            ensure(q.sources.some(s => cfg.enabled[s]), 'SOURCE_DISABLED', '所选来源全部禁用；需要用户启用', 403);
+            const finish = this.bound(actor, pid, cfg.version, () => { deadline.checkCaller(); callback(); }, ctx), validate = () => { finish(); deadline.check(); };
+            validate();
+            const operationScope = discoveryScope(`connector-search:${pid}:${actor.sessionId ?? 'user'}:${actor.attemptId ?? 'root'}`, ctx);
+            if (ctx && !this.c.store.operationResult(operationScope, key, q).found)
+                assertDiscoveryContext(this.c.store, pid, ctx, true);
+            return await this.once(operationScope, key, q, async () => {
+                const results = await Promise.all(q.sources.map(async (source) => {
+                    if (!cfg.enabled[source])
+                        return { source, status: 'disabled', count: 0, hits: [], error: 'SOURCE_DISABLED' };
+                    try {
+                        const hits = await searchProvider(source, q, this.request(pid, source, validate, deadline.signal, undefined, ctx, undefined, SEARCH_NETWORK_POLICY), this.credentials());
+                        validate();
+                        return { source, status: 'succeeded', count: hits.length, hits };
+                    }
+                    catch (e) {
+                        return { source, status: 'failed', count: 0, hits: [], error: e instanceof DomainError ? e.code : 'CONNECTOR_FAILED' };
+                    }
+                }));
+                // Own deadline may retain complete sources, but never bypass the caller or authorization fence.
+                finish();
+                if (!results.some(r => r.status === 'succeeded')) {
+                    deadline.check();
+                    throw new DomainError('CONNECTOR_ALL_FAILED', '全部来源失败；不能据此判断没有相关论文', 502, { sources: results.map(({ hits, ...r }) => r) });
+                }
+                const items = deduplicate(results.flatMap(r => r.hits));
+                return this.c.store.transaction(() => { finish(); return this.c.store.operation(operationScope, key, q, () => { finish(); const row = this.c.store.create('connector-search', pid, { ...discoveryProof(ctx), query: q.query, request: q, settingsVersion: cfg.version, scopeSessionId: actor.sessionId ?? null, scopeTaskId: actor.taskId ?? null, scopeAttemptId: actor.attemptId ?? null, items, sources: results.map(({ hits, ...r }) => r), status: results.every(r => r.status === 'succeeded') ? 'complete' : 'partial', retrievedAt: new Date().toISOString(), coverage: 'Selected sources and bounded relevance pools only; metadata/snippets are not full-paper verification' + (deadline.expired() ? '; operation deadline exhausted, coverage incomplete' : '') }); this.c.store.event(pid, 'connectors.searched', { searchId: row.id, sources: row.sources.map(r => ({ source: r.source, status: r.status })), count: items.length }); return row; }); });
+            });
+        }
+        finally {
+            deadline.dispose();
+        }
     }
-    catch (e) {
-        return { source, status: 'failed', count: 0, hits: [], error: e instanceof DomainError ? e.code : 'CONNECTOR_FAILED' };
-    } })); validate(); if (!results.some(r => r.status === 'succeeded'))
-        throw new DomainError('CONNECTOR_ALL_FAILED', '全部来源失败；不能据此判断没有相关论文', 502, { sources: results.map(({ hits, ...r }) => r) }); const items = deduplicate(results.flatMap(r => r.hits)); return this.c.store.transaction(() => { validate(); return this.c.store.operation(operationScope, key, q, () => { const row = this.c.store.create('connector-search', pid, { ...discoveryProof(ctx), query: q.query, request: q, settingsVersion: cfg.version, scopeSessionId: actor.sessionId ?? null, scopeTaskId: actor.taskId ?? null, scopeAttemptId: actor.attemptId ?? null, items, sources: results.map(({ hits, ...r }) => r), status: results.every(r => r.status === 'succeeded') ? 'complete' : 'partial', retrievedAt: new Date().toISOString(), coverage: 'Selected sources and bounded relevance pools only; metadata/snippets are not full-paper verification' }); this.c.store.event(pid, 'connectors.searched', { searchId: row.id, sources: row.sources.map(r => ({ source: r.source, status: r.status })), count: items.length }); return row; }); }); }); }
     async discoverPage(actor, pid, searchValue, pageValue, key, callback = () => { }, signal) {
-        signal = AbortSignal.any([AbortSignal.timeout(18000), ...(signal ? [signal] : [])]);
-        this.assertAuthorized(actor, pid);
-        ensure(actor.type === 'user' && !actor.sessionId && !actor.taskId && !actor.attemptId && !actor.wakeupId, 'LITERATURE_PAGE_OWNER_ONLY', '分页只支持没有会话授权的 owner 检索', 403);
-        const q = parseSearch(searchValue), pageRequest = parsePageRequest(pageValue), source = q.sources[0];
-        ensure(q.sources.length === 1 && (source === 'crossref' || source === 'openalex' || source === 'biorxiv' || source === 'pubmed') && q.strategy === 'keyword' && q.prioritize === 'default', 'LITERATURE_PAGE_SOURCE_INVALID', '分页仅支持 Crossref、OpenAlex、bioRxiv 或 PubMed 默认关键词排序');
-        const input = { search: q, pageRequest }, operationScope = `connector-search:${pid}:user:root`;
-        const result = await this.once(operationScope, key, input, async () => {
-            if (pageRequest.number === 1)
-                ensure(pageRequest.previousSearchId === null && pageRequest.cursor === '*' && pageRequest.expiresAt === null, 'LITERATURE_PAGE_SOURCE_INVALID', '第一页分页请求无效');
-            else {
-                const previous = ownerSearchNextPage(this.c.store, pid, pageRequest.previousSearchId);
-                ensure(digest(previous.search) === digest(q) && digest(previous.pageRequest) === digest(pageRequest), 'LITERATURE_PAGE_STALE', '前页查询或冻结游标已改变');
-            }
-            if (pageRequest.expiresAt !== null)
-                ensure(Date.now() < Date.parse(pageRequest.expiresAt), 'LITERATURE_PAGE_EXPIRED', '下一游标已过期，请从第一页重新检索');
-            const cfg = connectorSettings(this.c.store, pid);
-            assertSourceEnabled(this.c.store, pid, source);
-            const validate = this.bound(actor, pid, cfg.version, () => { ensure(!signal?.aborted, 'CONNECTOR_CANCELLED', '连接请求已取消或超时；不登记未完成结果', 409); callback(); });
-            validate();
-            if (source === 'pubmed')
-                ensure(cfg.requestLimit - this.c.store.list('connector-call', pid).length >= 2, 'CONNECTOR_BUDGET_EXCEEDED', 'PubMed 一页开始前至少需要 2 次 HTTP 额度；空页实际计 1 次');
-            const ownerCall = { id: digest({ operationScope, key }), requestDigest: digest(input), expiresAt: pageRequest.expiresAt }, request = this.request(pid, source, validate, signal, undefined, undefined, ownerCall);
-            const page = source === 'pubmed' ? await searchPubmedPage(q, pageRequest.cursor, this.request(pid, source, validate, signal, undefined, undefined, { ...ownerCall, id: digest({ operationScope, key, step: 'esearch' }) }), this.request(pid, source, validate, signal, undefined, undefined, { ...ownerCall, id: digest({ operationScope, key, step: 'efetch' }) }), this.credentials()) : source === 'openalex' || source === 'biorxiv' ? await searchOpenAlexPage(q, pageRequest.cursor, request, this.credentials(), source) : await searchCrossrefPage(q, pageRequest.cursor, request);
-            validate();
-            const nextCursorExpiresAt = page.nextCursor ? new Date(Date.now() + PAGE_CURSOR_TTL_MS).toISOString() : null, recordPage = { ...pageRequest, nextCursor: page.nextCursor, nextCursorExpiresAt, rawItemCount: page.rawItemCount }, items = deduplicate(page.hits);
-            return this.c.store.transaction(() => { validate(); return this.c.store.operation(operationScope, key, input, () => { const row = this.c.store.create('connector-search', pid, { query: q.query, request: q, page: recordPage, settingsVersion: cfg.version, scopeSessionId: null, scopeTaskId: null, scopeAttemptId: null, items, sources: [{ source, status: 'succeeded', count: page.hits.length }], status: 'complete', retrievedAt: new Date().toISOString(), coverage: page.coverage ?? `${source === 'openalex' ? 'OpenAlex' : source === 'biorxiv' ? 'bioRxiv via OpenAlex' : 'Crossref'} keyword metadata page; cursor lifetime is a local four-minute limit, not a provider guarantee` }); this.c.store.event(pid, 'connectors.searched', { searchId: row.id, sources: [{ source, status: 'succeeded' }], count: items.length, pageNumber: recordPage.number }); return row; }); });
-        });
-        const receipt = this.c.store.operationResult(operationScope, key, input);
-        ensure(result && typeof result.id === 'string' && receipt.found && result.id === receipt.value.id, 'LITERATURE_RECEIPT_INVALID', '分页回执没有有效记录');
-        const actual = this.c.store.get('connector-search', receipt.value.id, pid);
-        ensure(digest(actual) === digest(receipt.value), 'LITERATURE_RECEIPT_INVALID', '分页回执与固定搜索记录不符');
-        const actualRequest = actual.page && { number: actual.page.number, previousSearchId: actual.page.previousSearchId, cursor: actual.page.cursor, expiresAt: actual.page.expiresAt };
-        ensure(!!actual.page && !actual.discoveryGrant && actual.scopeSessionId === null && actual.scopeTaskId === null && actual.scopeAttemptId === null && actual.status === 'complete' && actual.query === q.query && digest(actual.request) === digest(q) && digest(actualRequest) === digest(pageRequest) && actual.sources.length === 1 && actual.sources[0].source === source && actual.sources[0].status === 'succeeded', 'LITERATURE_RECEIPT_INVALID', '分页结果没有绑定到此 owner 请求');
-        return actual;
+        const deadline = searchDeadline(signal);
+        signal = deadline.signal;
+        try {
+            this.assertAuthorized(actor, pid);
+            ensure(actor.type === 'user' && !actor.sessionId && !actor.taskId && !actor.attemptId && !actor.wakeupId, 'LITERATURE_PAGE_OWNER_ONLY', '分页只支持没有会话授权的 owner 检索', 403);
+            const q = parseSearch(searchValue), pageRequest = parsePageRequest(pageValue), source = q.sources[0];
+            ensure(q.sources.length === 1 && (source === 'crossref' || source === 'openalex' || source === 'biorxiv' || source === 'pubmed') && q.strategy === 'keyword' && q.prioritize === 'default', 'LITERATURE_PAGE_SOURCE_INVALID', '分页仅支持 Crossref、OpenAlex、bioRxiv 或 PubMed 默认关键词排序');
+            const input = { search: q, pageRequest }, operationScope = `connector-search:${pid}:user:root`;
+            const result = await this.once(operationScope, key, input, async () => {
+                if (pageRequest.number === 1)
+                    ensure(pageRequest.previousSearchId === null && pageRequest.cursor === '*' && pageRequest.expiresAt === null, 'LITERATURE_PAGE_SOURCE_INVALID', '第一页分页请求无效');
+                else {
+                    const previous = ownerSearchNextPage(this.c.store, pid, pageRequest.previousSearchId);
+                    ensure(digest(previous.search) === digest(q) && digest(previous.pageRequest) === digest(pageRequest), 'LITERATURE_PAGE_STALE', '前页查询或冻结游标已改变');
+                }
+                if (pageRequest.expiresAt !== null)
+                    ensure(Date.now() < Date.parse(pageRequest.expiresAt), 'LITERATURE_PAGE_EXPIRED', '下一游标已过期，请从第一页重新检索');
+                const cfg = connectorSettings(this.c.store, pid);
+                assertSourceEnabled(this.c.store, pid, source);
+                const validate = this.bound(actor, pid, cfg.version, () => { deadline.checkCaller(); deadline.check(); callback(); });
+                validate();
+                if (source === 'pubmed')
+                    ensure(cfg.requestLimit - this.c.store.list('connector-call', pid).length >= 2, 'CONNECTOR_BUDGET_EXCEEDED', 'PubMed 一页开始前至少需要 2 次 HTTP 额度；空页实际计 1 次');
+                const ownerCall = { id: digest({ operationScope, key }), requestDigest: digest(input), expiresAt: pageRequest.expiresAt }, request = this.request(pid, source, validate, signal, undefined, undefined, ownerCall, SEARCH_NETWORK_POLICY);
+                const page = source === 'pubmed' ? await searchPubmedPage(q, pageRequest.cursor, this.request(pid, source, validate, signal, undefined, undefined, { ...ownerCall, id: digest({ operationScope, key, step: 'esearch' }) }, SEARCH_NETWORK_POLICY), this.request(pid, source, validate, signal, undefined, undefined, { ...ownerCall, id: digest({ operationScope, key, step: 'efetch' }) }, SEARCH_NETWORK_POLICY), this.credentials()) : source === 'openalex' || source === 'biorxiv' ? await searchOpenAlexPage(q, pageRequest.cursor, request, this.credentials(), source) : await searchCrossrefPage(q, pageRequest.cursor, request);
+                validate();
+                const nextCursorExpiresAt = page.nextCursor ? new Date(Date.now() + PAGE_CURSOR_TTL_MS).toISOString() : null, recordPage = { ...pageRequest, nextCursor: page.nextCursor, nextCursorExpiresAt, rawItemCount: page.rawItemCount }, items = deduplicate(page.hits);
+                return this.c.store.transaction(() => { validate(); return this.c.store.operation(operationScope, key, input, () => { const row = this.c.store.create('connector-search', pid, { query: q.query, request: q, page: recordPage, settingsVersion: cfg.version, scopeSessionId: null, scopeTaskId: null, scopeAttemptId: null, items, sources: [{ source, status: 'succeeded', count: page.hits.length }], status: 'complete', retrievedAt: new Date().toISOString(), coverage: page.coverage ?? `${source === 'openalex' ? 'OpenAlex' : source === 'biorxiv' ? 'bioRxiv via OpenAlex' : 'Crossref'} keyword metadata page; cursor lifetime is a local four-minute limit, not a provider guarantee` }); this.c.store.event(pid, 'connectors.searched', { searchId: row.id, sources: [{ source, status: 'succeeded' }], count: items.length, pageNumber: recordPage.number }); return row; }); });
+            });
+            const receipt = this.c.store.operationResult(operationScope, key, input);
+            ensure(result && typeof result.id === 'string' && receipt.found && result.id === receipt.value.id, 'LITERATURE_RECEIPT_INVALID', '分页回执没有有效记录');
+            const actual = this.c.store.get('connector-search', receipt.value.id, pid);
+            ensure(digest(actual) === digest(receipt.value), 'LITERATURE_RECEIPT_INVALID', '分页回执与固定搜索记录不符');
+            const actualRequest = actual.page && { number: actual.page.number, previousSearchId: actual.page.previousSearchId, cursor: actual.page.cursor, expiresAt: actual.page.expiresAt };
+            ensure(!!actual.page && !actual.discoveryGrant && actual.scopeSessionId === null && actual.scopeTaskId === null && actual.scopeAttemptId === null && actual.status === 'complete' && actual.query === q.query && digest(actual.request) === digest(q) && digest(actualRequest) === digest(pageRequest) && actual.sources.length === 1 && actual.sources[0].source === source && actual.sources[0].status === 'succeeded', 'LITERATURE_RECEIPT_INVALID', '分页结果没有绑定到此 owner 请求');
+            return actual;
+        }
+        finally {
+            deadline.dispose();
+        }
     }
     async paper(actor, pid, value, key, callback = () => { }, signal) {
         signal = AbortSignal.any([AbortSignal.timeout(PAPER_READ_TIMEOUT_MS), ...(signal ? [signal] : [])]);

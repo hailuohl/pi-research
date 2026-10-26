@@ -27,7 +27,7 @@ async function worker(t,tool='host_execute'){
   let body='';for await(const part of req)body+=part;requests.push(JSON.parse(body));
   res.writeHead(200,{'content-type':'text/event-stream'});
   if(requests.length>1){finalResponse=res;return;}
-  const input=tool==='host_execute'?{argv:['offline-command'],timeoutMs:60000}:tool==='paper_read'?{id:'2401.01234v2'}:{};
+  const input=tool==='host_execute'?{argv:['offline-command'],timeoutMs:60000}:tool==='paper_read'?{id:'2401.01234v2'}:tool==='literature_search'?{query:'offline retrieval'}:tool==='literature_discover'?{query:'offline retrieval',sources:['crossref']}:{};
   res.end(chunk({role:'assistant',tool_calls:[{index:0,id:'original-call-1',type:'function',function:{name:tool,arguments:JSON.stringify({input})}}]})+chunk({},'tool_calls')+'data: [DONE]\n\n');
  });
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -169,4 +169,11 @@ test('paper_read stops waiting at 80 seconds and ignores a late result without r
  assert.match(text,/结果未确认/);assert.match(text,/不要自动重试/);
  assert.ok(text.includes(`tool=${f.call.tool}`));assert.ok(text.includes(`toolCallId=${f.call.toolCallId}`));assert.ok(text.includes(`requestId=${f.call.requestId}`));
  assert.doesNotMatch(text,/late-paper-must-not-replace-timeout/);
+});
+
+for(const tool of ['literature_search','literature_discover','session_action_resume'])test(`${tool} accepts its original response after the old 30-second RPC limit`,async t=>{
+ const f=await worker(t,tool);await f.command('fixture_tick',{ms:74000});f.respond({result:{confirmed:'original retrieval receipt'}});assert.equal((await f.toolEnd()).isError,false);assert.equal((await f.command('fixture_inspect')).timers,0);await f.finish();assert.equal(f.calls.length,1);assert.match(JSON.stringify(f.receipts()),/original retrieval receipt/);
+});
+for(const tool of ['literature_search','literature_discover'])test(`${tool} retains an uncertain timeout at 75 seconds without resending`,async t=>{
+ const f=await worker(t,tool);await f.command('fixture_tick',{ms:74999});assert.equal(f.events.some(event=>event.type==='tool_execution_end'),false);await f.command('fixture_tick',{ms:1});assert.equal((await f.toolEnd()).isError,true);await f.finish();assert.equal(f.calls.length,1);assert.match(JSON.stringify(f.receipts()),/结果未确认/);
 });

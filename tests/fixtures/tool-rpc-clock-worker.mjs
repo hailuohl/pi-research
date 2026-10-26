@@ -3,7 +3,7 @@ const nativeSetTimeout=globalThis.setTimeout,nativeClearTimeout=globalThis.clear
 let elapsed=0,loaded=false;
 const send=value=>process.connected&&process.send(value);
 globalThis.setTimeout=(callback,ms,...args)=>{
- if(ms!==30000&&ms!==80000)return nativeSetTimeout(callback,ms,...args);
+ if(ms!==30000&&ms!==75000&&ms!==80000)return nativeSetTimeout(callback,ms,...args);
  const timer={at:elapsed+ms,callback:()=>callback(...args),unref(){return this;},ref(){return this;}};
  timers.add(timer);return timer;
 };

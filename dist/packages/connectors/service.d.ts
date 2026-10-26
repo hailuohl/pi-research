@@ -107,6 +107,11 @@ export declare class ConnectorService {
         httpStatus: any;
         retryAfter: any;
         error: any;
+        sentAt: any;
+        headersAt: any;
+        finishedAt: any;
+        receivedBytes: any;
+        failureStage: any;
     }[];
     configure(actor: Actor, pid: string, value: unknown): {
         requestsUsed: number;

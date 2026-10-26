@@ -52,6 +52,11 @@ export interface DiscoveryCall {
     requestDigest?: string;
     operationKeyDigest?: string;
     requestUrlDigest?: string;
+    sentAt?: string;
+    headersAt?: string;
+    finishedAt?: string;
+    receivedBytes?: number;
+    failureStage?: 'queue' | 'rate-limit' | 'headers' | 'body' | 'validation';
     bytes?: number;
     httpStatus?: number;
     retryAfter?: string | null;

@@ -78,3 +78,5 @@ test('non-null invalid UTF-8 artifacts produce a safe domain failure instead of 
   assert.throws(()=>s.app.operations.execute(USER,'artifact_read',{artifactId:artifact.id,cursor:0},{projectId:s.project.id}),{code:'ARTIFACT_TEXT_REQUIRED'});
  }finally{s.close();}
 });
+
+test('retrieval deadline and all-failed diagnostics expose only exact static safe codes',()=>{for(const code of ['CONNECTOR_QUEUE_TIMEOUT','CONNECTOR_TIMEOUT','CONNECTOR_OPERATION_TIMEOUT','CONNECTOR_ALL_FAILED']){const raw='private-error-canary https://private.invalid/?api_key=secret';assert.deepEqual(safeToolDiagnostic({},code,raw),{code});assert.deepEqual(toolResultDiagnostic({},{content:[{type:'text',text:`${code}: ${raw}`}]}),{code});assert.doesNotMatch(toolFailureMessage('literature_discover',{code}),/private-error|private.invalid|api_key/);assert.equal(safeToolDiagnostic({},code+'suffix',raw),undefined);}});

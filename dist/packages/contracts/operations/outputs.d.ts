@@ -155,7 +155,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly enum: ["terminal", "not_recorded"];
                     };
                 };
-                readonly required: ("observedAt" | "queue")[];
+                readonly required: ("queue" | "observedAt")[];
                 readonly additionalProperties: false;
             };
             readonly id: {
@@ -5691,6 +5691,42 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly startedAt: {
                             readonly type: "string";
                         };
+                        readonly sentAt: {
+                            readonly anyOf: readonly [{
+                                readonly type: "string";
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
+                        readonly headersAt: {
+                            readonly anyOf: readonly [{
+                                readonly type: "string";
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
+                        readonly finishedAt: {
+                            readonly anyOf: readonly [{
+                                readonly type: "string";
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
+                        readonly receivedBytes: {
+                            readonly anyOf: readonly [{
+                                readonly type: "integer";
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
+                        readonly failureStage: {
+                            readonly anyOf: readonly [{
+                                readonly type: "string";
+                                readonly enum: ["queue", "rate-limit", "headers", "body", "validation"];
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
                         readonly httpStatus: {
                             readonly anyOf: readonly [{
                                 readonly type: "integer";
@@ -5713,7 +5749,7 @@ export declare const OUTPUT_SCHEMAS: {
                             }];
                         };
                     };
-                    readonly required: ("error" | "id" | "source" | "status" | "httpStatus" | "host" | "startedAt" | "retryAfter")[];
+                    readonly required: ("error" | "id" | "source" | "status" | "httpStatus" | "sentAt" | "host" | "startedAt" | "headersAt" | "finishedAt" | "receivedBytes" | "failureStage" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -7878,7 +7914,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("version" | "id" | "createdAt" | "projectId" | "status" | "kind" | "updatedAt" | "contentDigest" | "metrics" | "experimentId" | "manifestDigest" | "evidenceIds" | "integrity" | "runId" | "campaignId" | "roundId" | "validation" | "memberId" | "executionState" | "explanation")[];
+                    readonly required: ("version" | "id" | "createdAt" | "projectId" | "status" | "validation" | "kind" | "updatedAt" | "contentDigest" | "metrics" | "experimentId" | "manifestDigest" | "evidenceIds" | "integrity" | "runId" | "campaignId" | "roundId" | "memberId" | "executionState" | "explanation")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -19600,6 +19636,35 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly minLength: number;
                             readonly maxLength: number;
                         };
+                        readonly sentAt: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly headersAt: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly finishedAt: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly receivedBytes: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
+                        readonly failureStage: {
+                            readonly enum: readonly ["queue", "rate-limit", "headers", "body", "validation"];
+                        };
                         readonly discoveryGrant: {
                             readonly type: "object";
                             readonly properties: {
@@ -19737,7 +19802,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("version" | "requestDigest" | "error" | "id" | "createdAt" | "projectId" | "source" | "status" | "httpStatus" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "bytes" | "retryAfter" | "kind" | "updatedAt")[];
+                    readonly required: ("version" | "requestDigest" | "error" | "id" | "createdAt" | "projectId" | "source" | "status" | "httpStatus" | "sentAt" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "headersAt" | "finishedAt" | "receivedBytes" | "failureStage" | "bytes" | "retryAfter" | "kind" | "updatedAt")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -20616,6 +20681,35 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly minLength: number;
                             readonly maxLength: number;
                         };
+                        readonly sentAt: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly headersAt: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly finishedAt: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly receivedBytes: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
+                        readonly failureStage: {
+                            readonly enum: readonly ["queue", "rate-limit", "headers", "body", "validation"];
+                        };
                         readonly discoveryGrant: {
                             readonly type: "object";
                             readonly properties: {
@@ -20753,7 +20847,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("version" | "requestDigest" | "error" | "id" | "createdAt" | "projectId" | "source" | "status" | "httpStatus" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "bytes" | "retryAfter" | "kind" | "updatedAt")[];
+                    readonly required: ("version" | "requestDigest" | "error" | "id" | "createdAt" | "projectId" | "source" | "status" | "httpStatus" | "sentAt" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "headersAt" | "finishedAt" | "receivedBytes" | "failureStage" | "bytes" | "retryAfter" | "kind" | "updatedAt")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -21632,6 +21726,35 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly minLength: number;
                             readonly maxLength: number;
                         };
+                        readonly sentAt: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly headersAt: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly finishedAt: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly receivedBytes: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
+                        readonly failureStage: {
+                            readonly enum: readonly ["queue", "rate-limit", "headers", "body", "validation"];
+                        };
                         readonly discoveryGrant: {
                             readonly type: "object";
                             readonly properties: {
@@ -21769,7 +21892,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("version" | "requestDigest" | "error" | "id" | "createdAt" | "projectId" | "source" | "status" | "httpStatus" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "bytes" | "retryAfter" | "kind" | "updatedAt")[];
+                    readonly required: ("version" | "requestDigest" | "error" | "id" | "createdAt" | "projectId" | "source" | "status" | "httpStatus" | "sentAt" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "headersAt" | "finishedAt" | "receivedBytes" | "failureStage" | "bytes" | "retryAfter" | "kind" | "updatedAt")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -22648,6 +22771,35 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly minLength: number;
                             readonly maxLength: number;
                         };
+                        readonly sentAt: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly headersAt: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly finishedAt: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly receivedBytes: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
+                        readonly failureStage: {
+                            readonly enum: readonly ["queue", "rate-limit", "headers", "body", "validation"];
+                        };
                         readonly discoveryGrant: {
                             readonly type: "object";
                             readonly properties: {
@@ -22785,7 +22937,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("version" | "requestDigest" | "error" | "id" | "createdAt" | "projectId" | "source" | "status" | "httpStatus" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "bytes" | "retryAfter" | "kind" | "updatedAt")[];
+                    readonly required: ("version" | "requestDigest" | "error" | "id" | "createdAt" | "projectId" | "source" | "status" | "httpStatus" | "sentAt" | "host" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "headersAt" | "finishedAt" | "receivedBytes" | "failureStage" | "bytes" | "retryAfter" | "kind" | "updatedAt")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -36270,7 +36422,7 @@ export declare const OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("metrics" | "experimentId" | "evidenceIds" | "runId" | "validation" | "observationId")[];
+                    readonly required: ("validation" | "metrics" | "experimentId" | "evidenceIds" | "runId" | "observationId")[];
                     readonly additionalProperties: false;
                 };
             };

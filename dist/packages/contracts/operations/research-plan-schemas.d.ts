@@ -1583,7 +1583,7 @@ export declare const RESEARCH_COMPARISON_SCHEMA: {
                         };
                     };
                 };
-                readonly required: ("metrics" | "experimentId" | "evidenceIds" | "runId" | "validation" | "observationId")[];
+                readonly required: ("validation" | "metrics" | "experimentId" | "evidenceIds" | "runId" | "observationId")[];
                 readonly additionalProperties: false;
             };
         };
@@ -2905,7 +2905,7 @@ export declare const RESEARCH_PLAN_OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("metrics" | "experimentId" | "evidenceIds" | "runId" | "validation" | "observationId")[];
+                    readonly required: ("validation" | "metrics" | "experimentId" | "evidenceIds" | "runId" | "observationId")[];
                     readonly additionalProperties: false;
                 };
             };
