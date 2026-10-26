@@ -1,3 +1,4 @@
+import {verifySourceBlob,type SourceIntegrityContext} from '../storage/source-integrity.js';
 import {randomUUID} from 'node:crypto';
 import type {Actor,Session,Row,Project,Message} from '../domain/types.js';
 import type {DocumentVersion} from '../documents/types.js';
@@ -57,12 +58,12 @@ function assertAttachmentAuthority(store:Store,session:Row<Session>,binding:Row<
 export function attachmentSelectionFingerprint(store:Store,session:Row<Session>){
  return store.list<AttachmentSelection>('attachment-input-selection',session.projectId!).filter(s=>s.sessionId===session.id).map(s=>({documentVersionId:s.documentVersionId,bindingId:s.bindingId,version:s.version})).sort((a,b)=>a.documentVersionId.localeCompare(b.documentVersionId));
 }
-export function assertAttachmentInput(store:Store,pid:string,sessionId:string,input:ResearchSourceInput){
+export function assertAttachmentInput(store:Store,pid:string,sessionId:string,input:ResearchSourceInput,integrity?:SourceIntegrityContext){
  const binding=store.get<AttachmentBinding>('attachment-input-binding',input.readId,pid);
  ensure(binding.sessionId===sessionId&&input.readProtocol==='fixed-text-v1'&&input.documentVersionId===binding.documentVersionId&&input.purpose===binding.purpose&&input.artifactId===binding.artifactId&&input.path===binding.path&&input.workspace===binding.workspace&&input.digest===binding.digest&&input.size===binding.size,'BRIEF_SOURCE_CORRUPTED','固定附件输入绑定不符');
  // Frozen history keeps its original delivered facts. Current message authority is required at new freeze boundaries.
  ensure(hasDeliveredCoverage(store,pid,binding),'BRIEF_SOURCE_READ_REQUIRED',binding.purpose==='whole-text'?'whole-text需要完整已送达覆盖；EOF不代表中间范围已读':'固定输入需要实际SDK送达的检查页');
- const fixed=fixedDocumentTextSource(store,store.get<DocumentVersion>('document-version',binding.documentVersionId,pid));ensure(fixed.source.digest===input.digest&&fixed.source.size===input.size,'BRIEF_SOURCE_CHANGED','固定输入来源已变化');verifyStreamedBlob(store,fixed.source);verifyStreamedBlob(store,fixed.indexBlob);
+ const fixed=fixedDocumentTextSource(store,store.get<DocumentVersion>('document-version',binding.documentVersionId,pid));ensure(fixed.source.digest===input.digest&&fixed.source.size===input.size,'BRIEF_SOURCE_CHANGED','固定输入来源已变化');verifySourceBlob(store,fixed.source,integrity);verifySourceBlob(store,fixed.indexBlob,integrity);
 }
 export function attachmentInputs(store:Store,session:Row<Session>,inheritedIds:string[],status:'clarifying'|'ready'):ResearchSourceInput[]{
  const selected=attachmentSelectionFingerprint(store,session).flatMap(selection=>{

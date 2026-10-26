@@ -19,19 +19,19 @@ function acceptedInputs(store, pid, sessionId, inputs) {
         return false;
     } });
 }
-export function assertSourceInputs(store, pid, sessionId, inputs) {
+export function assertSourceInputs(store, pid, sessionId, inputs, integrity) {
     if (inputs === undefined)
         return;
     ensure(Array.isArray(inputs) && inputs.length <= MAX_INPUTS && new Set(inputs.map(i => pathKey(i.workspace, i.path))).size === inputs.length, 'BRIEF_SOURCE_CORRUPTED', '固定研究输入清单无效');
     let total = 0, legacyAccepted;
     for (const input of inputs) {
         if (input.sourceKind === 'workspace-snapshot') {
-            assertWorkspaceInput(store, pid, sessionId, input);
+            assertWorkspaceInput(store, pid, sessionId, input, integrity);
             continue;
         }
         ensure(input.sourceKind === undefined && input.textSourceId === undefined, 'BRIEF_SOURCE_CORRUPTED', '旧输入不能伪装固定工作区来源');
         if (input.readProtocol === 'fixed-text-v1') {
-            assertAttachmentInput(store, pid, sessionId, input);
+            assertAttachmentInput(store, pid, sessionId, input, integrity);
             continue;
         }
         ensure(input.purpose === undefined && input.documentVersionId === undefined, 'BRIEF_SOURCE_CORRUPTED', '旧研究输入不能改写读取模式');

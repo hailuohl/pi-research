@@ -1,3 +1,4 @@
+import { type SourceIntegrityContext } from '../storage/source-integrity.js';
 import { BEARING_PROFILE, type BearingExecution, type BearingFacts } from './bearing-outputs.js';
 import type { Actor, Row, Session } from '../domain/types.js';
 import type { ResearchApp } from '../research-app.js';
@@ -216,7 +217,7 @@ export declare function compileMethodContract(value: unknown, sources: Source[])
         };
     }[];
 };
-export declare function assertFrozenMethod(store: Store, pid: string, contract: FrozenMethodContract | undefined, inputs: ResearchSourceInput[] | undefined, rootSessionId?: string, phase?: 'formal'): {
+export declare function assertFrozenMethod(store: Store, pid: string, contract: FrozenMethodContract | undefined, inputs: ResearchSourceInput[] | undefined, rootSessionId?: string, phase?: 'formal', integrity?: SourceIntegrityContext): {
     specification: MethodSpecification;
     compilerVersion: string;
     contractDigest: string;

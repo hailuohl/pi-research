@@ -313,6 +313,8 @@ export class AgentHost {
         const actor = { ...(workflowContinuationId ? { workflowContinuationId, workflowNoticeMessageId: messageId, ...(reservation.message?.approvalNoticeId ? { approvalNoticeMessageId: messageId } : {}) } : {}), researchModelDigest: this.app.researchAutomation.modelIdentity(claimed), ...(approvalResumeId ? { approvalResumeId } : {}), ...(!workflowContinuationId && messageId ? { messageId } : {}), ...(continuationId ? { continuationId } : {}), permission: claimed.executionPermission, ...(wakeupId ? { wakeupId } : {}), type: 'agent', projectId: claimed.projectId, sessionId: claimed.id, role: claimed.role, generation: attempt?.generation ?? claimed.generation, ...(attempt ? { taskId: attempt.taskId, attemptId: attempt.id } : {}) };
         let active, requested = false;
         try {
+            if (attempt)
+                this.app.developmentReviews.withTaskIntegrity(store.get('task', attempt.taskId, claimed.projectId), () => undefined);
             const bundleId = prepareSessionSkills(this.app, claimed, actor);
             const skillBundle = this.app.skills.bundleBootstrap(claimed.projectId, claimed.role, bundleId);
             this.ensureReady(claimed);
@@ -344,6 +346,8 @@ export class AgentHost {
                     ensure(this.app.researchAutomation.isOwner(), 'AUTOMATION_RUNTIME_EXPIRED', '当前进程已失去持续任务owner');
                 if (workflowContinuationId)
                     this.app.workflowContinuations.assertBindingCurrent(workflowContinuationId);
+                if (attempt && this.app.developmentReviews.isFixedTask(store.get('task', attempt.taskId, claimed.projectId)))
+                    this.app.teams.active(actor);
                 this.app.skills.ensureBundleStartAllowed(claimed.projectId, bundleId);
                 const marked = this.admission.markSpawnRequested(slot.id, this.ownerHost, claimed.generation);
                 store.update('agent-admission', marked.id, marked.version, { httpManagedVersion: 1 });
@@ -426,19 +430,22 @@ export class AgentHost {
     }
     readResponse(a, actor, tool, callId, result, permission, epoch) {
         const workspace = tool === 'workspace_read' ? result : undefined, workspaceKind = workspace?.draftReadId ? 'draft' : workspace?.sourceInputReadId ? 'source' : undefined;
-        const readId = workspace?.draftReadId ?? workspace?.sourceInputReadId ?? (tool === 'artifact_read' ? result?.artifactReadId : tool === 'session_attachment_read' ? result?.attachmentReadId : undefined);
+        const reviewReadId = result?.reviewReadingProtocol === 'fixed-obligations-v1' ? result.reviewReadId : undefined;
+        const readId = workspace?.draftReadId ?? workspace?.sourceInputReadId ?? (tool === 'artifact_read' ? result?.artifactReadId : tool === 'session_attachment_read' ? result?.attachmentReadId : undefined) ?? reviewReadId;
         if (!readId)
             return;
         return this.app.store.transaction(() => {
+            if (reviewReadId && !this.app.developmentReviews.offerRead(actor, actor.projectId, reviewReadId, callId))
+                return;
             if (workspaceKind) {
                 if (!(workspaceKind === 'draft' ? this.app.draftReads : this.app.sourceInputs).offer(actor, readId, callId))
                     return;
             }
-            else if (tool === 'artifact_read') {
+            else if (tool === 'artifact_read' && result.artifactReadId) {
                 if (!this.app.artifactTexts.offer(actor, actor.projectId, readId, callId))
                     return;
             }
-            else {
+            else if (!reviewReadId) {
                 const read = this.app.store.get('attachment-input-read', readId, actor.projectId);
                 if (read.delivery !== 'pending' || read.offered || read.callId !== callId || read.sessionId !== actor.sessionId || read.generation !== actor.generation)
                     return;
@@ -448,7 +455,7 @@ export class AgentHost {
             const project = this.app.store.get('project', actor.projectId);
             ensure(project.lifecycleEpoch === epoch && project.status === 'active', 'ATTACHMENT_DELIVERY_STALE', '项目生命周期已变化');
             const id = randomUUID();
-            (a.readResponses ??= new Map()).set(callId, { id, tool, resultDigest: digest(JSON.stringify({ content: [{ type: 'text', text: JSON.stringify(result) }], details: {} })), actor: { ...actor }, readId, ...(workspaceKind ? { workspaceKind } : {}), permission: { ...permission }, epoch });
+            (a.readResponses ??= new Map()).set(callId, { id, tool, resultDigest: digest(JSON.stringify({ content: [{ type: 'text', text: JSON.stringify(result) }], details: {} })), actor: { ...actor }, readId, ...(reviewReadId ? { reviewReadId } : {}), ...(workspaceKind ? { workspaceKind } : {}), permission: { ...permission }, epoch });
             return id;
         });
     }
@@ -467,10 +474,12 @@ export class AgentHost {
                 ensure(p.lifecycleEpoch === pending.epoch && p.status === 'active', 'ATTACHMENT_DELIVERY_STALE', '项目生命周期已变化');
                 if (pending.workspaceKind)
                     (pending.workspaceKind === 'draft' ? this.app.draftReads : this.app.sourceInputs).deliver(pending.actor, pending.readId, callId);
-                else if (pending.tool === 'artifact_read')
+                else if (pending.tool === 'artifact_read' && pending.readId !== pending.reviewReadId)
                     this.app.artifactTexts.deliver(pending.actor, pending.actor.projectId, pending.readId, callId);
-                else
+                else if (!pending.reviewReadId)
                     deliverAttachmentRead(this.app.store, pending.actor, pending.readId, callId);
+                if (pending.reviewReadId)
+                    this.app.developmentReviews.deliverRead(pending.actor, pending.actor.projectId, pending.reviewReadId, callId);
             });
             return true;
         }

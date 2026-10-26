@@ -1,3 +1,4 @@
+import { type SourceIntegrityContext } from '../storage/source-integrity.js';
 import type { ResearchApp } from '../research-app.js';
 import type { Actor, Artifact, Evidence, Row } from '../domain/types.js';
 import type { Store } from '../storage/store.js';
@@ -30,7 +31,7 @@ export interface ArtifactTextRead {
 declare function readerIdentity(actor: Actor): {
     [k: string]: string | number | undefined;
 };
-export declare function verifyFixedTextEvidence(store: Store, pid: string, a: Row<Artifact>, e: Row<Evidence>): Row<Evidence>;
+export declare function verifyFixedTextEvidence(store: Store, pid: string, a: Row<Artifact>, e: Row<Evidence>, integrity?: SourceIntegrityContext): Row<Evidence>;
 export declare class ArtifactTextService {
     private app;
     constructor(app: ResearchApp);

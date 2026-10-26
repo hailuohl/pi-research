@@ -1,3 +1,4 @@
+import {verifySourceBlob,type SourceIntegrityContext} from '../storage/source-integrity.js';
 import {verifyStreamedBlob} from '../storage/streamed-blob.js';
 import {basename,dirname} from 'node:path';
 import {BEARING_PROFILE,BEARING_EXPORTS,bearingCandidatePaths,validateBearingOutputs,bearingFacts,bearingExports,type BearingExecution,type BearingFacts} from './bearing-outputs.js';
@@ -163,17 +164,17 @@ function pairedEvaluation(q:PairedRmseQuantitative|PlanQuantitative,metric:Archi
 }
 function compilerFor(spec:MethodSpecification) {const q=spec.quantitative;ensure(q.type==='descriptive'||q.type==='comparison'&&['positive-benefit-v1','paired-rmse-delta-v1','paired-rmse-plan-v1','paired-rmse-plan-v2'].includes(q.template),'METHOD_SPEC_UNSUPPORTED','不支持的方法模板');return q.type==='comparison'&&q.template==='paired-rmse-plan-v2'?CLOSED_COMPILER:q.type==='comparison'&&q.template==='paired-rmse-plan-v1'?PLAN_COMPILER:q.type==='comparison'&&q.template==='paired-rmse-delta-v1'?PAIRED_COMPILER:METHOD_COMPILER;}
 export function compileMethodContract(value:unknown,sources:Source[]) {const specification=parseMethodSpecification(value),q=specification.quantitative;if(isPlan(q))ensure(sources.some(s=>s.path===q.plan.formalInput.path&&s.digest===q.plan.formalInput.digest&&(s.verifiedReference===true||s.bytes!==undefined&&s.bytes.length===s.size&&digest(s.bytes)===s.digest)),'METHOD_SOURCE_NOT_READ','完整计划formalInput必须来自实际读取的固定输入');const compilerVersion=compilerFor(specification),literatureLedger=ledger(specification,sources),boundaryExamples=boundaries(specification),contractDigest=digest({compilerVersion,specification,literatureLedger,boundaryExamples}),content=protocol(specification,literatureLedger,boundaryExamples,contractDigest);ensure(Buffer.byteLength(content)<=MAX_TEXT_BYTES&&Buffer.byteLength(JSON.stringify(content))+8192<=128*1024,'METHOD_PROTOCOL_TOO_LARGE','规范方法附件超过2MiB文本或128KiB固定保存参数限制（预留8KiB路径/摘要元数据）；缩小明确研究范围后重新编译',400);return {specification,compilerVersion,contractDigest,protocol:content,protocolDigest:digest(Buffer.from(content)),literatureLedger,boundaryExamples};}
-function sourceBytes(store:Store,pid:string,inputs:ResearchSourceInput[],specification:MethodSpecification):Source[] {return inputs.map(input=>{
+function sourceBytes(store:Store,pid:string,inputs:ResearchSourceInput[],specification:MethodSpecification,integrity?:SourceIntegrityContext):Source[] {return inputs.map(input=>{
     const a=store.get<Artifact>('artifact',input.artifactId,pid),physical=store.paths.physical(a.path);
     ensure(a.digest===input.digest&&a.size===input.size,'BRIEF_SOURCE_CORRUPTED','方法输入与固定产物不符');
-    if(!specification.literatureSources.some(s=>s.path===input.path)){verifyStreamedBlob(store,{blobPath:a.path,digest:a.digest,size:a.size});return {...input,verifiedReference:true};}
+    if(!specification.literatureSources.some(s=>s.path===input.path)){verifySourceBlob(store,{blobPath:a.path,digest:a.digest,size:a.size},integrity);return {...input,verifiedReference:true};}
     return {...input,bytes:readStableFile(dirname(physical),basename(physical),2*1024*1024)};
 });}
 
-export function assertFrozenMethod(store:Store,pid:string,contract:FrozenMethodContract|undefined,inputs:ResearchSourceInput[]|undefined,rootSessionId?:string,phase?:'formal') {
+export function assertFrozenMethod(store:Store,pid:string,contract:FrozenMethodContract|undefined,inputs:ResearchSourceInput[]|undefined,rootSessionId?:string,phase?:'formal',integrity?:SourceIntegrityContext) {
     if(!contract)return;
     const q=contract.specification.quantitative;if(phase!=='formal'&&isPlan(q))assertSyntheticFixture(store,pid,q.developmentData.fixtureRef,rootSessionId);
-    const fresh=compileMethodContract(contract.specification,sourceBytes(store,pid,inputs??[],contract.specification)),{protocol:_,...compiled}=fresh,{protocolPath,...fixed}=contract;
+    const fresh=compileMethodContract(contract.specification,sourceBytes(store,pid,inputs??[],contract.specification,integrity)),{protocol:_,...compiled}=fresh,{protocolPath,...fixed}=contract;
     relativePath(protocolPath);ensure(digest(compiled)===digest(fixed),'METHOD_CONTRACT_CORRUPTED','固定方法规则、来源台账或编译摘要已改变');return fresh;
 }
 export function assertMethodSnapshot(contract:FrozenMethodContract|undefined,files:Array<{path:string;digest:string;size:number}>,phase?:'formal') {if(!contract)return;const file=files.find(f=>f.path===contract.protocolPath);ensure(file&&file.digest===contract.protocolDigest,'METHOD_PROTOCOL_CHANGED','规范方法附件已变化；请重新编译、ready、回读并确认研究计划');const q=contract.specification.quantitative;if(closedPaired(contract)){const q=closedPaired(contract)!;ensure(files.some(f=>f.path===q.fitImplementation.path),'METHOD_FIT_BINDING_INVALID','固定snapshot缺少fitImplementation源码');ensure(!files.some(f=>[...bearingCandidatePaths(q),...methodHostPaths(contract)].includes(f.path)),'METHOD_OUTPUT_PROFILE_INVALID','输入源码路径与候选/宿主输出路径冲突');}if(phase==='formal'&&isPlan(q))ensure(files.some(f=>f.path===q.plan.formalInput.path&&f.digest===q.plan.formalInput.digest),'METHOD_FORMAL_INPUT_CHANGED','正式snapshot缺少已确认formalInput的准确字节；开发fixture不能替代');}

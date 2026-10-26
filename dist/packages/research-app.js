@@ -171,6 +171,7 @@ export class ResearchApp {
         this.teams.skillPreflight = (task, preparedSession) => prepareTaskSkills(this, task, preparedSession);
         this.publicationReviews = new PublicationReviewService(this);
         this.formalReportReviews = new FormalReportReviewService(this);
+        this.teams.reviewIntegrity = (task, fn) => this.developmentReviews.withTaskIntegrity(task, fn);
         this.teams.reviewValidator = task => { this.developmentReviews.assertTaskCurrent(task); this.publicationReviews.assertTaskCurrent(task); this.formalReportReviews.assertTaskCurrent(task); };
         this.documentParsing = new DocumentParsingService(this);
         this.publicationBuilds = new PublicationBuildService(this);

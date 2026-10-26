@@ -1,3 +1,5 @@
+import type { SourceIntegrityContext } from '../storage/source-integrity.js';
+import { type ReviewObligation, type FIXED_REVIEW_READING } from './review-obligations.js';
 import type { Store } from '../storage/store.js';
 import type { Row, Task, Team, ResearchBriefRef } from '../domain/types.js';
 import type { SandboxJob } from '../execution/contracts.js';
@@ -5,6 +7,8 @@ import type { ResearchSourceInput } from '../research-workflows/source-inputs.js
 import { type ReviewTestArtifact, type ReviewInventory } from './review-assessment.js';
 import type { DraftRole, ProtocolDocument } from '../research-workflows/method-contracts.js';
 export interface DevelopmentReview {
+    readingProtocol?: typeof FIXED_REVIEW_READING;
+    readingObligations?: ReviewObligation[];
     jobId: string;
     sourceDigest: string;
     producerSessionId: string;
@@ -31,12 +35,12 @@ export interface DevelopmentReview {
     draftRoles?: DraftRole[];
     protocolDocument?: ProtocolDocument;
 }
-export declare function reviewInputBinding(r: Pick<DevelopmentReview, 'jobId' | 'dataArtifacts' | 'protocolVersion' | 'researchBrief' | 'sourceInputs' | 'testArtifacts' | 'draftRoles' | 'protocolDocument' | 'briefArtifact' | 'surfaceInventory'> & {
+export declare function reviewInputBinding(r: Pick<DevelopmentReview, 'jobId' | 'dataArtifacts' | 'protocolVersion' | 'researchBrief' | 'sourceInputs' | 'testArtifacts' | 'draftRoles' | 'protocolDocument' | 'briefArtifact' | 'surfaceInventory' | 'readingProtocol' | 'readingObligations'> & {
     id: string;
 }): {
     protocolDocument?: ProtocolDocument | undefined;
     draftRoles?: DraftRole[] | undefined;
-    protocolVersion?: 1 | 2 | undefined;
+    protocolVersion?: 2 | 1 | undefined;
     researchBrief?: ResearchBriefRef | undefined;
     sourceInputs?: ResearchSourceInput[] | undefined;
     testArtifacts?: ReviewTestArtifact[] | undefined;
@@ -47,31 +51,15 @@ export declare function reviewInputBinding(r: Pick<DevelopmentReview, 'jobId' | 
         path: string;
         sourceAcceptanceId?: string;
     }, "path">[] | undefined;
-    briefArtifact?: undefined;
-    surfaceInventory?: undefined;
-    reviewId: string;
-    jobId: string;
-} | {
-    protocolDocument?: ProtocolDocument | undefined;
-    draftRoles?: DraftRole[] | undefined;
-    protocolVersion?: 1 | 2 | undefined;
-    researchBrief?: ResearchBriefRef | undefined;
-    sourceInputs?: ResearchSourceInput[] | undefined;
-    testArtifacts?: ReviewTestArtifact[] | undefined;
-    dataArtifacts?: Omit<{
-        id: string;
-        digest: string;
-        size: number;
-        path: string;
-        sourceAcceptanceId?: string;
-    }, "path">[] | undefined;
-    briefArtifact: {
+    readingProtocol?: "fixed-obligations-v1" | undefined;
+    readingObligations?: ReviewObligation[] | undefined;
+    briefArtifact?: {
         id: string;
         digest: string;
         size: number;
         path: string;
     } | undefined;
-    surfaceInventory: ReviewInventory;
+    surfaceInventory?: ReviewInventory | undefined;
     reviewId: string;
     jobId: string;
 };
@@ -79,7 +67,7 @@ export type DevelopmentReviewInputBinding = ReturnType<typeof reviewInputBinding
 export declare function reviewPayload(r: DevelopmentReview): {
     protocolDocument?: ProtocolDocument | undefined;
     draftRoles?: DraftRole[] | undefined;
-    protocolVersion?: 1 | 2 | undefined;
+    protocolVersion?: 2 | 1 | undefined;
     researchBrief?: ResearchBriefRef | undefined;
     sourceInputs?: ResearchSourceInput[] | undefined;
     testArtifacts?: ReviewTestArtifact[] | undefined;
@@ -97,50 +85,26 @@ export declare function reviewPayload(r: DevelopmentReview): {
     testEvidenceIds: string[];
     requiredEvidenceIds: string[];
     baseSourceRevisionId?: string | undefined;
-    briefArtifact?: undefined;
-    surfaceInventory?: undefined;
-    jobId: string;
-    sourceDigest: string;
-    producerSessionId: string;
-} | {
-    protocolDocument?: ProtocolDocument | undefined;
-    draftRoles?: DraftRole[] | undefined;
-    protocolVersion?: 1 | 2 | undefined;
-    researchBrief?: ResearchBriefRef | undefined;
-    sourceInputs?: ResearchSourceInput[] | undefined;
-    testArtifacts?: ReviewTestArtifact[] | undefined;
-    dataArtifacts?: Omit<{
-        id: string;
-        digest: string;
-        size: number;
-        path: string;
-        sourceAcceptanceId?: string;
-    }, "path">[] | undefined;
-    teamId: string;
-    taskId: string;
-    approvalId: string;
-    manifestEvidenceId: string;
-    testEvidenceIds: string[];
-    requiredEvidenceIds: string[];
-    baseSourceRevisionId?: string | undefined;
-    briefArtifact: {
+    readingProtocol?: "fixed-obligations-v1" | undefined;
+    readingObligations?: ReviewObligation[] | undefined;
+    briefArtifact?: {
         id: string;
         digest: string;
         size: number;
         path: string;
     } | undefined;
-    surfaceInventory: ReviewInventory;
+    surfaceInventory?: ReviewInventory | undefined;
     jobId: string;
     sourceDigest: string;
     producerSessionId: string;
 };
 /** Shared by dispatch and acceptance: historical records cannot silently acquire a new test target. */
-export declare function assertDevelopmentReviewTarget(store: Store, pid: string, r: Row<DevelopmentReview>): {
+export declare function assertDevelopmentReviewTarget(store: Store, pid: string, r: Row<DevelopmentReview>, integrity?: SourceIntegrityContext): {
     job: Row<SandboxJob>;
     task: Row<Task>;
     team: Row<Team>;
 };
-export declare function developmentReviewAcceptanceBasis(store: Store, pid: string, task: Row<Task>): {
+export declare function developmentReviewAcceptanceBasis(store: Store, pid: string, task: Row<Task>, integrity?: SourceIntegrityContext): {
     reviewId: string;
     digest: string;
     jobId: string;

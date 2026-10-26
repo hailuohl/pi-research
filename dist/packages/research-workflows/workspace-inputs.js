@@ -1,3 +1,4 @@
+import { verifySourceBlob } from '../storage/source-integrity.js';
 import { randomUUID } from 'node:crypto';
 import { open } from 'node:fs/promises';
 import { lstatSync, constants } from 'node:fs';
@@ -8,7 +9,7 @@ import { safePath } from '../workspace/files.js';
 import { interactiveCoordinator } from '../policy/permissions.js';
 import { assertProjectReadable } from '../policy/lifecycle.js';
 import { filePolicy } from '../storage/file-policy.js';
-import { prepareStreamedText, publishStreamedText, verifyStreamedBlob, readStreamedText } from '../storage/streamed-blob.js';
+import { prepareStreamedText, publishStreamedText, verifyStreamedBlob, readStreamedText, assertStreamedIndex } from '../storage/streamed-blob.js';
 import { documentPublication } from '../storage/document-publication.js';
 import { ARTIFACT_TEXT_PREPARE_TIMEOUT_MS } from '../contracts/tool-budgets.js';
 export function ordinaryWorkspaceReader(actor) { return actor.type === 'agent' && actor.role === 'coordinator' && !actor.taskId && !actor.attemptId && !actor.wakeupId && !actor.continuationId && !actor.approvalResumeId && !actor.workflowContinuationId && !actor.approvalNoticeMessageId && !actor.workflowNoticeMessageId && !actor.permissionActionId; }
@@ -34,14 +35,17 @@ function coverage(store, pid, b) {
     }
     return end === b.size;
 }
-export function assertWorkspaceInput(store, pid, sessionId, input) {
+export function assertWorkspaceInput(store, pid, sessionId, input, integrity) {
     const b = store.get('workspace-input-binding', input.readId, pid);
     ensure(b.sessionId === sessionId && input.sourceKind === 'workspace-snapshot' && input.readProtocol === 'fixed-text-v1' && input.documentVersionId === undefined && input.purpose === b.purpose && input.artifactId === b.artifactId && input.textSourceId === b.textSourceId && input.path === b.path && input.workspace === b.workspace && input.digest === b.sourceDigest && input.size === b.size, 'BRIEF_SOURCE_CORRUPTED', '工作区固定输入与不可变绑定不符');
     ensure(coverage(store, pid, b), 'BRIEF_SOURCE_READ_REQUIRED', b.purpose === 'whole-text' ? 'whole-text需要完整SDK已送达覆盖；空原件也需要EOF回执' : 'dataset-reference需要SDK已送达的非空检查页');
     const f = fixed(store, pid, b);
-    verifyStreamedBlob(store, f.source);
-    verifyStreamedBlob(store, f.indexBlob);
-    readStreamedText(store, f.source, f.indexBlob, f.index, 0, 4);
+    verifySourceBlob(store, f.source, integrity);
+    verifySourceBlob(store, f.indexBlob, integrity);
+    if (integrity)
+        assertStreamedIndex(store, f.source, f.indexBlob, f.index);
+    else
+        readStreamedText(store, f.source, f.indexBlob, f.index, 0, 4);
 }
 export function workspaceSelections(store, session) { return store.list('workspace-input-selection', session.projectId).filter(s => s.sessionId === session.id).map(s => { const b = store.get('workspace-input-binding', s.bindingId, session.projectId); ensure(b.sessionId === s.sessionId && b.workspace === s.workspace && b.path === s.path, 'BRIEF_SOURCE_CORRUPTED', '工作区选择归属不符'); return { workspace: s.workspace, path: s.path, bindingId: b.id, version: s.version, purpose: b.purpose, artifactId: b.artifactId, sourceDigest: b.sourceDigest, size: b.size, textSourceId: b.textSourceId }; }).sort((a, b) => workspacePathKey(a.workspace, a.path).localeCompare(workspacePathKey(b.workspace, b.path))); }
 export class WorkspaceInputService {

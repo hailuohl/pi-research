@@ -1,3 +1,4 @@
+import type { SourceIntegrityContext } from '../storage/source-integrity.js';
 import type { Actor, Row, Session } from '../domain/types.js';
 import type { ResearchApp } from '../research-app.js';
 import { type Store } from '../storage/store.js';
@@ -15,7 +16,7 @@ export interface ResearchSourceInput {
     sourceKind?: 'workspace-snapshot';
     textSourceId?: string;
 }
-export declare function assertSourceInputs(store: Store, pid: string, sessionId: string, inputs: ResearchSourceInput[] | undefined): void;
+export declare function assertSourceInputs(store: Store, pid: string, sessionId: string, inputs: ResearchSourceInput[] | undefined, integrity?: SourceIntegrityContext): void;
 export declare class SourceInputService {
     private app;
     constructor(app: ResearchApp);
@@ -51,14 +52,14 @@ export declare class SourceInputService {
         sourceKind: "workspace-snapshot";
     })[];
     preview(session: Row<Session>, anchorBriefId: string | null, inherited: ResearchSourceInput[], status?: 'clarifying' | 'ready'): {
-        documentVersionId?: string | undefined;
-        path: string;
-        size: number;
-        digest: string;
         purpose?: "whole-text" | "dataset-reference" | undefined;
+        digest: string;
+        path: string;
+        documentVersionId?: string | undefined;
         textSourceId?: string | undefined;
         readId: string;
         readProtocol?: "fixed-text-v1" | undefined;
+        size: number;
         workspace: string;
         sourceKind?: "workspace-snapshot" | undefined;
         artifactId?: string;
@@ -66,27 +67,27 @@ export declare class SourceInputService {
     previewBytes(session: Row<Session>, anchorBriefId: string | null, inherited: ResearchSourceInput[], bytePaths: string[]): ({
         bytes: undefined;
         verifiedReference: true;
-        documentVersionId?: string | undefined;
-        path: string;
-        size: number;
-        digest: string;
         purpose?: "whole-text" | "dataset-reference" | undefined;
+        digest: string;
+        path: string;
+        documentVersionId?: string | undefined;
         textSourceId?: string | undefined;
         readId: string;
         readProtocol?: "fixed-text-v1" | undefined;
+        size: number;
         workspace: string;
         sourceKind?: "workspace-snapshot" | undefined;
         artifactId?: string;
     } | {
         bytes: Buffer<ArrayBufferLike>;
-        documentVersionId?: string | undefined;
-        path: string;
-        size: number;
-        digest: string;
         purpose?: "whole-text" | "dataset-reference" | undefined;
+        digest: string;
+        path: string;
+        documentVersionId?: string | undefined;
         textSourceId?: string | undefined;
         readId: string;
         readProtocol?: "fixed-text-v1" | undefined;
+        size: number;
         workspace: string;
         sourceKind?: "workspace-snapshot" | undefined;
         artifactId?: string;

@@ -1,3 +1,4 @@
+import { type SourceIntegrityContext } from '../storage/source-integrity.js';
 import type { Actor, Row, Session } from '../domain/types.js';
 import type { ResearchApp } from '../research-app.js';
 import { type Store } from '../storage/store.js';
@@ -15,7 +16,7 @@ export interface WorkspaceBinding {
 }
 export declare function ordinaryWorkspaceReader(actor: Actor): boolean;
 export declare const workspacePathKey: (workspace: string, path: string) => string;
-export declare function assertWorkspaceInput(store: Store, pid: string, sessionId: string, input: ResearchSourceInput): void;
+export declare function assertWorkspaceInput(store: Store, pid: string, sessionId: string, input: ResearchSourceInput, integrity?: SourceIntegrityContext): void;
 export declare function workspaceSelections(store: Store, session: Row<Session>): {
     workspace: string;
     path: string;

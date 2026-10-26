@@ -18,8 +18,8 @@ import { assertFrozenMethod } from '../research-workflows/method-contracts.js';
 function evidenceDescriptor(c, actor, id) { const a = c.store.get('artifact', id); scope(actor, a.projectId); assertProjectReadable(c.store, a.projectId, actor); ensure(a.origin !== 'native-continuation' || actor.type !== 'agent', 'NATIVE_CONTINUATION_PRIVATE', '原生续跑材料不向普通助手提供', 403); assertPmcArtifactRead(c.store, actor, a.projectId, id); assertPdfArtifactRead(c.store, actor, a.projectId, id); return a; }
 function readEvidenceArtifact(c, actor, id) { const a = evidenceDescriptor(c, actor, id), bytes = readFileSync(c.store.paths.physical(a.path)); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
 /** Host reference validation shares the complete evidence chain with the ordinary service. */
-export function verifyEvidence(c, projectId, evidenceId, current = true) { const e = c.store.get('evidence', evidenceId, projectId); const artifact = evidenceDescriptor(c, { type: 'system' }, e.artifactId); if (e.fixedText)
-    verifyFixedTextEvidence(c.store, projectId, artifact, e);
+export function verifyEvidence(c, projectId, evidenceId, current = true, integrity) { const e = c.store.get('evidence', evidenceId, projectId); const artifact = evidenceDescriptor(c, { type: 'system' }, e.artifactId); if (e.fixedText)
+    verifyFixedTextEvidence(c.store, projectId, artifact, e, integrity);
 else {
     const { bytes } = readEvidenceArtifact(c, { type: 'system' }, e.artifactId);
     ensure(artifact.projectId === projectId && artifact.digest === e.digest && bytes.toString('utf8').slice(e.locator.start, e.locator.end) === e.quote, 'EVIDENCE_INVALID', '证据引用或内容已失效', 409);

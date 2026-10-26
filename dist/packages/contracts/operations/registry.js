@@ -159,6 +159,8 @@ function executeRegistered(c, name, x) {
         case 'artifact_read': {
             if (x.readProtocol === 'fixed-text-v1')
                 return app.artifactTexts.page(actor, pid, x);
+            const fixedTarget = app.developmentReviews.fixedReadTarget(actor, pid, text(x.artifactId, 'artifactId', 100));
+            ensure(!fixedTarget || fixedTarget.obligation === 'whole-text' && fixedTarget.size <= 2 * 1024 * 1024, 'ARTIFACT_FIXED_READ_REQUIRED', '此固定审查目标须使用fixed-text-v1有界页', 415);
             const { artifact, bytes } = app.evidence.read(actor, text(x.artifactId, 'artifactId', 100));
             const limit = bytes.length > 2 * 1024 * 1024 ? app.developmentReviews.archivedLogLimit(actor, pid, artifact.id) ?? 2 * 1024 * 1024 : 2 * 1024 * 1024;
             ensure(!bytes.includes(0) && bytes.length <= limit, 'ARTIFACT_TEXT_REQUIRED', '产物不是可读文本或超过当前读取范围', 415);
@@ -372,7 +374,7 @@ const SPECS = [
             userOnly(c.actor); }, preconditions: noPrecondition, execute: (c, x) => c.app.formalReportReviews.prepare(c.actor, c.projectId, x) }),
     make('formal_report_review_inspect', { idempotencyPolicy: 'read-only', authorize: (c, x) => { c.app.formalReportReviews.authorize(c.actor, c.projectId, x.reviewId); }, preconditions: noPrecondition, execute: (c, x) => c.app.formalReportReviews.inspect(c.actor, c.projectId, x.reviewId) }),
     make('formal_report_review_source_read', { idempotencyPolicy: 'read-only', authorize: (c, x) => { c.app.formalReportReviews.inspect(c.actor, c.projectId, x.reviewId); }, preconditions: noPrecondition, execute: (c, x) => c.app.formalReportReviews.sourceRead(c.actor, c.projectId, x.reviewId, x.path, x.cursor, x.limit) }),
-    make('development_review_prepare', { idempotencyPolicy: 'key-required', authorize: (c, x) => { c.app.development.inspect(c.actor, c.projectId, x.jobId); }, preconditions: noPrecondition, execute: (c, x) => c.app.developmentReviews.prepare(c.actor, c.projectId, x) }),
+    make('development_review_prepare', { idempotencyPolicy: 'key-required', authorize: (c, x) => { c.app.development.inspect(c.actor, c.projectId, x.jobId); c.app.developmentReviews.validatePreparationBudget(c.actor, c.projectId, x); }, preconditions: noPrecondition, execute: (c, x) => c.app.developmentReviews.prepare(c.actor, c.projectId, x) }),
     make('development_review_inspect', { idempotencyPolicy: 'read-only', authorize: (c, x) => { c.app.developmentReviews.inspect(c.actor, c.projectId, x.reviewId); }, preconditions: noPrecondition, execute: (c, x) => c.app.developmentReviews.inspect(c.actor, c.projectId, x.reviewId) }),
     make('development_review_source_list', { idempotencyPolicy: 'read-only', authorize: (c, x) => { c.app.developmentReviews.sourceList(c.actor, c.projectId, x.reviewId); }, preconditions: noPrecondition, execute: (c, x) => c.app.developmentReviews.sourceList(c.actor, c.projectId, x.reviewId) }),
     make('development_review_source_read', { idempotencyPolicy: 'read-only', authorize: (c, x) => { c.app.developmentReviews.sourceList(c.actor, c.projectId, x.reviewId); }, preconditions: noPrecondition, execute: (c, x) => c.app.developmentReviews.sourceRead(c.actor, c.projectId, x.reviewId, x.path, x.cursor, x.limit) }),
@@ -548,6 +550,12 @@ export class OperationRegistry {
         return s;
     }
     execute(actor, id, raw, options) {
+        if (!['development_review_prepare', 'development_review_inspect', 'task_result_submit'].includes(id))
+            return this.executeCurrent(actor, id, raw, options);
+        const { input, pid } = this.entry(actor, id, raw, options);
+        return this.app.developmentReviews.operationIntegrity(actor, id, input, pid, () => this.executeCurrent(actor, id, raw, options));
+    }
+    entry(actor, id, raw, options) {
         let session = actor.type === 'agent' ? this.agentIdentity(actor, id) : undefined;
         const spec = SPECS.find(item => item.id === id);
         ensure(spec, 'OPERATION_NOT_FOUND', '领域操作不存在', 404);
@@ -562,10 +570,15 @@ export class OperationRegistry {
             ensure(!session || selected.id === session.id, 'SCOPE_DENIED', '不能切换 Agent 的会话工作区', 403);
             session = selected;
         }
+        return { session, spec, input, pid, lifecycleEpoch };
+    }
+    executeCurrent(actor, id, raw, options) {
+        const { session, spec, input, pid, lifecycleEpoch } = this.entry(actor, id, raw, options);
         let key = options.idempotencyKey;
         let permission;
         // Fixed execution rechecks consumption each time; only its original operation stores a receipt.
-        const cached = !['session_action_resume', 'session_action_execute', 'session_action_inspect', 'research_brief_inspect', 'research_history_list'].includes(id) && (actor.type === 'agent' || spec.idempotencyPolicy === 'key-required');
+        const fixedReviewInspect = id === 'development_review_inspect' && this.app.store.get('development-review', input.reviewId, pid).readingProtocol === 'fixed-obligations-v1';
+        const cached = !fixedReviewInspect && !['session_action_resume', 'session_action_execute', 'session_action_inspect', 'research_brief_inspect', 'research_history_list'].includes(id) && (actor.type === 'agent' || spec.idempotencyPolicy === 'key-required');
         if (cached || spec.idempotencyPolicy === 'key-required')
             ensure(typeof key === 'string' && key.trim() && key.length <= 200, 'OPERATION_ID_REQUIRED', '写操作需要 Idempotency-Key', 400);
         const context = { ...options, app: this.app, actor, session, validate: () => {
@@ -730,10 +743,10 @@ export class OperationRegistry {
                 context.validate();
                 this.app.methodContracts.recordSkillRead(actor, session, result);
             }
-            if (fresh && !(id === 'artifact_read' && input.readProtocol === 'fixed-text-v1') && actor.type === 'agent' && ['artifact_read', 'development_review_source_read', 'run_source_read', 'formal_report_review_source_read'].includes(id)) {
+            if (fresh && actor.type === 'agent' && ['artifact_read', 'development_review_source_read', 'run_source_read', 'formal_report_review_source_read'].includes(id) && (!(id === 'artifact_read' && input.readProtocol === 'fixed-text-v1') || !!this.app.developmentReviews.fixedReadTarget(actor, pid, input.artifactId))) {
                 context.validate();
                 let extra = id === 'artifact_read' || id === 'development_review_source_read' ? this.app.developmentReviews.recordReading(actor, pid, id, input, result, key) : undefined;
-                if (['artifact_read', 'run_source_read', 'formal_report_review_source_read'].includes(id))
+                if (!(id === 'artifact_read' && input.readProtocol === 'fixed-text-v1') && ['artifact_read', 'run_source_read', 'formal_report_review_source_read'].includes(id))
                     extra = this.app.formalReportReviews.recordReading(actor, pid, id, input, result, key) ?? extra;
                 if (extra)
                     result = output({ ...result, ...extra });
@@ -925,6 +938,12 @@ export class OperationRegistry {
                     spec.authorize(context, input);
                 const previous = lookup();
                 if (previous) {
+                    if (['artifact_read', 'development_review_source_read'].includes(id) && input.readProtocol !== 'fixed-text-v1' && previous.value.reviewReadingProtocol === 'fixed-obligations-v1') {
+                        context.validate();
+                        spec.authorize(context, input);
+                        this.app.developmentReviews.replayRead(actor, pid, previous.value.reviewReadId);
+                        return output(previous.value);
+                    }
                     if (id === 'workspace_read') {
                         context.validate();
                         spec.authorize(context, input);
@@ -942,9 +961,11 @@ export class OperationRegistry {
                     if (id === 'artifact_read' && input.readProtocol === 'fixed-text-v1') {
                         context.validate();
                         const fresh = spec.execute(context, input);
-                        const { artifactReadId, ...original } = previous.value;
+                        const { artifactReadId, reviewReadId, reviewReadingProtocol, ...original } = previous.value;
                         ensure(digest(fresh) === digest(original), 'ARTIFACT_SOURCE_CHANGED', '缓存固定页来源改变', 409);
                         this.app.artifactTexts.markReplay(actor, pid, artifactReadId);
+                        if (reviewReadingProtocol === 'fixed-obligations-v1')
+                            this.app.developmentReviews.replayRead(actor, pid, reviewReadId);
                         return output(previous.value);
                     }
                     if (id === 'evidence_register' && input.readProtocol === 'fixed-text-v1') {

@@ -12,6 +12,7 @@ function validBlob(store, blob) {
     ensure(/^[a-f0-9]{64}$/.test(blob.digest) && Number.isSafeInteger(blob.size) && blob.size >= 0 && store.paths.key(blob.blobPath) === 'artifacts/' + blob.digest, 'ARTIFACT_CORRUPTED', '固定原件引用无效', 409);
     return store.paths.physical(blob.blobPath);
 }
+export const validateStreamedBlobReference = validBlob;
 function readAt(fd, length, position) {
     const bytes = Buffer.allocUnsafe(length);
     let offset = 0;
@@ -54,6 +55,7 @@ export function verifyStreamedBlob(store, blob, validate) {
         validate?.();
         ensure(hash.digest('hex') === blob.digest, 'ARTIFACT_CORRUPTED', '原件完整摘要校验失败', 409);
         unchanged(store, blob, file);
+        return file.before;
     }
     finally {
         closeSync(file.fd);
@@ -289,6 +291,17 @@ function validateIndex(source, indexBlob, index) {
     ensure(index.leafCount === leafCount && indexBlob.size === (2 * leafCount - 1) * HASH_BYTES + index.blockCount * ENTRY_BYTES && /^[a-f0-9]{64}$/.test(index.rootDigest) && Number.isSafeInteger(index.utf16Length) && (source.size === 0 ? index.utf16Length === 0 : index.utf16Length > 0) && index.utf16Length <= source.size, 'ARTIFACT_CORRUPTED', '文本索引结构失效', 409);
 }
 /** Merkle proofs authenticate only touched block entries, keeping index I/O bounded even for large configured limits. */
+export function assertStreamedIndex(store, source, indexBlob, index) {
+    validateIndex(source, indexBlob, index);
+    const file = checkedOpen(store, indexBlob);
+    try {
+        ensure(readAt(file.fd, HASH_BYTES, 0).toString('hex') === index.rootDigest, 'ARTIFACT_CORRUPTED', '文本索引根改变', 409);
+        unchanged(store, indexBlob, file);
+    }
+    finally {
+        closeSync(file.fd);
+    }
+}
 export function readStreamedText(store, source, indexBlob, index, cursor, limit, utf16 = false) {
     validateIndex(source, indexBlob, index);
     integer(cursor, 'cursor', 0, source.size);

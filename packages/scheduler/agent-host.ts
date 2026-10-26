@@ -30,7 +30,7 @@ import {assertWorkspaceReady} from '../workspace/git-service.js';
 import {randomUUID} from 'node:crypto';
 import {AgentAdmissionService,type AgentAdmission} from './agent-admission.js';
 interface Active {
-    readResponses?:Map<string,{id:string;tool:string;resultDigest:string;actor:Actor;readId:string;workspaceKind?:'draft'|'source';permission:PermissionReference;epoch:number}>;
+    readResponses?:Map<string,{id:string;tool:string;resultDigest:string;actor:Actor;readId:string;reviewReadId?:string;workspaceKind?:'draft'|'source';permission:PermissionReference;epoch:number}>;
     catalogFingerprint:string;
     admissionId: string;
     child: ChildProcess;
@@ -250,6 +250,7 @@ export class AgentHost {
         const actor: Actor = { ...(workflowContinuationId?{workflowContinuationId,workflowNoticeMessageId:messageId,...(reservation.message?.approvalNoticeId?{approvalNoticeMessageId:messageId}:{})}:{}),researchModelDigest:this.app.researchAutomation.modelIdentity(claimed),...(approvalResumeId?{approvalResumeId}:{}),...(!workflowContinuationId&&messageId?{messageId}:{}),...(continuationId?{continuationId}:{}),permission:claimed.executionPermission,...(wakeupId ? { wakeupId } : {}), type: 'agent', projectId: claimed.projectId!, sessionId: claimed.id, role: claimed.role, generation: attempt?.generation ?? claimed.generation, ...(attempt ? { taskId: attempt.taskId, attemptId: attempt.id } : {}) };
         let active:Active|undefined,requested=false;
         try {
+        if(attempt)this.app.developmentReviews.withTaskIntegrity(store.get<Task>('task',attempt.taskId,claimed.projectId!),()=>undefined);
         const bundleId=prepareSessionSkills(this.app,claimed,actor);
         const skillBundle = this.app.skills.bundleBootstrap(claimed.projectId!,claimed.role,bundleId);
         this.ensureReady(claimed);const taskModel=sessionTaskModel(this.app.store,claimed);if(taskModel)assertTaskModelCurrentSync(this.app.context,taskModel);
@@ -273,6 +274,7 @@ export class AgentHost {
             // Serialize the final revocation check with process creation across controllers.
             if(continuationId)ensure(this.app.researchAutomation.isOwner(),'AUTOMATION_RUNTIME_EXPIRED','当前进程已失去持续任务owner');
             if(workflowContinuationId)this.app.workflowContinuations.assertBindingCurrent(workflowContinuationId);
+            if(attempt&&this.app.developmentReviews.isFixedTask(store.get<Task>('task',attempt.taskId,claimed.projectId!)))this.app.teams.active(actor);
             this.app.skills.ensureBundleStartAllowed(claimed.projectId!,bundleId);
             const marked=this.admission.markSpawnRequested(slot.id,this.ownerHost,claimed.generation);store.update('agent-admission',marked.id,marked.version,{httpManagedVersion:1});requested=true;
             // Windows locks a process cwd; keep the replaceable workspace only in the SDK options.
@@ -319,15 +321,17 @@ export class AgentHost {
     }
     private readResponse(a:Active,actor:Actor,tool:string,callId:string,result:unknown,permission:PermissionReference,epoch:number){
         const workspace=tool==='workspace_read'?result as {draftReadId?:string;sourceInputReadId?:string}:undefined,workspaceKind=workspace?.draftReadId?'draft':workspace?.sourceInputReadId?'source':undefined;
-        const readId=workspace?.draftReadId??workspace?.sourceInputReadId??(tool==='artifact_read'?(result as {artifactReadId?:string})?.artifactReadId:tool==='session_attachment_read'?(result as {attachmentReadId?:string})?.attachmentReadId:undefined);if(!readId)return;
+        const reviewReadId=(result as {reviewReadingProtocol?:string})?.reviewReadingProtocol==='fixed-obligations-v1'?(result as {reviewReadId:string}).reviewReadId:undefined;
+        const readId=workspace?.draftReadId??workspace?.sourceInputReadId??(tool==='artifact_read'?(result as {artifactReadId?:string})?.artifactReadId:tool==='session_attachment_read'?(result as {attachmentReadId?:string})?.attachmentReadId:undefined)??reviewReadId;if(!readId)return;
         return this.app.store.transaction(()=>{
+            if(reviewReadId&&!this.app.developmentReviews.offerRead(actor,actor.projectId!,reviewReadId,callId))return;
             if(workspaceKind){if(!(workspaceKind==='draft'?this.app.draftReads:this.app.sourceInputs).offer(actor,readId,callId))return;}
-            else if(tool==='artifact_read'){if(!this.app.artifactTexts.offer(actor,actor.projectId!,readId,callId))return;}else{
+            else if(tool==='artifact_read'&&(result as {artifactReadId?:string}).artifactReadId){if(!this.app.artifactTexts.offer(actor,actor.projectId!,readId,callId))return;}else if(!reviewReadId){
             const read=this.app.store.get<AttachmentRead>('attachment-input-read',readId,actor.projectId!);
             if(read.delivery!=='pending'||read.offered||read.callId!==callId||read.sessionId!==actor.sessionId||read.generation!==actor.generation)return;
             this.app.store.update<AttachmentRead>('attachment-input-read',read.id,read.version,{offered:true});}
             this.app.sessionPermissions.assert(permission,false);const project=this.app.store.get<import('../domain/types.js').Project>('project',actor.projectId!);ensure(project.lifecycleEpoch===epoch&&project.status==='active','ATTACHMENT_DELIVERY_STALE','项目生命周期已变化');
-            const id=randomUUID();(a.readResponses??=new Map()).set(callId,{id,tool,resultDigest:digest(JSON.stringify({content:[{type:'text',text:JSON.stringify(result)}],details:{}})),actor:{...actor},readId,...(workspaceKind?{workspaceKind}:{}),permission:{...permission},epoch});return id;
+            const id=randomUUID();(a.readResponses??=new Map()).set(callId,{id,tool,resultDigest:digest(JSON.stringify({content:[{type:'text',text:JSON.stringify(result)}],details:{}})),actor:{...actor},readId,...(reviewReadId?{reviewReadId}:{}),...(workspaceKind?{workspaceKind}:{}),permission:{...permission},epoch});return id;
         });
     }
     private completeReadDelivery(a:Active,tool:string,callId:string,m:{readDelivery?:unknown;resultDigest?:unknown;isError?:unknown},failed=false){
@@ -338,7 +342,8 @@ export class AgentHost {
             ensure(!a.stopError&&!a.ended&&!a.exitObserved&&this.valid(a)&&pending.actor.sessionId===a.sessionId&&pending.actor.generation===a.generation,'ATTACHMENT_DELIVERY_STALE','旧Worker不能确认读取');
             this.app.sessionPermissions.assert(pending.permission,false);const p=this.app.store.get<import('../domain/types.js').Project>('project',pending.actor.projectId!);ensure(p.lifecycleEpoch===pending.epoch&&p.status==='active','ATTACHMENT_DELIVERY_STALE','项目生命周期已变化');
             if(pending.workspaceKind)(pending.workspaceKind==='draft'?this.app.draftReads:this.app.sourceInputs).deliver(pending.actor,pending.readId,callId);
-            else if(pending.tool==='artifact_read')this.app.artifactTexts.deliver(pending.actor,pending.actor.projectId!,pending.readId,callId);else deliverAttachmentRead(this.app.store,pending.actor,pending.readId,callId);
+            else if(pending.tool==='artifact_read'&&pending.readId!==pending.reviewReadId)this.app.artifactTexts.deliver(pending.actor,pending.actor.projectId!,pending.readId,callId);else if(!pending.reviewReadId)deliverAttachmentRead(this.app.store,pending.actor,pending.readId,callId);
+            if(pending.reviewReadId)this.app.developmentReviews.deliverRead(pending.actor,pending.actor.projectId!,pending.reviewReadId,callId);
         });return true;}catch{return false;}
     }
     private valid(a: Active) {

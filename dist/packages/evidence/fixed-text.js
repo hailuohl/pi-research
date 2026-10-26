@@ -1,10 +1,11 @@
+import { verifySourceBlob, verifiedSourceContext } from '../storage/source-integrity.js';
 import { ordinaryWorkspaceReader } from '../research-workflows/workspace-inputs.js';
 import { ARTIFACT_TEXT_PREPARE_TIMEOUT_MS } from '../contracts/tool-budgets.js';
 import { randomUUID } from 'node:crypto';
 import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 import { integer, text } from '../contracts/validation.js';
-import { prepareFixedTextIndex, publishFixedTextIndex, readStreamedText, verifyStreamedBlob } from '../storage/streamed-blob.js';
+import { prepareFixedTextIndex, publishFixedTextIndex, readStreamedText, verifyStreamedBlob, assertStreamedIndex } from '../storage/streamed-blob.js';
 import { assertTextIndexSource, textIndexPublication } from '../storage/text-index-publication.js';
 import { fixedDocumentTextSource } from '../documents/fixed-text-source.js';
 import { assertDiscoveryArtifact } from '../policy/discovery-grant-validation.js';
@@ -17,11 +18,11 @@ function fixed(store, pid, a, id) {
     ensure(['artifact:text-index', 'document:text-index'].includes(index.origin) && !index.taskId && !index.runId && !index.wakeupId && !index.discoveryGrant, 'ARTIFACT_SOURCE_CHANGED', '固定文本索引归属无效', 409);
     return { source: blob(a), indexBlob: blob(index), index: source.index };
 }
-export function verifyFixedTextEvidence(store, pid, a, e) {
+export function verifyFixedTextEvidence(store, pid, a, e, integrity) {
     const ref = e.fixedText;
     ensure(ref.readProtocol === 'fixed-text-v1' && a.projectId === pid && a.id === e.artifactId && a.digest === e.digest, 'EVIDENCE_INVALID', '固定引文来源不符', 409);
     const source = fixed(store, pid, a, ref.textSourceId);
-    verifyStreamedBlob(store, source.source);
+    verifySourceBlob(store, source.source, integrity ?? verifiedSourceContext(store, source.source));
     integer(ref.start, 'start', 0, a.size);
     integer(ref.end, 'end', ref.start + 1, Math.min(a.size, ref.start + 16000));
     const page = readStreamedText(store, source.source, source.indexBlob, source.index, ref.start, Math.max(4, ref.end - ref.start), true), quote = Buffer.from(page.content).subarray(0, ref.end - ref.start);
@@ -50,7 +51,8 @@ export class ArtifactTextService {
         if (actor.type === 'agent')
             assertDiscoveryArtifact(app.store, pid, a);
         const review = actor.type === 'agent' && actor.role === 'reviewer' && actor.taskId && app.store.get('task', actor.taskId, pid).reviewId;
-        const limit = review ? app.developmentReviews.archivedLogLimit(actor, pid, artifactId) ?? 2 * 1024 * 1024 : a.size;
+        const target = review ? app.developmentReviews.fixedReadTarget(actor, pid, artifactId) : undefined;
+        const limit = review ? app.developmentReviews.archivedLogLimit(actor, pid, artifactId) ?? (target?.obligation === 'dataset-reference' ? target.size : 2 * 1024 * 1024) : a.size;
         ensure(a.size <= limit, 'ARTIFACT_TEXT_REQUIRED', '产物超过当前获准读取范围', 415);
         return a;
     }
@@ -72,8 +74,18 @@ export class ArtifactTextService {
             const f = fixed(app.store, pid, a, id);
             verifyStreamedBlob(app.store, f.source, budget);
             verifyStreamedBlob(app.store, f.indexBlob, budget);
+            assertStreamedIndex(app.store, f.source, f.indexBlob, f.index);
             check();
             return result();
+        }
+        const indexed = app.store.db.prepare("SELECT id FROM records WHERE kind='artifact-text-source' AND project_id=? AND json_extract(data,'$.artifactId')=? AND json_extract(data,'$.sourceDigest')=? AND json_extract(data,'$.size')=? ORDER BY id LIMIT 1").get(pid, a.id, a.digest, a.size);
+        if (indexed) {
+            const existingId = String(indexed.id), f = fixed(app.store, pid, a, existingId);
+            verifyStreamedBlob(app.store, f.source, budget);
+            verifyStreamedBlob(app.store, f.indexBlob, budget);
+            assertStreamedIndex(app.store, f.source, f.indexBlob, f.index);
+            check();
+            return this.descriptor(actor, pid, { ...input, textSourceId: existingId });
         }
         const row = app.store.db.prepare("SELECT id FROM records WHERE kind='document-text-source' AND project_id=? AND json_extract(data,'$.original.artifactId')=?").get(pid, a.id);
         if (row) {
@@ -142,7 +154,7 @@ export class ArtifactTextService {
         ensure(page.content.indexOf(quote, start + 1) < 0, 'EVIDENCE_QUOTE_AMBIGUOUS', '这一页内有重复片段；请扩大引文或重新读取有界页', 400);
         const end = start + quote.length, boundary = (i) => i === 0 || i === page.content.length || !(page.content.charCodeAt(i) >= 0xdc00 && page.content.charCodeAt(i) <= 0xdfff && page.content.charCodeAt(i - 1) >= 0xd800 && page.content.charCodeAt(i - 1) <= 0xdbff);
         ensure(boundary(start) && boundary(end) && Buffer.from(quote).toString('utf8') === quote, 'EVIDENCE_QUOTE_MISMATCH', '引文不能拆分完整字符', 400);
-        verifyStreamedBlob(this.app.store, blob(a));
+        verifySourceBlob(this.app.store, blob(a), verifiedSourceContext(this.app.store, blob(a)));
         const byteStart = r.cursor + Buffer.byteLength(page.content.slice(0, start)), byteEnd = byteStart + Buffer.byteLength(quote);
         return this.app.store.create('evidence', pid, { type: 'artifact', artifactId: a.id, digest: a.digest, locator: { start: r.utf16Start + start, end: r.utf16Start + end }, quote, description: '原文片段；解释与研究断言未核验', fixedText: { readProtocol: 'fixed-text-v1', textSourceId: r.textSourceId, readId: r.id, start: byteStart, end: byteEnd } });
     }

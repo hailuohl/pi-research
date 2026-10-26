@@ -21,6 +21,7 @@ function validBlob(store:Pick<Store,'paths'>,blob:ArtifactBlob) {
  ensure(/^[a-f0-9]{64}$/.test(blob.digest)&&Number.isSafeInteger(blob.size)&&blob.size>=0&&store.paths.key(blob.blobPath)==='artifacts/'+blob.digest,'ARTIFACT_CORRUPTED','固定原件引用无效',409);
  return store.paths.physical(blob.blobPath);
 }
+export const validateStreamedBlobReference=validBlob;
 function readAt(fd:number,length:number,position:number) {
  const bytes=Buffer.allocUnsafe(length);let offset=0;
  while(offset<length){const count=readSync(fd,bytes,offset,length-offset,position+offset);ensure(count>0,'ARTIFACT_CORRUPTED','固定原件被截断',409);offset+=count;}
@@ -38,7 +39,7 @@ function unchanged(store:Pick<Store,'paths'>,blob:ArtifactBlob,file:{fd:number;b
 }
 /** Full integrity boundary, bounded memory; never use metadata as a hash substitute. */
 export function verifyStreamedBlob(store:Pick<Store,'paths'>,blob:ArtifactBlob,validate?:()=>void) {
- const file=checkedOpen(store,blob);try{const hash=createHash('sha256');for(let position=0;position<blob.size;position+=IO_BYTES){validate?.();hash.update(readAt(file.fd,Math.min(IO_BYTES,blob.size-position),position));}validate?.();ensure(hash.digest('hex')===blob.digest,'ARTIFACT_CORRUPTED','原件完整摘要校验失败',409);unchanged(store,blob,file);}finally{closeSync(file.fd);}
+ const file=checkedOpen(store,blob);try{const hash=createHash('sha256');for(let position=0;position<blob.size;position+=IO_BYTES){validate?.();hash.update(readAt(file.fd,Math.min(IO_BYTES,blob.size-position),position));}validate?.();ensure(hash.digest('hex')===blob.digest,'ARTIFACT_CORRUPTED','原件完整摘要校验失败',409);unchanged(store,blob,file);return file.before;}finally{closeSync(file.fd);}
 }
 async function writeAt(file:FileHandle,bytes:Uint8Array,position:number) {
  let offset=0;while(offset<bytes.length){const result=await file.write(bytes,offset,bytes.length-offset,position+offset);ensure(result.bytesWritten>0,'STORAGE_WRITE_FAILED','写入原件失败',500);offset+=result.bytesWritten;}
@@ -128,6 +129,9 @@ function validateIndex(source:ArtifactBlob,indexBlob:ArtifactBlob,index:FixedTex
  ensure(index.leafCount===leafCount&&indexBlob.size===(2*leafCount-1)*HASH_BYTES+index.blockCount*ENTRY_BYTES&&/^[a-f0-9]{64}$/.test(index.rootDigest)&&Number.isSafeInteger(index.utf16Length)&&(source.size===0?index.utf16Length===0:index.utf16Length>0)&&index.utf16Length<=source.size,'ARTIFACT_CORRUPTED','文本索引结构失效',409);
 }
 /** Merkle proofs authenticate only touched block entries, keeping index I/O bounded even for large configured limits. */
+export function assertStreamedIndex(store:Store,source:ArtifactBlob,indexBlob:ArtifactBlob,index:FixedTextIndex) {
+ validateIndex(source,indexBlob,index);const file=checkedOpen(store,indexBlob);try{ensure(readAt(file.fd,HASH_BYTES,0).toString('hex')===index.rootDigest,'ARTIFACT_CORRUPTED','文本索引根改变',409);unchanged(store,indexBlob,file);}finally{closeSync(file.fd);}
+}
 export function readStreamedText(store:Store,source:ArtifactBlob,indexBlob:ArtifactBlob,index:FixedTextIndex,cursor:number,limit:number,utf16=false) {
  validateIndex(source,indexBlob,index);integer(cursor,'cursor',0,source.size);integer(limit,'limit',4,TEXT_PAGE_BYTES);
  const sourceFile=checkedOpen(store,source),sourceFd=sourceFile.fd;let indexFile:ReturnType<typeof checkedOpen>|undefined;

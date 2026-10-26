@@ -65,10 +65,12 @@ export declare class TeamService {
     };
     assertResource(actor: Actor, kind: 'artifact' | 'evidence' | 'run' | 'task', id: string): void;
     heartbeat(attemptId: string): Row<TaskAttempt> | undefined;
+    reviewIntegrity?: <T>(task: Row<Task>, fn: () => T) => T;
     submit(actor: Actor, value: unknown): Row<{
         attemptId: string;
         digest: string;
     }>;
+    private submitCurrent;
     /** All named reviewers are gates. Conflicting opinions remain disputed, never last-writer-wins. */
     private aggregateReviews;
     refresh(id: string): Row<Team>;

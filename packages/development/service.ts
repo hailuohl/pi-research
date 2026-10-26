@@ -1,3 +1,4 @@
+import type {SourceIntegrityContext} from '../storage/source-integrity.js';
 import {assertDiscoveryArtifact} from '../policy/discovery-grant-validation.js';
 import {assertRunGrantArtifact} from '../policy/run-grant-validation.js';
 import {randomUUID} from 'node:crypto';
@@ -141,13 +142,13 @@ export class DevelopmentService {
         const files=listFiles(root).map(f=>{const bytes=readStableFile(root,f.path,64*MiB);total+=bytes.length;ensure(total<=64*MiB,'SNAPSHOT_TOO_LARGE','工作区超过测试快照上限');return {path:f.path,size:bytes.length,digest:digest(bytes),...(!legacy?{mode:readSourceMode(root,f.path)}:{})};}).sort((a,b)=>a.path.localeCompare(b.path));
         ensure(digest(files)===t.sourceDigest,'DEVELOPMENT_SOURCE_STALE','工作区已变化，请重新准备测试');
     }
-    private current(t:DevelopmentTask|SandboxJob,pid:string,active:boolean,deadline:boolean,verifyFiles=true) {
+    private current(t:DevelopmentTask|SandboxJob,pid:string,active:boolean,deadline:boolean,verifyFiles=true,integrity?:SourceIntegrityContext) {
         if('developmentTaskId' in t&&(active||!this.app.store.get<Approval>('approval',t.grantId,pid).fullAccess))this.assertPermission(t as Row<SandboxJob>);
         ensure(digest(t.manifest)===t.manifestDigest&&t.sourceDigest===t.manifest.inputSnapshot.digest&&digest(t.manifest.inputSnapshot.files)===t.sourceDigest,'MANIFEST_CORRUPTED','开发测试清单校验失败');
         const id='developmentTaskId' in t?t.developmentTaskId:(t as Row<DevelopmentTask>).id;
         const approval=this.app.approvals.assert(t.grantId,pid,id,t.manifestDigest,'development.test');ensure(approval.subjectKind==='development-task','APPROVAL_STALE','审批类型不匹配');if(active)this.app.researchAutomation.assertApproval(approval,true,'developmentTaskId'in t&&t.startRequested);
         const m=t.manifest,s=this.app.store.get<Session>('session',t.sessionId,pid);
-        if(m.researchBrief){ensure(m.researchBrief.rootSessionId===s.id,'BRIEF_REFERENCE_MISMATCH','开发测试研究来源不属于本会话');const brief=fixedResearchBrief(this.app.store,pid,m.researchBrief);ensure(m.methodContractDigest===brief.methodContract?.contractDigest,'METHOD_CONTRACT_CORRUPTED','测试方法契约标识与原计划不一致');assertMethodSnapshot(brief.methodContract,m.inputSnapshot.files);const expected=methodSyntheticFixture(brief.methodContract);if(expected)assertSyntheticManifest(this.app.store,pid,s.id,expected,m.syntheticFixture,m.command,m.dataArtifacts);else ensure(!m.syntheticFixture,'SYNTHETIC_FIXTURE_BINDING_INVALID','旧计划不能自添fixture身份');}else ensure(!m.methodContractDigest&&!m.syntheticFixture,'METHOD_CONTRACT_CORRUPTED','测试方法契约缺少原研究计划');
+        if(m.researchBrief){ensure(m.researchBrief.rootSessionId===s.id,'BRIEF_REFERENCE_MISMATCH','开发测试研究来源不属于本会话');const brief=fixedResearchBrief(this.app.store,pid,m.researchBrief,undefined,integrity);ensure(m.methodContractDigest===brief.methodContract?.contractDigest,'METHOD_CONTRACT_CORRUPTED','测试方法契约标识与原计划不一致');assertMethodSnapshot(brief.methodContract,m.inputSnapshot.files);const expected=methodSyntheticFixture(brief.methodContract);if(expected)assertSyntheticManifest(this.app.store,pid,s.id,expected,m.syntheticFixture,m.command,m.dataArtifacts);else ensure(!m.syntheticFixture,'SYNTHETIC_FIXTURE_BINDING_INVALID','旧计划不能自添fixture身份');}else ensure(!m.methodContractDigest&&!m.syntheticFixture,'METHOD_CONTRACT_CORRUPTED','测试方法契约缺少原研究计划');
         ensure(m.threadLimit===undefined||Number.isSafeInteger(m.threadLimit)&&m.threadLimit>=1&&m.threadLimit<=8,'MANIFEST_CORRUPTED','开发测试线程上限无效');
         ensure(m.metricArtifact===undefined||typeof m.metricArtifact==='string'&&m.expectedArtifacts.includes(m.metricArtifact),'MANIFEST_CORRUPTED','指标产物未绑定预期产物');
         if(deadline&&s.workingGrantId)ensure(m.workingGrant?.id===s.workingGrantId,'WORKING_GRANT_REQUIRED','会话已绑定授权；旧单次清单不能绕过范围或计次，请重新准备');
@@ -254,12 +255,12 @@ export class DevelopmentService {
             this.app.store.event(pid,'development.finalized',{jobId:id,state,integrity,artifactIds});return next;
         });
     }
-    assertResultMatches(actor:Actor,pid:string,id:string,candidateDigest:string) {
+    assertResultMatches(actor:Actor,pid:string,id:string,candidateDigest:string,integrity?:SourceIntegrityContext) {
         this.inspect(actor,pid,id);const j=this.app.store.get<SandboxJob>('sandbox-job',id,pid);
         ensure(j.state==='succeeded'&&j.integrity==='complete'&&j.exitCode===0,'DEVELOPMENT_TEST_FAILED','需要成功且完整的开发测试');
-        ensure(j.sourceDigest===candidateDigest,'DEVELOPMENT_SOURCE_STALE','测试结果不属于候选源码');this.current(j,pid,false,false);
+        ensure(j.sourceDigest===candidateDigest,'DEVELOPMENT_SOURCE_STALE','测试结果不属于候选源码');this.current(j,pid,false,false,true,integrity);
         for(const id of j.artifactIds){const a=this.app.store.get<Artifact>('artifact',id,pid),bytes=readStableFile(dirname(this.app.store.paths.physical(a.path)),basename(this.app.store.paths.physical(a.path)),32*MiB);ensure(bytes.length===a.size&&digest(bytes)===a.digest,'ARTIFACT_CORRUPTED','测试归档产物已改变');}
-        if(j.manifest.researchBrief){const brief=fixedResearchBrief(this.app.store,pid,j.manifest.researchBrief);assertDevelopmentMethodArchive(this.app.store,j,brief.methodContract,assertFrozenMethod(this.app.store,pid,brief.methodContract,brief.sourceInputs)?.protocol);}
+        if(j.manifest.researchBrief){const brief=fixedResearchBrief(this.app.store,pid,j.manifest.researchBrief,undefined,integrity);assertDevelopmentMethodArchive(this.app.store,j,brief.methodContract,assertFrozenMethod(this.app.store,pid,brief.methodContract,brief.sourceInputs,undefined,undefined,integrity)?.protocol);}
         return this.inspect(actor,pid,id);
     }
 }

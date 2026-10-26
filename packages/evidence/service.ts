@@ -1,3 +1,4 @@
+import type {SourceIntegrityContext} from '../storage/source-integrity.js';
 import {assertGrantAdmission} from '../policy/grant-retirement.js';
 import {assertDiscoveryArtifact,assertDiscoveryDocument} from '../policy/discovery-grant-validation.js';
 import {assertPdfArtifactRead,assertTextCorpusGrantActor,type TextCorpusGrantReference} from '../policy/text-corpus-grants.js';
@@ -24,7 +25,7 @@ function evidenceDescriptor(c:Pick<AppContext,'store'>,actor:Actor,id:string) {c
 function readEvidenceArtifact(c:Pick<AppContext,'store'>,actor:Actor,id:string) {const a=evidenceDescriptor(c,actor,id),bytes=readFileSync(c.store.paths.physical(a.path));ensure(digest(bytes)===a.digest,'ARTIFACT_CORRUPTED','产物内容校验失败',409);return {artifact:a,bytes};}
 
 /** Host reference validation shares the complete evidence chain with the ordinary service. */
-export function verifyEvidence(c:Pick<AppContext,'store'>,projectId:string,evidenceId:string,current=true) {const e=c.store.get<Evidence>('evidence',evidenceId,projectId);const artifact=evidenceDescriptor(c,{type:'system'},e.artifactId);if(e.fixedText)verifyFixedTextEvidence(c.store,projectId,artifact,e);else {const {bytes}=readEvidenceArtifact(c,{type:'system'},e.artifactId);ensure(artifact.projectId===projectId&&artifact.digest===e.digest&&bytes.toString('utf8').slice(e.locator.start,e.locator.end)===e.quote,'EVIDENCE_INVALID','证据引用或内容已失效',409);}if(current)assertDiscoveryArtifact(c.store,projectId,artifact);if(e.providerText)verifyPmcText(c,projectId,e.providerText.documentVersionId,e.providerText,e.artifactId);if(e.document){const link=verifyDocumentLink(c,projectId,e.document,e.artifactId);if(current)assertDiscoveryDocument(c.store,projectId,link.document);}return e;}
+export function verifyEvidence(c:Pick<AppContext,'store'>,projectId:string,evidenceId:string,current=true,integrity?:SourceIntegrityContext) {const e=c.store.get<Evidence>('evidence',evidenceId,projectId);const artifact=evidenceDescriptor(c,{type:'system'},e.artifactId);if(e.fixedText)verifyFixedTextEvidence(c.store,projectId,artifact,e,integrity);else {const {bytes}=readEvidenceArtifact(c,{type:'system'},e.artifactId);ensure(artifact.projectId===projectId&&artifact.digest===e.digest&&bytes.toString('utf8').slice(e.locator.start,e.locator.end)===e.quote,'EVIDENCE_INVALID','证据引用或内容已失效',409);}if(current)assertDiscoveryArtifact(c.store,projectId,artifact);if(e.providerText)verifyPmcText(c,projectId,e.providerText.documentVersionId,e.providerText,e.artifactId);if(e.document){const link=verifyDocumentLink(c,projectId,e.document,e.artifactId);if(current)assertDiscoveryDocument(c.store,projectId,link.document);}return e;}
 
 export class EvidenceService {
     constructor(private c: AppContext) { }

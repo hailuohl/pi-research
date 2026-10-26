@@ -71,11 +71,11 @@ export function acceptedResearchBrief(store, pid, sessionId, id, readyOnly = tru
     ensure(row.rootSessionId === sessionId && isIntact(row) && (!readyOnly || row.status === 'ready' || row.status === 'confirmed'), 'BRIEF_CORRUPTED', '历史接受上下文必须来自原完整研究计划');
     return row;
 }
-function assertBriefMethods(store, pid, brief, phase) { assertFrozenMethod(store, pid, brief.methodContract, brief.sourceInputs, brief.rootSessionId, phase); if (brief.methodContract?.compilerVersion === 'method-contract-v3') {
+function assertBriefMethods(store, pid, brief, phase, integrity) { assertFrozenMethod(store, pid, brief.methodContract, brief.sourceInputs, brief.rootSessionId, phase, integrity); if (brief.methodContract?.compilerVersion === 'method-contract-v3') {
     validateProtocolRoles(brief.methodContract, brief.draftFiles, brief.draftRoles);
     ensure(digest(brief.protocolDocument) === digest({ path: brief.methodContract.protocolPath, digest: brief.methodContract.protocolDigest, compilerVersion: brief.methodContract.compilerVersion }), 'METHOD_PROTOCOL_ROLE_INVALID', '唯一完整protocolDocument绑定缺失或已改变');
 } }
-export function fixedResearchBrief(store, projectId, ref, phase) {
+export function fixedResearchBrief(store, projectId, ref, phase, integrity) {
     ensure(ref, 'BRIEF_REFERENCE_REQUIRED', '需要固定研究计划引用；普通 Run 不能用作规范报告来源');
     const root = store.get('session', ref.rootSessionId, projectId);
     ensure(root.role === 'coordinator' && !root.taskId && !root.teamId, 'INVALID_ROOT_SESSION', '研究简报只属于项目主协调会话');
@@ -83,10 +83,10 @@ export function fixedResearchBrief(store, projectId, ref, phase) {
     ensure(row.rootSessionId === ref.rootSessionId && row.id === ref.id && row.digest === ref.digest && row.revision === ref.revision, 'BRIEF_REFERENCE_MISMATCH', '固定研究简报引用与原记录不一致');
     ensure(row.status === 'confirmed', 'BRIEF_NOT_CONFIRMED', '固定研究计划尚未确认');
     ensure(isIntact(row), 'BRIEF_CORRUPTED', '研究简报内容校验失败');
-    assertSourceInputs(store, projectId, row.rootSessionId, row.sourceInputs);
-    assertBriefMethods(store, projectId, row, phase);
+    assertSourceInputs(store, projectId, row.rootSessionId, row.sourceInputs, integrity);
+    assertBriefMethods(store, projectId, row, phase, integrity);
     for (const evidenceId of row.evidenceIds)
-        verifyEvidence({ store }, projectId, evidenceId, true);
+        verifyEvidence({ store }, projectId, evidenceId, true, integrity);
     return row;
 }
 function briefRow(row) {

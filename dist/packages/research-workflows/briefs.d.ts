@@ -1,3 +1,4 @@
+import type { SourceIntegrityContext } from '../storage/source-integrity.js';
 import type { Actor, ResearchBriefRef, Row } from '../domain/types.js';
 import type { ResearchApp } from '../research-app.js';
 import type { DraftFile } from './draft-reads.js';
@@ -52,7 +53,7 @@ export interface ResearchBriefInspection {
 }
 /** Only a stored intact brief supplies historical acceptance; callers cannot pass frozen arrays as authority. */
 export declare function acceptedResearchBrief(store: Store, pid: string, sessionId: string, id: string, readyOnly?: boolean): Row<ResearchBrief>;
-export declare function fixedResearchBrief(store: Store, projectId: string, ref: ResearchBriefRef, phase?: 'formal'): Row<ResearchBrief>;
+export declare function fixedResearchBrief(store: Store, projectId: string, ref: ResearchBriefRef, phase?: 'formal', integrity?: SourceIntegrityContext): Row<ResearchBrief>;
 export declare class ResearchBriefService {
     private app;
     constructor(app: ResearchApp);
@@ -66,27 +67,27 @@ export declare class ResearchBriefService {
     private assertFreshActor;
     validateReadyDrafts(actor: Actor, projectId: string, sessionId: string, input: unknown, approvedActionId?: string): void;
     sourceInputFingerprint(sessionId: string, expectedRevisionId: string | null, status?: 'clarifying' | 'ready'): {
-        documentVersionId?: string | undefined;
-        path: string;
-        size: number;
-        digest: string;
         purpose?: "whole-text" | "dataset-reference" | undefined;
+        digest: string;
+        path: string;
+        documentVersionId?: string | undefined;
         textSourceId?: string | undefined;
         readId: string;
         readProtocol?: "fixed-text-v1" | undefined;
+        size: number;
         workspace: string;
         sourceKind?: "workspace-snapshot" | undefined;
         artifactId?: string;
     }[] | {
         inputs: {
-            documentVersionId?: string | undefined;
-            path: string;
-            size: number;
-            digest: string;
             purpose?: "whole-text" | "dataset-reference" | undefined;
+            digest: string;
+            path: string;
+            documentVersionId?: string | undefined;
             textSourceId?: string | undefined;
             readId: string;
             readProtocol?: "fixed-text-v1" | undefined;
+            size: number;
             workspace: string;
             sourceKind?: "workspace-snapshot" | undefined;
             artifactId?: string;

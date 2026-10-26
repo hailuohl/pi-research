@@ -1,3 +1,4 @@
+import type { SourceIntegrityContext } from '../storage/source-integrity.js';
 import type { ResearchApp } from '../research-app.js';
 import type { Actor, Approval, Row } from '../domain/types.js';
 import type { SandboxJob, SandboxResources, SandboxState } from '../execution/contracts.js';
@@ -342,7 +343,7 @@ export declare class DevelopmentService {
         incomplete?: boolean;
         generation?: number;
     }): Row<SandboxJob>;
-    assertResultMatches(actor: Actor, pid: string, id: string, candidateDigest: string): {
+    assertResultMatches(actor: Actor, pid: string, id: string, candidateDigest: string, integrity?: SourceIntegrityContext): {
         approval: Row<Approval>;
         effectiveState: "submitted";
         canSubmit: boolean;

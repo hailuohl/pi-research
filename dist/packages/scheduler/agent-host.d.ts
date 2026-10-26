@@ -11,6 +11,7 @@ interface Active {
         resultDigest: string;
         actor: Actor;
         readId: string;
+        reviewReadId?: string;
         workspaceKind?: 'draft' | 'source';
         permission: PermissionReference;
         epoch: number;

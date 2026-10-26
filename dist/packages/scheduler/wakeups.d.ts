@@ -207,6 +207,49 @@ export declare class WakeupService {
             reviewerSessionId?: string | undefined;
             blockingMessage?: string | undefined;
             readingChecks?: ({
+                total: number;
+                readComplete: boolean;
+                missingIntervals: never[];
+                referenceVerified: boolean;
+                inspectionSatisfied: boolean;
+                inspectedRanges: {
+                    start: number;
+                    end: number;
+                }[];
+                targetId: string;
+                kind: import("../development/review-assessment.js").ReviewReadKind;
+                path: string;
+                digest: string;
+                obligation: "whole-text" | "dataset-reference";
+                cursorUnit: "utf16";
+            } | {
+                total: number;
+                readComplete: boolean;
+                missingIntervals: {
+                    start: number;
+                    end: number;
+                }[];
+                targetId: string;
+                kind: import("../development/review-assessment.js").ReviewReadKind;
+                path: string;
+                digest: string;
+                obligation: "whole-text" | "dataset-reference";
+                cursorUnit: "utf16";
+            } | {
+                blockedReason: string;
+                referenceVerified?: boolean | undefined;
+                inspectionSatisfied?: boolean | undefined;
+                inspectedRanges?: never[] | undefined;
+                total: null;
+                readComplete: boolean;
+                missingIntervals: never[];
+                targetId: string;
+                kind: import("../development/review-assessment.js").ReviewReadKind;
+                path: string;
+                digest: string;
+                obligation: "whole-text" | "dataset-reference";
+                cursorUnit: "utf16";
+            })[] | ({
                 targetId: string;
                 kind: string;
                 path: string;
@@ -233,7 +276,7 @@ export declare class WakeupService {
             status: "failed" | "running" | "pending" | "passed" | "stale" | "rejected" | "disputed" | "awaiting_approval";
             protocolDocument?: import("../research-workflows/method-contracts.js").ProtocolDocument | undefined;
             draftRoles?: import("../research-workflows/method-contracts.js").DraftRole[] | undefined;
-            protocolVersion?: 1 | 2 | undefined;
+            protocolVersion?: 2 | 1 | undefined;
             researchBrief?: import("../domain/types.js").ResearchBriefRef | undefined;
             sourceInputs?: import("../research-workflows/source-inputs.js").ResearchSourceInput[] | undefined;
             testArtifacts?: import("../development/review-assessment.js").ReviewTestArtifact[] | undefined;
@@ -251,69 +294,15 @@ export declare class WakeupService {
             testEvidenceIds: string[];
             requiredEvidenceIds: string[];
             baseSourceRevisionId?: string | undefined;
-            briefArtifact?: undefined;
-            surfaceInventory?: undefined;
-            jobId: string;
-            sourceDigest: string;
-            producerSessionId: string;
-            id: string;
-            reviewId: string;
-        } | {
-            verdict?: "disputed" | "reject" | "accept" | undefined;
-            reviewerSessionId?: string | undefined;
-            blockingMessage?: string | undefined;
-            readingChecks?: ({
-                targetId: string;
-                kind: string;
-                path: string;
-                digest: string;
-                total: number;
-                readComplete: boolean;
-                missingIntervals: {
-                    start: number;
-                    end: number;
-                }[];
-                blockedReason?: undefined;
-            } | {
-                targetId: string;
-                kind: string;
-                path: string;
-                digest: string;
-                total: null;
-                readComplete: boolean;
-                missingIntervals: never[];
-                blockedReason: string;
-            })[] | undefined;
-            assessmentRequiredAreas?: ("implementation_and_tests" | "input_evidence" | "independent_units_and_intervals" | "threshold_interpretation" | "claim_boundaries")[] | undefined;
-            digest: string;
-            status: "failed" | "running" | "pending" | "passed" | "stale" | "rejected" | "disputed" | "awaiting_approval";
-            protocolDocument?: import("../research-workflows/method-contracts.js").ProtocolDocument | undefined;
-            draftRoles?: import("../research-workflows/method-contracts.js").DraftRole[] | undefined;
-            protocolVersion?: 1 | 2 | undefined;
-            researchBrief?: import("../domain/types.js").ResearchBriefRef | undefined;
-            sourceInputs?: import("../research-workflows/source-inputs.js").ResearchSourceInput[] | undefined;
-            testArtifacts?: import("../development/review-assessment.js").ReviewTestArtifact[] | undefined;
-            dataArtifacts?: Omit<{
-                id: string;
-                digest: string;
-                size: number;
-                path: string;
-                sourceAcceptanceId?: string;
-            }, "path">[] | undefined;
-            teamId: string;
-            taskId: string;
-            approvalId: string;
-            manifestEvidenceId: string;
-            testEvidenceIds: string[];
-            requiredEvidenceIds: string[];
-            baseSourceRevisionId?: string | undefined;
-            briefArtifact: {
+            readingProtocol?: "fixed-obligations-v1" | undefined;
+            readingObligations?: import("../development/review-obligations.js").ReviewObligation[] | undefined;
+            briefArtifact?: {
                 id: string;
                 digest: string;
                 size: number;
                 path: string;
             } | undefined;
-            surfaceInventory: import("../development/review-assessment.js").ReviewInventory;
+            surfaceInventory?: import("../development/review-assessment.js").ReviewInventory | undefined;
             jobId: string;
             sourceDigest: string;
             producerSessionId: string;
@@ -339,7 +328,7 @@ export declare class WakeupService {
             } | undefined;
             id: string;
             experimentId: string;
-            state: "succeeded" | "failed" | "cancelled" | "unknown" | "queued" | "running" | "submitting" | "cancelling";
+            state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "unknown" | "submitting" | "cancelling";
             integrity: "pending" | "incomplete" | "complete" | "invalid";
             validation: "incomplete" | "invalid" | "verified";
             explanation: string;
@@ -451,7 +440,7 @@ export declare class WakeupService {
         purpose: string;
         run: {
             id: string;
-            state: "succeeded" | "failed" | "cancelled" | "unknown" | "queued" | "running" | "submitting" | "cancelling";
+            state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "unknown" | "submitting" | "cancelling";
             integrity: "pending" | "incomplete" | "complete" | "invalid";
             validation: "incomplete" | "invalid" | "verified";
             explanation: string;

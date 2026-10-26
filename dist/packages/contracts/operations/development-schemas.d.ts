@@ -516,7 +516,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                         readonly maxLength: number;
                                     };
                                 };
-                                readonly required: ("id" | "size" | "digest" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
+                                readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
                                 readonly additionalProperties: false;
                             };
                             readonly inputPath: {
@@ -572,7 +572,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                 readonly maxLength: number;
                             };
                         };
-                        readonly required: ("rootSessionId" | "id" | "digest" | "revision")[];
+                        readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
                         readonly additionalProperties: false;
                     };
                     readonly approvalResumeDigest: {
@@ -1143,7 +1143,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                         readonly maxLength: number;
                                     };
                                 };
-                                readonly required: ("id" | "size" | "digest" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
+                                readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
                                 readonly additionalProperties: false;
                             };
                             readonly inputPath: {
@@ -1199,7 +1199,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                 readonly maxLength: number;
                             };
                         };
-                        readonly required: ("rootSessionId" | "id" | "digest" | "revision")[];
+                        readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
                         readonly additionalProperties: false;
                     };
                     readonly approvalResumeDigest: {
@@ -1868,7 +1868,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                             readonly maxLength: number;
                                         };
                                     };
-                                    readonly required: ("id" | "size" | "digest" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
+                                    readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
                                     readonly additionalProperties: false;
                                 };
                                 readonly inputPath: {
@@ -1924,7 +1924,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                     readonly maxLength: number;
                                 };
                             };
-                            readonly required: ("rootSessionId" | "id" | "digest" | "revision")[];
+                            readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
                             readonly additionalProperties: false;
                         };
                         readonly approvalResumeDigest: {
@@ -2494,7 +2494,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                             readonly maxLength: number;
                                         };
                                     };
-                                    readonly required: ("id" | "size" | "digest" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
+                                    readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
                                     readonly additionalProperties: false;
                                 };
                                 readonly inputPath: {
@@ -2550,7 +2550,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                     readonly maxLength: number;
                                 };
                             };
-                            readonly required: ("rootSessionId" | "id" | "digest" | "revision")[];
+                            readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
                             readonly additionalProperties: false;
                         };
                         readonly approvalResumeDigest: {
@@ -3187,7 +3187,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                         readonly maxLength: number;
                                     };
                                 };
-                                readonly required: ("id" | "size" | "digest" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
+                                readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
                                 readonly additionalProperties: false;
                             };
                             readonly inputPath: {
@@ -3243,7 +3243,7 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                 readonly maxLength: number;
                             };
                         };
-                        readonly required: ("rootSessionId" | "id" | "digest" | "revision")[];
+                        readonly required: ("id" | "rootSessionId" | "revision" | "digest")[];
                         readonly additionalProperties: false;
                     };
                     readonly approvalResumeDigest: {

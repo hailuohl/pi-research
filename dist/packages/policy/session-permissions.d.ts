@@ -41,14 +41,14 @@ export declare class SessionPermissionService {
         blockedReason: string;
         actionId: string;
         operation: string;
-        state: "failed" | "unknown" | "pending" | "stale" | "completed" | "approved" | "rejected" | "executing";
+        state: "failed" | "pending" | "unknown" | "stale" | "completed" | "approved" | "rejected" | "executing";
         approvalStatus: "pending" | "stale" | "approved" | "rejected";
         input: Record<string, unknown> | null;
     } | {
         input: Record<string, unknown>;
         actionId: string;
         operation: string;
-        state: "failed" | "unknown" | "pending" | "stale" | "completed" | "approved" | "rejected" | "executing";
+        state: "failed" | "pending" | "unknown" | "stale" | "completed" | "approved" | "rejected" | "executing";
         approvalStatus: "pending" | "stale" | "approved" | "rejected";
         blockedReason: string | null;
     };
@@ -100,7 +100,7 @@ export declare class SessionPermissionService {
             unknownCommands: number;
             jobs: {
                 id: string;
-                state: "succeeded" | "failed" | "cancelled" | "unknown" | "running" | "starting";
+                state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
                 pid: number | undefined;
                 exitCode: number | null | undefined;
                 error: string | undefined;
@@ -162,7 +162,7 @@ export declare class SessionPermissionService {
             unknownCommands: number;
             jobs: {
                 id: string;
-                state: "succeeded" | "failed" | "cancelled" | "unknown" | "running" | "starting";
+                state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
                 pid: number | undefined;
                 exitCode: number | null | undefined;
                 error: string | undefined;
@@ -197,13 +197,14 @@ export declare class SessionPermissionService {
         }[];
     };
     stale(id: string): void;
-    source(sessionId: string, operation: string, input: Record<string, unknown>): {
+    source(sessionId: string, operation: string, input: Record<string, unknown>, storedVersion?: 1 | 2): {
         fingerprint: string;
         before: {
             path: string;
             content: string | null;
             digest: string | null;
         } | undefined;
+        sourceFingerprintVersion?: 2 | undefined;
     };
     guard(actor: Actor, operation: string, input: Record<string, unknown>, callId: string | undefined): {
         reference: PermissionReference;
@@ -303,7 +304,7 @@ export declare class SessionPermissionService {
             unknownCommands: number;
             jobs: {
                 id: string;
-                state: "succeeded" | "failed" | "cancelled" | "unknown" | "running" | "starting";
+                state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
                 pid: number | undefined;
                 exitCode: number | null | undefined;
                 error: string | undefined;

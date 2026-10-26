@@ -1,3 +1,4 @@
+import type {SourceIntegrityContext} from '../storage/source-integrity.js';
 import {assertWorkspaceInput,workspaceSelections,ordinaryWorkspaceReader} from './workspace-inputs.js';
 import {assertAttachmentInput,attachmentInputs,attachmentSelectionFingerprint} from './attachment-inputs.js';
 import {dirname,basename,relative,resolve,sep} from 'node:path';
@@ -20,14 +21,14 @@ function acceptedInputs(store:Store,pid:string,sessionId:string,inputs:ResearchS
     return store.list<ResearchBrief>('research-brief',pid).some(b=>{if(b.rootSessionId!==sessionId||b.sourceInputs===undefined||digest(b.sourceInputs)!==digest(inputs))return false;try{acceptedResearchBrief(store,pid,sessionId,b.id,false);return true;}catch{return false;}});
 }
 
-export function assertSourceInputs(store:Store,pid:string,sessionId:string,inputs:ResearchSourceInput[]|undefined) {
+export function assertSourceInputs(store:Store,pid:string,sessionId:string,inputs:ResearchSourceInput[]|undefined,integrity?:SourceIntegrityContext) {
     if(inputs===undefined)return;
     ensure(Array.isArray(inputs)&&inputs.length<=MAX_INPUTS&&new Set(inputs.map(i=>pathKey(i.workspace,i.path))).size===inputs.length,'BRIEF_SOURCE_CORRUPTED','固定研究输入清单无效');
     let total=0,legacyAccepted:boolean|undefined;
     for(const input of inputs) {
-        if(input.sourceKind==='workspace-snapshot'){assertWorkspaceInput(store,pid,sessionId,input);continue;}
+        if(input.sourceKind==='workspace-snapshot'){assertWorkspaceInput(store,pid,sessionId,input,integrity);continue;}
         ensure(input.sourceKind===undefined&&input.textSourceId===undefined,'BRIEF_SOURCE_CORRUPTED','旧输入不能伪装固定工作区来源');
-        if(input.readProtocol==='fixed-text-v1'){assertAttachmentInput(store,pid,sessionId,input);continue;}
+        if(input.readProtocol==='fixed-text-v1'){assertAttachmentInput(store,pid,sessionId,input,integrity);continue;}
         ensure(input.purpose===undefined&&input.documentVersionId===undefined,'BRIEF_SOURCE_CORRUPTED','旧研究输入不能改写读取模式');
         const read=store.get<InputRead>('research-input-read',input.readId,pid),artifact=store.get<Artifact>('artifact',input.artifactId,pid);
         ensure(!read.blockedReason&&read.sessionId===sessionId&&read.workspace===input.workspace&&read.path===input.path&&read.digest===input.digest&&read.size===input.size&&artifact.origin===`research-input:${sessionId}`&&artifact.digest===input.digest&&artifact.size===input.size,'BRIEF_SOURCE_CORRUPTED',`固定研究输入来源不符：${input.path}`);

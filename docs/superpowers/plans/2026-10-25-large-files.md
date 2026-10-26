@@ -58,6 +58,9 @@ Batch 2B specification: `docs/superpowers/specs/2026-10-26-large-files-batch2b.m
 
 ## Batch 3: fixed input -> run -> archive -> review
 
+- [x] Batch 3A: fixed dataset-reference -> actual Docker host fixture -> exact SDK independent development review/reopen. Validation and remaining formal execution/QA scope: `docs/acceptance/large-files-batch3a/RESULT.md`.
+- [ ] Batch 3B1: reviewed code/source integration approval -> formal Docker code/data manifest and complete large-data execution -> small archive/reopen; 3B2 follows with exact bounded facts and formal review on that same Run.
+
 - [ ] Add failure-exposing tests for the 16/32/64 MiB downstream gates and large output handling.
 - [ ] Stream snapshot/data copy and artifact collection with existing validation/redaction, and retain exact data/source manifests.
 - [ ] Route fixed run/review reads through bounded sources, retaining actual source/quote coverage and existing reviewer separation.

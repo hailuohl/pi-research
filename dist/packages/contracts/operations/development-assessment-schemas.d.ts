@@ -1,3 +1,4 @@
+export declare const DEVELOPMENT_ASSESSMENT_REFERENCE_LIMIT = 12;
 export declare const REVIEW_INVENTORY_SCHEMA: {
     readonly type: "object";
     readonly properties: {
@@ -282,6 +283,40 @@ export declare const DEVELOPMENT_ASSESSMENT_SCHEMA: {
 export declare const REVIEW_READING_CHECK_SCHEMA: {
     readonly type: "object";
     readonly properties: {
+        readonly cursorUnit: {
+            readonly const: "utf16";
+        };
+        readonly obligation: {
+            readonly enum: readonly ["whole-text", "dataset-reference"];
+        };
+        readonly referenceVerified: {
+            readonly type: "boolean";
+        };
+        readonly inspectionSatisfied: {
+            readonly type: "boolean";
+        };
+        readonly inspectedRanges: {
+            readonly maxItems?: number | undefined;
+            readonly type: "array";
+            readonly items: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly start: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly end: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                };
+                readonly required: readonly ["start", "end"];
+                readonly additionalProperties: false;
+            };
+            readonly minItems: number;
+        };
         readonly targetId: {
             readonly pattern?: string | undefined;
             readonly type: "string";

@@ -1821,7 +1821,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("cursor" | "limit")[];
+        readonly required: readonly ("limit" | "cursor")[];
         readonly additionalProperties: false;
     };
     readonly research_history_list: {
@@ -3093,7 +3093,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("cursor" | "limit")[];
+        readonly required: readonly ("limit" | "cursor")[];
         readonly additionalProperties: false;
     };
     readonly document_inspect: {
@@ -3541,7 +3541,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("role" | "query" | "limit" | "stateFilter" | "beforeSessionId")[];
+        readonly required: readonly ("query" | "limit" | "role" | "stateFilter" | "beforeSessionId")[];
         readonly additionalProperties: false;
     };
     readonly session_view: {
@@ -3692,7 +3692,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("cursor" | "limit")[];
+        readonly required: readonly ("limit" | "cursor")[];
         readonly additionalProperties: false;
     };
     readonly compute_capacity_configure: {
@@ -3801,7 +3801,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("cursor" | "limit")[];
+        readonly required: readonly ("limit" | "cursor")[];
         readonly additionalProperties: false;
     };
     readonly model_http_configure: {
@@ -4034,6 +4034,9 @@ export declare const INPUT_SCHEMAS: {
                 readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
                 readonly minLength: number;
                 readonly maxLength: number;
+            };
+            readonly readingProtocol: {
+                const: string;
             };
         };
         readonly required: readonly ["jobId"];
@@ -5114,7 +5117,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("cursor" | "limit")[];
+        readonly required: readonly ("limit" | "cursor")[];
         readonly additionalProperties: false;
     };
     readonly manuscript_inspect: {
@@ -5285,7 +5288,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: readonly ("revisionId" | "cursor" | "limit")[];
+        readonly required: readonly ("limit" | "cursor" | "revisionId")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_import: {
@@ -6030,7 +6033,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly minItems: number;
             };
         };
-        readonly required: ("status" | "scope" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary" | "expectedRevisionId")[];
+        readonly required: ("status" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "expectedRevisionId")[];
         readonly additionalProperties: false;
     };
     readonly research_brief_inspect: {

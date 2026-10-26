@@ -1,3 +1,4 @@
+import { type Stats } from 'node:fs';
 import type { Store } from './store.js';
 import type { ArtifactBlob } from './artifact-blob.js';
 import type { DocumentBlobPublication } from './document-publication.js';
@@ -13,8 +14,10 @@ export interface FixedTextIndex {
     rootDigest: string;
     utf16Length: number;
 }
+declare function validBlob(store: Pick<Store, 'paths'>, blob: ArtifactBlob): string;
+export declare const validateStreamedBlobReference: typeof validBlob;
 /** Full integrity boundary, bounded memory; never use metadata as a hash substitute. */
-export declare function verifyStreamedBlob(store: Pick<Store, 'paths'>, blob: ArtifactBlob, validate?: () => void): void;
+export declare function verifyStreamedBlob(store: Pick<Store, 'paths'>, blob: ArtifactBlob, validate?: () => void): Stats;
 export declare function prepareStreamedText(store: Store, projectId: string, input: AsyncIterable<Uint8Array>, maxBytes: number, validate: () => void, allowEmpty?: boolean): Promise<{
     publication: {
         format: "document-blob-publication-v1";
@@ -62,6 +65,7 @@ export declare function prepareFixedTextIndex(store: Store, projectId: string, a
 export declare function publishFixedTextIndex(store: Store, publication: TextIndexPublication, validate: () => void): Promise<void>;
 export declare function publishStreamedText(store: Store, publication: DocumentBlobPublication, validate: () => void, checkpoint?: () => void): Promise<void>;
 /** Merkle proofs authenticate only touched block entries, keeping index I/O bounded even for large configured limits. */
+export declare function assertStreamedIndex(store: Store, source: ArtifactBlob, indexBlob: ArtifactBlob, index: FixedTextIndex): void;
 export declare function readStreamedText(store: Store, source: ArtifactBlob, indexBlob: ArtifactBlob, index: FixedTextIndex, cursor: number, limit: number, utf16?: boolean): {
     utf16Start?: number | undefined;
     utf16End?: number | undefined;
@@ -71,3 +75,4 @@ export declare function readStreamedText(store: Store, source: ArtifactBlob, ind
     totalBytes: number;
     complete: boolean;
 };
+export {};

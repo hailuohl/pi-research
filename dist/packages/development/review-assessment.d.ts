@@ -1,3 +1,4 @@
+import type { SourceIntegrityContext } from '../storage/source-integrity.js';
 import type { Store } from '../storage/store.js';
 import type { Actor, Row, Task, TaskResult } from '../domain/types.js';
 import type { DevelopmentReview } from './reviews-types.js';
@@ -53,6 +54,7 @@ export interface ReviewInventory {
 }
 export type ReviewReadKind = 'candidate' | 'source_input' | 'test_artifact' | 'brief';
 interface Target {
+    size?: number;
     targetId: string;
     kind: ReviewReadKind;
     path: string;
@@ -68,7 +70,50 @@ export declare function buildReviewInventory(store: Store, pid: string, r: Devel
 export declare function recordReviewRead(store: Store, actor: Actor, r: Row<DevelopmentReview>, operation: string, input: Record<string, unknown>, output: Record<string, unknown>, callId: string): {
     reviewReadId: `${string}-${string}-${string}-${string}-${string}`;
 } | undefined;
-export declare function reviewReadingChecks(store: Store, pid: string, r: Row<DevelopmentReview>, task: Row<Task>): ({
+export declare function reviewReadingChecks(store: Store, pid: string, r: Row<DevelopmentReview>, task: Row<Task>, integrity?: SourceIntegrityContext): ({
+    total: number;
+    readComplete: boolean;
+    missingIntervals: never[];
+    referenceVerified: boolean;
+    inspectionSatisfied: boolean;
+    inspectedRanges: {
+        start: number;
+        end: number;
+    }[];
+    targetId: string;
+    kind: ReviewReadKind;
+    path: string;
+    digest: string;
+    obligation: "whole-text" | "dataset-reference";
+    cursorUnit: "utf16";
+} | {
+    total: number;
+    readComplete: boolean;
+    missingIntervals: {
+        start: number;
+        end: number;
+    }[];
+    targetId: string;
+    kind: ReviewReadKind;
+    path: string;
+    digest: string;
+    obligation: "whole-text" | "dataset-reference";
+    cursorUnit: "utf16";
+} | {
+    blockedReason: string;
+    referenceVerified?: boolean | undefined;
+    inspectionSatisfied?: boolean | undefined;
+    inspectedRanges?: never[] | undefined;
+    total: null;
+    readComplete: boolean;
+    missingIntervals: never[];
+    targetId: string;
+    kind: ReviewReadKind;
+    path: string;
+    digest: string;
+    obligation: "whole-text" | "dataset-reference";
+    cursorUnit: "utf16";
+})[] | ({
     targetId: string;
     kind: string;
     path: string;
@@ -90,5 +135,5 @@ export declare function reviewReadingChecks(store: Store, pid: string, r: Row<De
     missingIntervals: never[];
     blockedReason: string;
 })[];
-export declare function validateDevelopmentAssessment(store: Store, pid: string, r: Row<DevelopmentReview>, task: Row<Task>, result: TaskResult): void;
+export declare function validateDevelopmentAssessment(store: Store, pid: string, r: Row<DevelopmentReview>, task: Row<Task>, result: TaskResult, integrity?: SourceIntegrityContext): void;
 export {};

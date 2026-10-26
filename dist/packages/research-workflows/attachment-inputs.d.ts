@@ -1,3 +1,4 @@
+import { type SourceIntegrityContext } from '../storage/source-integrity.js';
 import type { Actor, Session, Row } from '../domain/types.js';
 import { type Store } from '../storage/store.js';
 import type { ResearchSourceInput } from './source-inputs.js';
@@ -50,5 +51,5 @@ export declare function attachmentSelectionFingerprint(store: Store, session: Ro
     bindingId: string;
     version: number;
 }[];
-export declare function assertAttachmentInput(store: Store, pid: string, sessionId: string, input: ResearchSourceInput): void;
+export declare function assertAttachmentInput(store: Store, pid: string, sessionId: string, input: ResearchSourceInput, integrity?: SourceIntegrityContext): void;
 export declare function attachmentInputs(store: Store, session: Row<Session>, inheritedIds: string[], status: 'clarifying' | 'ready'): ResearchSourceInput[];

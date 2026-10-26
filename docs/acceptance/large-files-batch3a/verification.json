@@ -1,0 +1,154 @@
+{
+  "baseline": "be9b80cb1da59e6d69a045c881e6a4ac40503ad1",
+  "scope": "confirmed fixed512 reference -> real Docker small hostfixture -> smallarchive -> independent SDK devreview ->reopen; dataset not computation input",
+  "fullRegressionOriginal": {
+    "session": 58058,
+    "status": "interrupted; no terminal summary, session58058 unknown, no OS test process, log lastwrite05:26:11Z",
+    "log": "batch3/regression.log",
+    "knownFailures": [
+      "HTTP and CLI operations share strict contracts, owner scope and idempotency"
+    ],
+    "resume": {
+      "status": "completed with three failures from same production entry ordering regression",
+      "manifest": "batch3/regression-resume-files.json",
+      "log": "batch3/regression-resume.log",
+      "exitRecord": "batch3/regression-resume-exit.json",
+      "session": 42898,
+      "process": 203112,
+      "exitCode": 1,
+      "total": 2233,
+      "pass": 2205,
+      "fail": 3,
+      "skip": 25,
+      "durationMs": 1368553.6276,
+      "files": 237
+    },
+    "knownFailureFiles": [
+      "tests/integration/operations-http-cli.test.mjs",
+      "tests/unit/compute-connections.test.mjs",
+      "tests/unit/operation-outputs.test.mjs",
+      "tests/unit/ssh-onboarding.test.mjs"
+    ]
+  },
+  "necessaryEntryRepair": {
+    "files": 5,
+    "deltaSha256": "385b043bbea1c76327ee8f22aefd07a862117cc9d92c11889aa0647630b0e72f",
+    "red": {
+      "log": "batch3/entry-order-repair/red.log",
+      "total": 31,
+      "pass": 9,
+      "fail": 22,
+      "note": "includes parent test count; no claim unique independent cases"
+    },
+    "green": {
+      "status": "passed",
+      "session": 78105,
+      "exitCode": 0,
+      "total": 94,
+      "pass": 94,
+      "fail": 0,
+      "skip": 0,
+      "durationMs": 354423.9764,
+      "log": "batch3/entry-order-repair/green.log"
+    },
+    "review": {
+      "agent": "/root/large_file_3a_entry_order_review",
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "xhigh",
+      "runtimeEcho": false,
+      "status": "accepted, no blocking/nonblocking product findings;123 hashes unchanged",
+      "report": "batch3/entry-order-repair/INDEPENDENT-REVIEW.md",
+      "productProbes": 5,
+      "capacityReuse": "prior512 evidence applicable; measured run not repeated after metadata-only entry repair",
+      "housekeeping": "automatic review rejected cleanup of two owned synthetic Temp fixtures; blocked by policy with no specific reason; retained, no bypass"
+    }
+  },
+  "capacity": {
+    "session": 12827,
+    "status": "passed",
+    "log": "batch3/root-512-repair1.log",
+    "result": "batch3/root-512-repair1/result.json",
+    "heapMiB": 192,
+    "bytes": 536870912,
+    "image": "python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f",
+    "context": "desktop-linux",
+    "stages": [
+      "actual-root-sdk-fixed-source-and-brief",
+      "actual-docker-only-host-fixture",
+      "actual-independent-sdk-coverage-and-inspection",
+      "reopen-exact-review"
+    ],
+    "passed": true,
+    "job": {
+      "id": "6d1821d8-a73f-4832-a5cd-6479cde16c18",
+      "containerId": "0d40bffd068651f811c70a3c5eb553681e3fee42942ee33b198e517742a11e06",
+      "manifestDigest": "47fbe557d87a17aa167caa061eaf8b7897c46941b1ef00c848648255b2eaac25",
+      "sourceDigest": "2a19c0b1e6f7ba17a5288720e7c651288bed78a634155d7974bb9b4e72bbe1c6",
+      "fixtureId": "cbe9f083-d0ad-4b73-a215-7ab2d6b29390",
+      "dataMounts": [
+        "/data/cbe9f083-d0ad-4b73-a215-7ab2d6b29390"
+      ]
+    },
+    "source": {
+      "artifactId": "8a8bf780-fac0-40e1-ac5e-d9c331efb633",
+      "digest": "1896db0804747802fa4590888f6967e3de1c8bb4fd0b9c7f447c071e3069b46f",
+      "size": 536870912
+    },
+    "review": {
+      "id": "97dfd75b4269bf0f544bf02f56e21cb78d80477dc27c8ce41a044bd4ce890cac",
+      "digest": "3dc16b4397a5a2589a9a69c600a3d4be62863e1bf2f0476fd641812f30708f0b",
+      "reviewerSessionId": "7d25d34e-a693-42aa-aa51-79ae16ea06d9",
+      "receiptCount": 18,
+      "datasetReadComplete": false,
+      "inspectionSatisfied": true
+    },
+    "maxPageBytes": 16000,
+    "maxReadBytes": 1048576,
+    "maxRequestBytes": 310631,
+    "requestBytes": 6584700,
+    "peakRssBytes": 281571328,
+    "formalExecuted": false,
+    "scientificJudgment": false,
+    "errors": []
+  },
+  "cleanBuild": {
+    "status": "passed",
+    "session": 7601,
+    "summary": ".validation/clean-entry-Y3jK6L/summary.json",
+    "evidence": "batch3/entry-order-repair/final-clean-summary.json",
+    "files": 797,
+    "distManifestSha256": "7f388a59e57a9ec9b29c8fcc112166f13e1186cdc19908f50ee676df227cf5c8",
+    "freshDependencyInstall": false,
+    "dependencyInstallReusedFrom": ".validation/clean-build-OHZ84t/summary.json"
+  },
+  "originalFreshDependencyBuild": {
+    "session": 36647,
+    "status": "passed",
+    "summary": ".validation/clean-build-OHZ84t/summary.json",
+    "files": 797,
+    "distManifestSha256": "c4049bf9afe2231dc7355c1fa3f7577392424d66f86bc039ef0f061a5a12f6b2"
+  },
+  "independentReports": [
+    "batch3/REVIEW-3A.md",
+    "batch3/REVIEW-3A-REPAIR.md",
+    "batch3/entry-order-repair/INDEPENDENT-REVIEW.md"
+  ],
+  "models": {
+    "implementation": {
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "runtimeEcho": false
+    },
+    "entryRepair": {
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "runtimeEcho": false
+    },
+    "independentReview": {
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "runtimeEcho": false
+    }
+  },
+  "remaining": "formal512 data execution, exact full-input facts/formal review, large outputs/localSSH, documents/model budget/upload; no external-provider or browser test claimed"
+}

@@ -1,9 +1,10 @@
+import type { SourceIntegrityContext } from '../storage/source-integrity.js';
 import { type TextCorpusGrantReference } from '../policy/text-corpus-grants.js';
 import type { ProviderTextEvidenceLink } from '../documents/types.js';
 import type { AppContext } from '../domain/context.js';
 import type { Actor, Artifact, Evidence, Claim, Row } from '../domain/types.js';
 /** Host reference validation shares the complete evidence chain with the ordinary service. */
-export declare function verifyEvidence(c: Pick<AppContext, 'store'>, projectId: string, evidenceId: string, current?: boolean): Row<Evidence>;
+export declare function verifyEvidence(c: Pick<AppContext, 'store'>, projectId: string, evidenceId: string, current?: boolean, integrity?: SourceIntegrityContext): Row<Evidence>;
 export declare class EvidenceService {
     private c;
     constructor(c: AppContext);

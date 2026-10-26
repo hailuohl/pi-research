@@ -51,5 +51,7 @@ export declare class OperationRegistry {
     agentIdentity(actor: Actor, name: string): Row<Session>;
     authorizeAgent(actor: Actor, name: string): Row<Session>;
     execute(actor: Actor, id: string, raw: unknown, options: OperationScope): unknown;
+    private entry;
+    private executeCurrent;
 }
 export {};
