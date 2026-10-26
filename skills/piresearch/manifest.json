@@ -1,5 +1,5 @@
 {
-  "bundleId": "cf2f0270a626a97a8070804373685ecfd246b556b62d44defbf53e2471f38f90",
+  "bundleId": "cf8638daffd84643b72fd4bfaa298c8daf5eb0d2d36640985916cc57cae463da",
   "skills": [
     {
       "id": "pi-research-overview",
@@ -378,7 +378,7 @@
         "reviewer"
       ],
       "path": "skills/piresearch/pi-research-paper/SKILL.md",
-      "digest": "19589d61891a1c268ebb148e3a38f4deb97f50df441cd6fb1223706c954a55d1",
+      "digest": "9d899dc0a7ac224f90ca84512a72e25ecdd75b92eeefe31d13cf3d71de74b4b5",
       "resources": [
         {
           "path": "assets/starter-main.tex",
@@ -390,7 +390,7 @@
         },
         {
           "path": "references/build-and-review.md",
-          "digest": "162935f26fa70e766db47ce56c87dd6a3279c8f250faa010077f4f3dbcdae192"
+          "digest": "a6edbec4972888ddfe3eddbcf396553fb2679096b0b2edbd0d38618491d92296"
         },
         {
           "path": "references/scientific-review.md",

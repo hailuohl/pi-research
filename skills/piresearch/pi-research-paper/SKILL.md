@@ -53,6 +53,15 @@ writer 没有 `publication_templates`、`publication_template_inspect/read`，�
 
 ## 4. 固定完整稿件
 
+先完成草稿与当前计划绑定，再冻结：
+
+1. 用 `workspace_write` 保存最新稿件；`workspace_read` 实际完整回读各已写文件，取得真实 `digest` 与 `draftReadId`。UTF-8 分页须完整 SDK 送达；截断或编码损坏不算成功凭据。
+2. 用 `research_brief_inspect` 回读当前计划及 `latestId`，以它作 `expectedRevisionId` 保存包含全部已写文件 `draftFiles:[{path,readId}]` 的新 ready 修订，`readId` 使用真实 `draftReadId`。计划原本为空清单时，即使已回读新增 main.tex 也仍未绑定；先核对已有有效凭据，不把 READ_REQUIRED 解释为完全没有读过。
+3. 按现有模式取得确认结果：confirm 等待用户确认当前 ready 修订；合法 fullAccess 自动确认只沿既有 automatic-approvals 证明链，核对真实返回已 confirmed，不再强加人工重复批准。不能自行新增隐式确认。
+4. 当前修订确认后，再以完整真实源码和资产调用 `manuscript_create`，核对返回 `sourceDigest` 与固定计划。该工具不会补写或确认计划。
+
+每次修改已绑定草稿（包括同字节重写）都需新写入版本的完整回读及新计划绑定，不能复用旧 readId、跨会话凭据或复制 digest 制造凭据。外部修改、删除或工作区替换时，先核对当前实际文件；按实际 digest 作 expectedDigest 受管保存修复，再以新 callId 回读并更新计划、按既有模式确认。编码不一致先核对完整 UTF-8 保存与读取，不把截断或损坏内容变成成功凭据。旧计划、稿件与编译结果按原 ID 保留，历史固定计划不强制迁移到最新工作区，不自动更换 sourceDigest 或借旧稿冒充新稿。
+
 交互主协调者用 `manuscript_create` 固定当前已确认研究计划下的完整源码与资产，`evidenceIds` 仅取其获准子集。用户入口的引用字段规则不同；writer/Task 可在授权范围准备草稿，不能冒用协调者冻结文稿。每个文件指定真实 `artifactId` 或实际字节的 `contentBase64` 之一，不能漏 cls/sty/bst/bib/图或借用其他项目资产。
 
 **固定稿件、准备构建、读取诊断、页图检查、独立审查或修订前，必须读取 [references/build-and-review.md](references/build-and-review.md)**，其中给出当前参数、角色、批准和状态处理。新修订用真实 `previousRevisionId` 连到旧稿，不覆盖冻结版本。

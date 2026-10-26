@@ -204,3 +204,28 @@ test('ordinary development review objectives and legacy read rights are preserve
  approve(s.app,review.approvalId);s.app.teams.activate(USER,review.teamId);const who=taskActor(s.app.teams.claim(review.teamId));
  assert.throws(()=>op(s,who,'artifact_read',{artifactId:source.id}),{code:'TASK_SCOPE_DENIED'});assert.equal(Object.hasOwn(s.app.developmentReviews.inspect(USER,s.project.id,id),'dataArtifacts'),false);
 }finally{s.close();}});
+
+
+test('read new draft remains unbound until a newly approved confirmed brief and preserves frozen history on reopen',async()=>{const s=setup();try{
+ const who=rootActor(s),empty=op(s,who,'research_brief_save',plan());
+ const confirmed=s.app.researchBriefs.confirm(USER,s.project.id,s.session.id,{briefId:empty.id,expectedVersion:empty.version});
+ const source='\\documentclass{article}\n\\begin{document}Bound draft\\end{document}',input={title:'Bound draft',engine:'pdflatex',mainFile:'main.tex',bibliography:'none',evidenceIds:[],files:[{path:'main.tex',contentBase64:Buffer.from(source).toString('base64')}]};
+ const old=await op(s,who,'manuscript_create',input);write(s,'main.tex',source);const receipt=read(s,who,'main.tex');assert.ok(receipt.draftReadId);
+ await assert.rejects(async()=>op(s,who,'manuscript_create',{...input,previousRevisionId:old.id}),{code:'BRIEF_DRAFT_READ_REQUIRED'});
+ assert.deepEqual(s.app.researchBriefs.inspect(USER,s.project.id,s.session.id).brief.draftFiles,[]);assert.equal(s.app.store.list('manuscript-revision').length,1);
+ s.app.sessionPermissions.initialize(s.session.id,'confirm');
+ const current=op(s,who,'research_brief_inspect',{}),request=plan({expectedRevisionId:current.latestId,draftFiles:[draft('main.tex',receipt)]});
+ assert.throws(()=>op(s,who,'research_brief_save',request),{code:'APPROVAL_REQUIRED'});
+ const pending=s.app.sessionPermissions.status(USER,s.session.id).actions.at(-1);s.app.sessionPermissions.decide(USER,s.session.id,pending.id,{expectedVersion:pending.version,expectedApprovalVersion:pending.approval.version,approved:true});
+ const saved=s.app.sessionPermissions.executeAction(who,s.session.id,pending.id).result;assert.equal(saved.status,'ready');
+ assert.throws(()=>s.app.publicationBuilds.createRevision(who,s.project.id,input),{code:'BRIEF_NOT_CONFIRMED'});
+ assert.throws(()=>s.app.researchBriefs.confirm(USER,s.project.id,s.session.id,{briefId:saved.id,expectedVersion:saved.version+1}),{code:'VERSION_CONFLICT'});
+ const ready=s.app.researchBriefs.confirm(USER,s.project.id,s.session.id,{briefId:saved.id,expectedVersion:saved.version});
+ // The USER confirmation is deliberately only the confirm mode path.
+ const create={...input,previousRevisionId:old.id};await assert.rejects(async()=>op(s,who,'manuscript_create',create,'confirm-bound-create'),{code:'APPROVAL_REQUIRED'});const card=s.app.sessionPermissions.status(USER,s.session.id).actions.at(-1);s.app.sessionPermissions.decide(USER,s.session.id,card.id,{expectedVersion:card.version,expectedApprovalVersion:card.approval.version,approved:true});const next=await op(s,who,'manuscript_create',create,'confirm-bound-create');assert.equal(next.researchBrief.id,ready.id);assert.equal(next.sourceDigest,old.sourceDigest);assert.equal(next.previousRevisionId,old.id);
+ assert.throws(()=>op(s,who,'research_brief_save',request),{code:'VERSION_CONFLICT'});
+ const repo=s.app.context.repoRoot;s.app.close();s.app=new ResearchApp(s.dir,repo);
+ const historical=s.app.publicationBuilds.revision(who,s.project.id,old.id);assert.equal(historical.researchBrief.id,confirmed.id);assert.equal(historical.sourceDigest,old.sourceDigest);
+ assert.equal(s.app.publicationBuilds.revision(who,s.project.id,next.id).sourceDigest,next.sourceDigest);assert.deepEqual(s.app.researchBriefs.inspect(USER,s.project.id,s.session.id,empty.id).brief,confirmed);
+ assert.doesNotThrow(()=>s.app.researchBriefs.assertReference(who,s.project.id,s.session.id,old.researchBrief));assert.equal(s.app.publicationBuilds.readSource(who,s.project.id,old.id,'main.tex',0,16000).content,source);
+}finally{s.close();}});

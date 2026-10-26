@@ -97,3 +97,22 @@ test('non-null invalid UTF-8 artifacts produce a safe domain failure instead of 
 });
 
 test('retrieval deadline and all-failed diagnostics expose only exact static safe codes',()=>{for(const code of ['CONNECTOR_QUEUE_TIMEOUT','CONNECTOR_TIMEOUT','CONNECTOR_OPERATION_TIMEOUT','CONNECTOR_ALL_FAILED']){const raw='private-error-canary https://private.invalid/?api_key=secret';assert.deepEqual(safeToolDiagnostic({},code,raw),{code});assert.deepEqual(toolResultDiagnostic({},{content:[{type:'text',text:`${code}: ${raw}`}]}),{code});assert.doesNotMatch(toolFailureMessage('literature_discover',{code}),/private-error|private.invalid|api_key/);assert.equal(safeToolDiagnostic({},code+'suffix',raw),undefined);}});
+
+
+test('draft binding failures keep exact static recovery hints and never expose raw missing paths',async()=>{
+ const hints={BRIEF_DRAFT_READ_REQUIRED:/当前计划.*未绑定/,BRIEF_DRAFT_READ_STALE:/新写入版本/,BRIEF_DRAFT_CHANGED:/expectedDigest/,BRIEF_DRAFT_WORKSPACE_CHANGED:/工作区/,BRIEF_DRAFT_ENCODING_INVALID:/UTF-8/};
+ for(const [code,expected] of Object.entries(hints)){
+  const raw='private-draft-canary D:/private/main.tex https://private.invalid/?token=secret';
+  assert.deepEqual(safeToolDiagnostic({},code,raw),{code});
+  assert.deepEqual(toolResultDiagnostic({},{content:[{type:'text',text:code+': '+raw}]}),{code});
+  assert.equal(safeToolDiagnostic({},code+'suffix',raw),undefined);
+  const message=toolFailureMessage('manuscript_create',{code});assert.match(message,expected);assert.doesNotMatch(message,/private-|secret|D:\//);
+  const s=setup();try{
+   const {host,a,sent}=await failedTool(s,new DomainError(code,raw,400,{missingDraftFiles:['private-draft-canary'],path:'D:/private/main.tex'}),'manuscript_create');
+   assert.equal(sent.at(-1).error.code,code);assert.equal(sent.at(-1).error.details,undefined);
+   await host.onMessage(a,{type:'tool_execution_end',tool:'manuscript_create',toolCallId:'private-call-id-canary',isError:true},join(s.dir,'sessions',s.session.id));
+   const notice=s.app.sessions.messages(USER,s.session.id).filter(m=>m.role==='system').at(-1);assert.equal(notice.content,message);assert.doesNotMatch(notice.content,/private-|secret|D:\//);
+  }finally{s.close();}
+ }
+ const required=toolFailureMessage('manuscript_create',{code:'BRIEF_DRAFT_READ_REQUIRED'});assert.match(required,/已有.*回读凭据/);assert.doesNotMatch(required,/未读取|没有读过|尚未回读/);
+});

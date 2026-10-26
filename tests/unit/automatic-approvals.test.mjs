@@ -131,3 +131,21 @@ for(const terminal of ['timed_out','cancelled'])test('automatic campaign prepare
   resumed=resume(s,s.app.wakeups.get(USER,thirdNotice.id));const third=exec(s,resumed,'run_submit',{intentId:ids[2]},'third-after-'+terminal);assert.equal(third.intentId,ids[2]);assert.equal(s.app.store.get('run',third.id).permissionOrigin,'agent');assert.equal(s.app.store.list('run').length,4);assert.equal(s.app.store.get('approval',d.approvalId).automaticExecution.state,'completed');
  }finally{s.close();}
 });
+
+
+test('automatic draft binding recovery confirms only through the existing human fullAccess proof and preserves history',async()=>{const s=setup();try{
+ const access=enable(s),a=begin(s),empty=exec(s,a,'research_brief_save',ready,'empty-draft-plan');assert.equal(empty.status,'confirmed');
+ const source='\\documentclass{article}\n\\begin{document}Automatic bound draft\\end{document}',input={title:'Automatic bound draft',engine:'pdflatex',mainFile:'main.tex',bibliography:'none',evidenceIds:[],files:[{path:'main.tex',contentBase64:Buffer.from(source).toString('base64')}]};
+ const old=await exec(s,a,'manuscript_create',input,'old-unbound-manuscript');
+ exec(s,a,'workspace_write',{source:'session',path:'main.tex',content:source,expectedDigest:null},'draft-write');
+ const {acknowledgeWorkspaceRead}=await import('../support/workspace-delivery.mjs'),read=acknowledgeWorkspaceRead(s.app,a,exec(s,a,'workspace_read',{source:'session',path:'main.tex'},'draft-read'));assert.ok(read.draftReadId);
+ await assert.rejects(async()=>exec(s,a,'manuscript_create',{...input,previousRevisionId:old.id},'unbound-create'),{code:'BRIEF_DRAFT_READ_REQUIRED'});
+ const current=exec(s,a,'research_brief_inspect',{},'current-brief'),request={...ready,expectedRevisionId:current.latestId,draftFiles:[{path:'main.tex',readId:read.draftReadId}]};
+ const bound=exec(s,a,'research_brief_save',request,'bind-draft');assert.equal(bound.status,'confirmed');assert.equal(bound.automaticApproval.originMessageId,a.messageId);assert.equal(bound.automaticExecution.state,'completed');assert.equal(bound.automaticApproval.permission.hostEpoch,a.permission.hostEpoch);assert.equal(bound.automaticApproval.subjectId,bound.id);assert.equal(bound.automaticApproval.subjectDigest,bound.digest);assert.doesNotThrow(()=>s.app.automaticApprovals.assert(bound.automaticApproval));assert.equal(s.app.store.list('session-action').length,0);
+ assert.throws(()=>exec(s,a,'research_brief_save',request,'stale-brief-revision'),{code:'VERSION_CONFLICT'});
+ const next=await exec(s,a,'manuscript_create',{...input,previousRevisionId:old.id},'bound-create');assert.equal(next.researchBrief.id,bound.id);assert.equal(next.sourceDigest,old.sourceDigest);
+ s.app.hostAccess.revoke(USER,s.session.id,{expectedVersion:access.version});
+ await assert.rejects(async()=>exec(s,a,'manuscript_create',input,'revoked-create'));assert.equal(s.app.store.list('manuscript-revision').length,2);
+ const repo=s.app.context.repoRoot;s.app.close();s.app=new ResearchApp(s.dir,repo);
+ assert.equal(s.app.publicationBuilds.revision(USER,s.project.id,next.id).sourceDigest,next.sourceDigest);assert.equal(s.app.publicationBuilds.revision(USER,s.project.id,old.id).researchBrief.id,empty.id);assert.equal(s.app.researchBriefs.inspect(USER,s.project.id,s.session.id,empty.id).brief.status,'confirmed');
+}finally{s.close();}});

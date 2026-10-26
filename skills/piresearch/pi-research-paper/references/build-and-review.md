@@ -6,7 +6,16 @@
 
 用户或交互主协调者可 `manuscript_create`。Agent 必须有当前已确认研究计划，`evidenceIds` 只能是计划证据的获准子集；宿主绑定 rootSessionId/researchBrief，Agent 不传这些字段。自动唤醒、writer/Task 无此入口。writer 可准备草稿，由主协调者接收并核对合法来源；不能直接把 Task 资产当自己的已获准资产。
 
-先用 `artifact_create` 保存真实 UTF-8 TeX，再冻结。下例只适用于无需其他配套文件的主协调者稿件：
+先完成草稿与当前计划绑定，再冻结：
+
+1. 用 `workspace_write` 保存最新稿件；`workspace_read` 实际完整回读各已写文件，取得真实 `digest` 与 `draftReadId`。UTF-8 分页须完整 SDK 送达；截断或编码损坏不算成功凭据。
+2. 用 `research_brief_inspect` 回读当前计划及 `latestId`，以它作 `expectedRevisionId` 保存包含全部已写文件 `draftFiles:[{path,readId}]` 的新 ready 修订，`readId` 使用真实 `draftReadId`。计划原本为空清单时，即使已回读新增 main.tex 也仍未绑定；先核对已有有效凭据，不把 READ_REQUIRED 解释为完全没有读过。
+3. 按现有模式取得确认结果：confirm 等待用户确认当前 ready 修订；合法 fullAccess 自动确认只沿既有 automatic-approvals 证明链，核对真实返回已 confirmed，不再强加人工重复批准。不能自行新增隐式确认。
+4. 当前修订确认后，再以完整真实源码和资产调用 `manuscript_create`，核对返回 `sourceDigest` 与固定计划。该工具不会补写或确认计划。
+
+每次修改已绑定草稿（包括同字节重写）都需新写入版本的完整回读及新计划绑定，不能复用旧 readId、跨会话凭据或复制 digest 制造凭据。外部修改、删除或工作区替换时，先核对当前实际文件；按实际 digest 作 expectedDigest 受管保存修复，再以新 callId 回读并更新计划、按既有模式确认。编码不一致先核对完整 UTF-8 保存与读取，不把截断或损坏内容变成成功凭据。旧计划、稿件与编译结果按原 ID 保留，历史固定计划不强制迁移到最新工作区，不自动更换 sourceDigest 或借旧稿冒充新稿。
+
+计划绑定完成后，可用 `artifact_create` 保存同一真实 UTF-8 TeX 作为冻结资产；不能用它替代工作区回读与计划绑定。下例只适用于无需其他配套文件的主协调者稿件：
 
 ```json
 {"tool":"manuscript_create","input":{"title":"Research manuscript draft","engine":"pdflatex","mainFile":"main.tex","bibliography":"none","templateId":"article-pdflatex","evidenceIds":[],"files":[{"path":"main.tex","artifactId":"actual-tex-artifact-id"}]}}
@@ -36,6 +45,8 @@ Codex 的终端、图像和 LaTeX 工具不是 Pi Research 工具；这些示例
 | succeeded | 继续核对完整性、结果与来源，不凭状态名或 PDF 存在就结束 |
 
 成功要求 job `state:succeeded`、`integrity:complete`，固定结果 `status:succeeded`、`hadErrors:false`、`converged:true`，无 error 诊断，真实 PDF 和完整页预览绑定正确；同时核对 `sourceValidity:current`。读取实际 `diagnostics`、`logs` 及 PDF/previews 记录；退出码0、文件存在或模型自述都不能单独证明成功。
+
+`PUBLICATION_PARSER_FAILED` 是容器非零退出的兼容统称，不能据此认定只有解析器故障。先读取 `publication_result.diagnostics` 的结构化错误代码、严重性、文件与行号，并核对实际 logs；没有完整结果时读取原 job 诊断。包/字体缺失、TeX 错误或编译环境故障按真实原因处理，不在作业运行时安装包、联网下载字体或改用宿主编译。
 
 有 resultId 时从 `publication_result.logs` 的真实 artifactId 读日志；没有完整结果时核对 job.error 和已归档 artifactIds。TeX 日志第一条 `!` 常给根因及行号，先处理该处：未定义宏、缺包、引擎不符、图路径错误、未解决引用、超时或非收敛分别诊断，不拿后续连串错误替代首因。环境缺口明确交回配置，不为过编译改掉用户模板。
 
@@ -67,7 +78,7 @@ Codex 的终端、图像和 LaTeX 工具不是 Pi Research 工具；这些示例
 
 内容复核还应确认：摘要、正文及图表用读者能理解的科学/实验名称，内部追溯编号留在既有绑定或独立来源记录；真实引用、必要代码/数据版本、单位、科学局限和负结果完整。来源记录须对应实际产物和可解析入口，不因隐藏内部编号而丢失证据绑定，不把尚未生成的材料称为已交付。提示词符合这些规则不等于模型输出已通过核对。
 
-先读当前工作区内容和摘要，修正文/图/引用后用 `manuscript_create` 创建完整新修订，增加真实 `previousRevisionId`；旧批准不覆盖新字节。再准备新待批构建，实际成功后查看新 result 对应页，旧页图不能代表新稿布局。
+修正文/图/引用后，按上述 workspace_write → workspace_read → 当前 latestId/expectedRevisionId 保存完整 draftFiles → 既有模式确认的顺序重新绑定，再用 `manuscript_create` 创建完整新修订，增加真实 `previousRevisionId`；旧批准不覆盖新字节。再准备新待批构建，实际成功后查看新 result 对应页，旧页图不能代表新稿布局。
 
 `manuscript_list`/`manuscript_inspect`/`manuscript_source_read` 按原 revision ID 和文件路径回查源码，`publication_build_list` 按原 revisionId 回查 job，`publication_result` 及 review 入口回查结果与意见。个人模板按旧 templateId 读取；同名新上传不改旧模板与已有固定稿。无权、来源失效或摘要不符时保留合法历史并报告具体缺口，不回退到最新文件冒充原版本。
 

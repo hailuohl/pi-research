@@ -2,6 +2,11 @@ import { LOCAL_ENTRY_HINT } from '../runners/local-entry.js';
 const recoveryHints = {
     NOT_FOUND: '未找到指定资源。先读取当前会话或任务的索引，使用实际返回的 ID，不猜测 ID。',
     ARTIFACT_TEXT_REQUIRED: '产物不是有效文本或超过读取范围。当前独立开发审查可按原日志 artifactId 分页；其他文本上限 2 MiB，二进制产物使用对应类型入口，不重复尝试相同请求。',
+    BRIEF_DRAFT_READ_REQUIRED: '当前计划未绑定全部已写入草稿。先用 workspace_read 与 research_brief_inspect 核对已有最新有效回读凭据及 latestId，再以 expectedRevisionId 保存包含完整 draftFiles 的新 ready 修订；按现有 confirm 或合法 fullAccess 自动确认结果核对当前修订已确认后，再 manuscript_create。不自动补写计划，不绕过既有确认权限。',
+    BRIEF_DRAFT_READ_STALE: '草稿回读凭据属于旧写入版本或其他会话。即使同字节重写，也须用新 callId 真实 workspace_read 完整回读新写入版本；不复用旧 readId 或伪造 digest。以当前 latestId 保存完整 draftFiles 的新 ready 修订，按既有确认模式确认后再冻结稿件。',
+    BRIEF_DRAFT_CHANGED: '草稿已被外部修改或删除。先 workspace_read 核对当前实际内容与 digest；必要时按本次 digest 作 expectedDigest 受管保存修复，再用新 callId 完整回读取得有效 draftReadId，更新计划绑定并按既有模式确认。不借旧稿或改 sourceDigest 绕过。',
+    BRIEF_DRAFT_WORKSPACE_CHANGED: '当前工作区与草稿凭据绑定不一致。重新核对实际工作区及文件，按当前内容与 digest 受管保存修复，用新 callId 完整回读，保存完整 draftFiles 的新计划修订并按既有模式确认；历史固定计划和稿件保留，不迁移或重绑旧成果。',
+    BRIEF_DRAFT_ENCODING_INVALID: '草稿不是可完整回读的 UTF-8 文本。先核对完整 UTF-8 保存与读取，按实际 digest 作 expectedDigest 修复，再用新 callId 完整 workspace_read 并更新计划绑定、按既有模式确认；不得把截断或编码损坏内容制造为成功凭据。',
     BRIEF_REQUIRED: '先读取当前研究计划，并等待用户确认后再准备运行或文稿。',
     BRIEF_NOT_CONFIRMED: '当前最新研究计划尚未确认。先读取计划并等待用户确认，再继续运行或制稿。',
     BRIEF_REFERENCE_MISMATCH: '重新读取当前已确认研究计划；文稿引用只能选用该计划列出的证据。',

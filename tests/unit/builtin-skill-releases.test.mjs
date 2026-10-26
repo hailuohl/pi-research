@@ -33,3 +33,13 @@ test('maintainer publishing verifies old archives, preserves history, ignores un
 test('publishing rejects CRLF skill sources before changing release metadata',()=>{const dir=mkdtempSync(join(tmpdir(),'pi-release-eol-'));try{cpSync(join(root,'skills'),join(dir,'skills'),{recursive:true});mkdirSync(join(dir,'packages/skills'),{recursive:true});cpSync(join(root,'packages/skills/manifest.ts'),join(dir,'packages/skills/manifest.ts'));const file=join(dir,'skills/piresearch/pi-research-compute/references/local.md'),index=join(dir,'skills/releases/index.json'),manifest=join(dir,'skills/piresearch/manifest.json'),beforeIndex=readFileSync(index),beforeManifest=readFileSync(manifest);writeFileSync(file,readFileSync(file,'utf8').replaceAll('\r\n','\n').replaceAll('\n','\r\n'));const result=spawnSync(process.execPath,[join(root,'scripts/rebuild-skill-manifest.mjs')],{cwd:dir,encoding:'utf8'});assert.notEqual(result.status,0);assert.match(result.stderr,/skill source must use LF/);assert.deepEqual(readFileSync(index),beforeIndex);assert.deepEqual(readFileSync(manifest),beforeManifest);}finally{rmSync(dir,{recursive:true,force:true});}});
 
 test('approved custom bytes are reverified before starting their fixed bundle',()=>{const f=setup();try{const revision=custom(f),configuration=f.service.configure(owner,f.pid,{expectedVersion:0,revisionIds:[revision.id]}),path=join(f.dir,'skill-blobs',revision.files[0].digest);f.service.ensureBundleStartAllowed(f.pid,configuration.bundleId);chmodSync(path,0o600);writeFileSync(path,'corrupt reviewed text');assert.throws(()=>f.service.ensureBundleStartAllowed(f.pid,configuration.bundleId),{code:'SKILL_INTEGRITY_FAILED'});}finally{f.close();}});
+
+
+test('draft recovery release keeps the immediately previous paper archive intact and delivers current guidance by bundle read',()=>{const f=setup();try{
+ const previous='cf2f0270a626a97a8070804373685ecfd246b556b62d44defbf53e2471f38f90';assert.notEqual(BUNDLE_ID,previous);
+ const before=f.service.bundleRead(f.pid,'coordinator',previous,'pi-research-paper','references/build-and-review.md');
+ const after=f.service.bundleRead(f.pid,'coordinator',BUNDLE_ID,'pi-research-paper','references/build-and-review.md');
+ assert.notEqual(after.digest,before.digest);assert.equal(digest(Buffer.from(before.content)),before.digest);assert.equal(digest(Buffer.from(after.content)),after.digest);
+ assert.match(after.content,/expectedRevisionId/);assert.match(after.content,/draftReadId/);assert.match(after.content,/automatic-approvals/);assert.match(after.content,/PUBLICATION_PARSER_FAILED/);
+ assert.deepEqual(f.service.bundleRead(f.pid,'coordinator',previous,'pi-research-paper','references/build-and-review.md'),before);
+}finally{f.close();}});
