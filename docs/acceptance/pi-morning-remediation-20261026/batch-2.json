@@ -1,0 +1,76 @@
+{
+  "batch": 2,
+  "scope": "固定编译镜像依赖、诊断分类和原作业历史保留",
+  "parentCommit": "27e530f150492112e4d19a538b74d4cf470ae381",
+  "files": 10,
+  "compiler": {
+    "profileId": "latex-document-v1",
+    "dockerContext": "desktop-linux",
+    "imageDigest": "sha256:6ef2080fda1d4c9c44c891245116d5733cd2fd9b19dbae5646ba62e44141e0fa",
+    "lockDigest": "5631d64b6a191e096374a265f4a5f5c43a3f673001add2bda8ad6ea2767202a7",
+    "scriptDigest": "7f37e25831c1f5ee0023212d866db022ba426e1cc0020cc675815d80c8d09175",
+    "dockerfileDigest": "d4b1d3f077834fb0e8e7f37963ae6e4bd43091638898a12ab38ee512796d8e9f",
+    "profileDigest": "d10bc5d2d5324db78e4d3bfc5725086f584271d053c699a3f2a9f368a6a842a6"
+  },
+  "packages": {
+    "old": 257,
+    "new": 265,
+    "oldMetadataUnchanged": true,
+    "addedDownloadBytes": 76921360
+  },
+  "verification": {
+    "initialFull": {
+      "exitCode": 1,
+      "tests": 2858,
+      "pass": 2830,
+      "fail": 1,
+      "skipped": 27,
+      "onlyFailure": "inherited Task1 missing safe sources details; fixed in parent commit",
+      "rawLog": "task-2-full-regression.log",
+      "note": "原全量失败记录不改写；本批交付基于已修复父提交，受影响合同37项定向通过。"
+    },
+    "nodeRelated": {
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    "pythonFinal": {
+      "passed": 8,
+      "parameterizedRows": 17,
+      "environment": "fixed Linux Python base; Windows O_NOFOLLOW errors not counted as pass"
+    },
+    "realCompiler": {
+      "initialCasesPassed": 5,
+      "upgradePassed": 1,
+      "finalFilenameCounterexamplesPassed": 2,
+      "releaseSmoke": "passed with PDF/page/log digest and label validation"
+    },
+    "cleanBuild": "passed npm-ci/build/typecheck/dist identity; Node sources unchanged by Python-only followup fixes",
+    "independentReview": {
+      "requestedModel": "gpt-6-astra",
+      "reasoning": "xhigh",
+      "runtimeEcho": "未回显",
+      "status": "P2 filename keyword collisions fixed by explicit suffix classification; scoped re-review passed"
+    }
+  },
+  "preserved": [
+    "old image and receipts",
+    "old prepared/queued/running manifests",
+    "old PDF/log bytes",
+    "same protocol v1 and output closed checks",
+    "no frontend/layout change"
+  ],
+  "productionConfiguration": "not yet switched; done only after original-root integration gate",
+  "fileSha256": {
+    "scripts/document-build/README.md": "62aa5d01bf9531223643ed1f8b26c387f33caf0a4e8b62bc57f534a44ceddad3",
+    "scripts/document-build/build.py": "7f37e25831c1f5ee0023212d866db022ba426e1cc0020cc675815d80c8d09175",
+    "scripts/document-build/debian-packages.lock.json": "5631d64b6a191e096374a265f4a5f5c43a3f673001add2bda8ad6ea2767202a7",
+    "scripts/document-build/smoke.tex": "60c7b3ed5fbb635b59579e9fe6d9f38022ad07770e9f32dca6a38d1e15391844",
+    "scripts/document-build/test_build.py": "edd34e72c63010f30b98aa7301c738e0bf3cd904d593a216a24f0b4bdccf7fd2",
+    "scripts/setup-document-build.mjs": "8b5432ce12b7063a0ff586acde04cab9611bbef16133642706e0bde4fb417e13",
+    "tests/live/publication-build-live.test.mjs": "8792496514f822f99738a1e3cd3612d766f6abdb4fe63466326d524d211c85b9",
+    "tests/unit/latex-runtime-live.test.mjs": "a859b1fd272306adff390da7199b5e72079c7bc16c9a56516ae1888211931136",
+    "tests/unit/latex-runtime.test.mjs": "c8bdd53a5246e98fe65f22861d2313c4c515d9ff2ee273b514334c2537a86ad2",
+    "tests/unit/publication-build.test.mjs": "518c6686e8f91e63ec51daaa2323d9c38887891cf1c73e4e63b398a4f0517ddc"
+  }
+}

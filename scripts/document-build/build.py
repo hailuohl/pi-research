@@ -156,6 +156,23 @@ class Build:
         return code, captured.decode('utf8', 'replace')
 
     def parse_diagnostics(self, text):
+        def error_code(message):
+            missing = re.search(r'\bFile\s+(.+?)\s+not found\b', message, re.I)
+            if missing:
+                suffix = PurePosixPath(missing[1].strip('`\'" ')).suffix.lower()
+                if suffix in {'.sty', '.cls'}:
+                    return 'missing_package'
+                if suffix in {'.png', '.jpg', '.jpeg', '.pdf', '.eps', '.svg', '.bmp', '.tif', '.tiff'}:
+                    return 'missing_image'
+                if suffix in {'.tfm', '.map', '.pfb', '.otf', '.ttf'}:
+                    return 'missing_font'
+                return 'tex_error'
+            if re.search(r'(?:\bfont\s+.+not loadable\b|\bthe font\s+.+cannot be found\b|\bMetric\s+\(TFM\)\s+file not found\b|\.(?:tfm|map|pfb|otf|ttf)(?=[\x27`"\s):]).*(?:not found|cannot open|can.t open))', message, re.I):
+                return 'missing_font'
+            if re.search(r'Unable to load picture|Cannot determine size of graphic', message, re.I):
+                return 'missing_image'
+            return 'tex_error'
+
         found = False
         for match in re.finditer(r'(?m)^([^\n]+\.(?:tex|sty|cls|bib)):(\d+):\s*(.+)$', text):
             file, line, message = match.groups()
@@ -164,13 +181,15 @@ class Build:
                 within_source(file)
             except (ValueError, OSError):
                 file = None
-            code = 'missing_package' if re.search(r"File .+\.(?:sty|cls).+not found", message) else 'missing_image' if re.search(r"File .+not found|Unable to load picture|Cannot determine size of graphic", message, re.I) else 'tex_error'
+            code = error_code(message)
+            if file is None:
+                message += ' [compiler dependency location; not a manuscript source line]'
             self.diagnostic(code, message, file=file, line=int(line), pass_number=self.passes)
             found = True
         for match in re.finditer(r'(?m)^!\s*(.+)', text):
             tail = text[match.end():match.end()+3000]
             line = re.search(r'(?m)^l\.(\d+)\b', tail)
-            self.diagnostic('tex_error', match.group(1), line=int(line[1]) if line else None, pass_number=self.passes)
+            self.diagnostic(error_code(match.group(1)), match.group(1), line=int(line[1]) if line else None, pass_number=self.passes)
             found = True
         if re.search(r'(?m)^Missing character:', text):
             self.diagnostic('missing_character', 'The selected font is missing one or more characters.', pass_number=self.passes)

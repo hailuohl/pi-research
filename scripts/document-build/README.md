@@ -11,16 +11,30 @@ size and SHA-256. Docker installs those packages with `--network none` and
 `apt-get --no-download`; running document jobs never download dependencies.
 The Python base is pinned to the same digest used by the PDF parser. Debian
 trixie and security archives are frozen at `20260918T000000Z`. The authenticated
-apt resolution requires 257 packages, 346,595,108 download bytes, and approximately
-936 MB installed (including Chinese fonts). These are the minimal requested
+apt resolution requires 265 packages and 423,516,468 download bytes, including
+`texlive-lang-chinese` (`ctex.sty`) and `texlive-fonts-recommended` (`pzdr.tfm`). These are the requested
 Debian packages plus mandatory dependencies, not `texlive-full`.
 
 Explicit dependency maintenance uses `--resolve`, which first saves an apt
 simulation and download plan, authenticates packages with Debian's archive keys,
-and replaces the lock. Review that change before configuring the new image.
+and replaces the lock, then stops. Review that change and run the command again
+without `--resolve` to verify downloads and build the image. Existing cache bytes
+are never overwritten. Each build copies exactly the locked packages into a fresh
+`staging-<profileDigest>-*` directory, so unrelated old cache entries remain intact.
 Caches, resolution evidence, build output and `latest.json` remain under
 `.validation/document-build-cache`; failures retain evidence. A damaged cache
-entry fails closed. Do not reuse a receipt after changing the compiler files.
+entry fails closed. The image tag contains the profile digest, preserving old
+tags and raw image IDs. Release verification checks image labels, locates
+`ctex.sty`, `pzdr.tfm`, and `hyperref.sty`, and compiles `smoke.tex` with XeLaTeX
+under the same offline resource limits. It checks the converged result, PDF, page
+images, and their digests before saving `receipts/<profileDigest>.json` and
+atomically updating `latest.json`. Build or validation failure leaves the previous
+receipt intact. Content receipts retain earlier successful images. Do not reuse
+a receipt after changing the compiler files. Explicitly select the new receipt's
+image through `publication_configure`; the setup command does not change settings.
+New preparation fails with `PUBLICATION_PROFILE_MISMATCH` until the configured
+image matches the local compiler profile. Existing prepared, queued, or running
+jobs keep their frozen manifest and image; old results remain readable.
 
 The profile is `latex-document-v1`. `lockDigest`, `scriptDigest`, and
 `dockerfileDigest` hash the raw bytes of the three adjacent files. `profileDigest`
@@ -57,6 +71,33 @@ PDF metadata has file/digest/bytes/pages. Preview metadata has
 pageNumber/file/digest/bytes/width/height. The single log is `build.log` with
 file/digest/bytes metadata. PDF is `document.pdf`, previews are `page-001.png`
 onwards. Failure exports diagnostics and log, without a canonical PDF.
+
+Diagnostics prioritize `missing_font` (fonts, TFM, or map files), then
+`missing_package` (`.sty`/`.cls`), then `missing_image` for explicit image
+extensions or image loading failures, and finally `tex_error`. Both file-prefixed
+and `! LaTeX Error` logs are parsed. A dependency's line is never assigned to the
+main source: its file is null and the message identifies a dependency location.
+Original error text remains in the controlled build log. The historical job code
+`PUBLICATION_PARSER_FAILED` means a failed compiler process; read structured build
+diagnostics first instead of treating this as a PDF parser failure.
+
+The standard-library diagnostic check is Linux-only, like the supervisor's
+`O_NOFOLLOW` file boundary. Run it explicitly in the fixed base image (mount this
+directory read-only at `/tests` and a writable tmpfs at `/tmp`):
+
+```text
+python -B -I /tests/test_build.py
+```
+
+The focused live checks use `PI_LATEX_LIVE=1` with the `chinese-hyperref`,
+`missing-image`, and `missing-package` test-name filters. The optional
+`PI_PUBLICATION_UPGRADE_LIVE=1` test in `tests/live/publication-build-live.test.mjs`
+also requires the previous receipt at `document-build-cache/previous-receipt.json`
+and its original three profile files under
+`document-build-cache/previous-profile/scripts/document-build/`. Preserve those
+files before dependency maintenance. That test uses a new data directory and
+keeps both images' manifests, logs and results; it never reconfigures an existing
+application data directory.
 
 The host must check container exit status AND the closed supervisor schema AND
 `!hadErrors && converged` AND PDF/PNG bytes/digests before accepting success.

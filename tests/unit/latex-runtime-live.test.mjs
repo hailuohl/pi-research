@@ -13,11 +13,12 @@ const cases=[
  {name:'xelatex',engine:'xelatex',main:doc('Hello world.'),status:'succeeded'},
  {name:'lualatex',engine:'lualatex',main:doc('Hello world.'),status:'succeeded'},
  {name:'chinese',engine:'xelatex',main:'\\documentclass{article}\n\\usepackage{fontspec}\n\\setmainfont{Noto Serif CJK SC}\n\\begin{document}\n中文论文：固定环境与真实编译。\n\\end{document}',status:'succeeded'},
+ {name:'chinese-hyperref',engine:'xelatex',main:readFileSync(join(root,'scripts','document-build','smoke.tex'),'utf8'),status:'succeeded'},
  {name:'lua-chinese-budget',engine:'lualatex',main:'\\documentclass{article}\n\\usepackage{fontspec}\n\\setmainfont{Noto Serif CJK SC}\n\\begin{document}\n中文论文：固定环境与真实编译。\n\\end{document}',status:'succeeded',allowMemoryKill:true},
  {name:'bibtex',engine:'pdflatex',main:doc('Source \\cite{demo}.\\bibliographystyle{plain}\\bibliography{refs}'),files:{'refs.bib':'@book{demo,author={Ada Author},title={Evidence},year={2024},publisher={Example}}'},status:'succeeded'},
  {name:'biber',engine:'pdflatex',main:'\\documentclass{article}\n\\usepackage[backend=biber]{biblatex}\n\\addbibresource{refs.bib}\n\\begin{document}\nSource \\cite{demo}.\\printbibliography\n\\end{document}',files:{'refs.bib':'@book{demo,author={Ada Author},title={Evidence},year={2024},publisher={Example}}'},status:'succeeded'},
- {name:'missing-image',engine:'pdflatex',main:'\\documentclass{article}\n\\usepackage{graphicx}\n\\begin{document}\n\\includegraphics{missing-image.png}\n\\end{document}',status:'failed',line:4},
- {name:'missing-package',engine:'pdflatex',main:'\\documentclass{article}\n\\usepackage{pi-package-does-not-exist}\n\\begin{document}Hi\\end{document}',status:'failed'},
+ {name:'missing-image',engine:'pdflatex',main:'\\documentclass{article}\n\\usepackage{graphicx}\n\\begin{document}\n\\includegraphics{missing-image.png}\n\\end{document}',status:'failed',line:4,diagnostic:'missing_image'},
+ {name:'missing-package',engine:'pdflatex',main:'\\documentclass{article}\n\\usepackage{pi-package-does-not-exist}\n\\begin{document}Hi\\end{document}',status:'failed',diagnostic:'missing_package'},
  {name:'undefined-reference',engine:'pdflatex',main:doc('See \\ref{missing}.'),status:'non_convergent'},
  {name:'shell-blocked',engine:'pdflatex',main:doc('\\immediate\\write18{touch /output/escaped}\nSafe.'),status:'succeeded',absent:'escaped'},
  {name:'lua-blocked',engine:'lualatex',main:doc('\\directlua{for _,n in ipairs({"execute","spawn","exec"}) do assert(os[n]("touch /output/escaped") == nil) end; assert(io.popen("touch /output/escaped") == nil); assert(package.loadlib("/lib/x86_64-linux-gnu/libc.so.6","system") == nil); assert(not pcall(require,"ffi")); assert(not pcall(require,"socket")); for k,_ in pairs(require("debug")) do assert(k == "traceback") end; assert(io.open("/output/build.json","w") == nil)}Safe.'),status:'succeeded',absent:'escaped'},
@@ -42,6 +43,8 @@ for(const fixture of cases)test('isolated compiler: '+fixture.name,{skip:!live,t
  const memoryKill=fixture.allowMemoryKill&&result.status==='failed'&&result.diagnostics.some(d=>d.code==='engine_exit'&&d.message.endsWith('status -9.'));
  if(!memoryKill)assert.equal(result.status,fixture.status,JSON.stringify(result.diagnostics));assert.equal(run.code,result.status==='succeeded'?0:1);
  assert.equal(result.hadErrors,result.status!=='succeeded');if(fixture.line)assert.ok(result.diagnostics.some(d=>d.file==='main.tex'&&d.line===fixture.line),JSON.stringify(result.diagnostics));
+ if(fixture.diagnostic)assert.ok(result.diagnostics.some(d=>d.code===fixture.diagnostic),JSON.stringify(result.diagnostics));
+ if(result.status!=='succeeded'){assert.equal(result.pdf,null);assert.deepEqual(result.previews,[]);assert.equal(existsSync(join(output,'document.pdf')),false);}
  if(fixture.absent)assert.equal(existsSync(join(output,fixture.absent)),false);
  if(result.pdf){assert.equal(result.converged,true);for(const artifact of [result.pdf,...result.previews,...result.logs]){const bytes=readFileSync(join(output,artifact.file));assert.equal(digest(bytes),artifact.digest);assert.equal(bytes.length,artifact.bytes);}}
 });
