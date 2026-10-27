@@ -1,7 +1,0 @@
-{
-  "cause": "Acceptance database copy omitted managed Git objects, so its stored parent commit was absent in the new local repository.",
-  "recovery": "Copied original read-only object database into the acceptance repository, verified bound parent commit, retried the failed operation through the owner API.",
-  "parentCommit": "61dcde6a882f4852a48fa8930e320babd7d23951",
-  "retriedOperationId": "f1d8df6959d0ac3b88d7490a13d1204ea963ef63d0dbbc98aed5c58182c2699c",
-  "originalRepositoryUnchanged": true
-}

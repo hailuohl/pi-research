@@ -11,15 +11,13 @@
   "sourceSpecs": [
     {
       "path": "docs/specs/project-design.txt",
-      "sha256": "c4a65316c92c599844c4cf75b3c16324c3e361ce707d2f5c7221819370823af4"
+      "sha256": "4b89c00cfc84e2cfbc9678531e4ade70889ae3002b170e26003f9f24e83b4548"
     },
     {
       "path": "docs/specs/multi-agent-design.md",
-      "sha256": "46b9670656c361837276d878cb0b100c4e235a716e0209a77fa13121030e6087"
+      "sha256": "9a1cec8898dc8128c2110dda15d66d2873bc4c0e9cffbe968b37ad64dadc3401"
     }
   ],
   "piSdkReferenceVersion": "0.87.1",
-  "piSdkLiveVerified": false,
-  "workflowSourceReviewedAt": "2026-09-27",
-  "workflowSourceReview": "WORKFLOW-COMPARISON.md"
+  "piSdkLiveVerified": false
 }

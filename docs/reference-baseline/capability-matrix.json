@@ -3,7 +3,7 @@
   "basis": {
     "capabilitySource": "packages/contracts/capabilities.ts",
     "roadmap": "docs/specs/project-design.txt",
-    "implementationPlan": "docs/IMPLEMENTATION-PLAN.zh-CN.md",
+    "scopeRevision": "2026-09-29：当前范围以implementationPlan为准；desktop项所含桌面分发及自建托管账户/组织/实例/账本已移出目标，不计为未完成。前端布局和关键交互已恢复为PR09目标；本机参考版本/页面基线待按用户流程确认，现有dimensions只记录已有证据，不新增通过声明。",
     "zipSha256": {
       "v0.2.3-fixed-skills": "cf648fa86d39024d55914af421d9899c7f1f968bf549ca67d1bdae29374dd4fa",
       "v0.3.1-experimental-skills": "5dee66f094f42353c5ac1d47387ae30fa4e65bafde11b3ff10f39542ff591f1c"
@@ -65,7 +65,7 @@
     },
     {
       "id": "reviewed-skills",
-      "name": "科研工作台适配技能",
+      "name": "受管适配技能",
       "stage": "M2/M4",
       "prs": [
         "PR11"
@@ -670,7 +670,7 @@
     },
     {
       "id": "workbench",
-      "name": "科研工作台",
+      "name": "研究工作台",
       "stage": "M6",
       "prs": [
         "PR09"
@@ -815,8 +815,7 @@
       "alignment": "equivalent",
       "reason": "目标用户能力；兼容说明不是可执行后端。",
       "files": [
-        "packages/runners/contracts.ts",
-        "docs/IMPLEMENTATION-PLAN.zh-CN.md"
+        "packages/runners/contracts.ts"
       ],
       "interfaces": [],
       "tests": [],
@@ -908,9 +907,7 @@
       ],
       "alignment": "equivalent",
       "reason": "目标用户能力；当前无发布或双向同步。",
-      "files": [
-        "docs/IMPLEMENTATION-PLAN.zh-CN.md"
-      ],
+      "files": [],
       "interfaces": [],
       "tests": [],
       "dimensions": {
@@ -938,17 +935,16 @@
     },
     {
       "id": "desktop",
-      "name": "桌面安装、托管计算与团队账户",
+      "name": "桌面分发与自建托管账户服务（已移出目标）",
       "stage": "M8",
       "prs": [
         "PR13",
         "PR14"
       ],
       "alignment": "intentional-deviation",
-      "reason": "当前单用户回环Web部署；完整分发和托管服务仍是目标。",
+      "reason": "2026-09-29用户明确移除桌面安装/自动更新/应用版本回滚及自建账户/组织/托管实例/用量账本。保留该ID和原证据供历史对照，不作为待完成项；用户已有远程环境接入仍由remote项按需覆盖。",
       "files": [
-        "apps/server/http.ts",
-        "docs/IMPLEMENTATION-PLAN.zh-CN.md"
+        "apps/server/http.ts"
       ],
       "interfaces": [
         "apps/server/http.ts"
@@ -983,7 +979,7 @@
     },
     {
       "id": "parity",
-      "name": "完整对齐与科研能力评测",
+      "name": "修订范围内的科研功能对齐与任务评测",
       "stage": "M0/M9",
       "prs": [
         "PR01",
@@ -991,19 +987,16 @@
         "PR09"
       ],
       "alignment": "intentional-deviation",
-      "reason": "Pi唯一内核、独立UI等已声明差异；固定上游仅静态阅读，未做逐屏或真实科研对照。",
+      "reason": "Pi唯一内核、独立UI形态及scopeRevision排除项是明确差异；用户已要求对齐主要前端布局和交互。本机参考版本/同视口页面证据尚待PR01/09补录；当前固定上游静态材料不证明视觉或真实任务对齐。单/多Agent收益评测属于优化，不是功能可用门槛。",
       "files": [
-        "docs/reference-baseline/baseline.json",
-        "docs/reference-baseline/WORKFLOW-COMPARISON.md"
+        "docs/reference-baseline/baseline.json"
       ],
       "interfaces": [],
       "tests": [],
       "dimensions": {
         "code": {
           "status": "partial",
-          "evidence": [
-            "docs/reference-baseline/WORKFLOW-COMPARISON.md"
-          ]
+          "evidence": []
         },
         "config": {
           "status": "present",
@@ -1031,9 +1024,7 @@
     "outputSchemas": 37,
     "registeredOperations": 37,
     "status": "all-current-tools-contract-tested",
-    "evidence": [
-      "docs/acceptance/pr03/RESULTS.zh-CN.md"
-    ],
+    "evidence": [],
     "liveVerified": false
   }
 }

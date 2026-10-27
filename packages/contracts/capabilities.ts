@@ -13,7 +13,7 @@ export const CAPABILITIES = [
     { id: 'budget', name: '团队与活动尝试额度', stage: 'M5', status: 'partial', verification: '原子预留、模型HTTP共享限流、计算预留及Grant永久计次已验', notes: 'HTTP、Worker和CPU/RAM分别管理，unknown继续占位。尝试/请求/Run上限不等于token或账单硬上限；无真实账单时不推算费用。' },
     { id: 'autonomous', name: 'Campaign / 轮次 / 四类决定', stage: 'M5', status: 'partial', verification: '固定方案、有界修复、Wine/Anscombe比较和停止已有证据', notes: 'Repair/Refill/Promote/Stop与实测观测持久保存；决定、整合与Run遵循原批准。负结果保留，示例比较与模型建议不证明普遍科学优势。' },
     { id: 'root-wakeup', name: '结果队列 / 主Pi唤醒综合', stage: 'M5', status: 'integration_unverified', verification: '持久化/权限/实际子进程IPC测试；缺真实Pi自动唤醒证据', notes: '有界分析、用户消息优先与未知用量保留；由实际任务触发目标验收，不以开发/审查会话代替自动综合实测。' },
-    { id: 'workbench', name: '科研工作台', stage: 'M6', status: 'partial', verification: 'React构建及既有浏览器科研流程已有历史证据', notes: '前端布局与完整重构当前暂缓；固定原版逐屏对齐未完成。项目总览仍读取多类完整历史，Run/报告/会话另有有界入口。' },
+    { id: 'workbench', name: '研究工作台', stage: 'M6', status: 'partial', verification: 'React构建及既有浏览器科研流程已有历史证据', notes: '前端布局与完整重构当前暂缓；固定原版逐屏对齐未完成。项目总览仍读取多类完整历史，Run/报告/会话另有有界入口。' },
     { id: 'evidence', name: '类型化证据 / Claim / 固定报告', stage: 'M6', status: 'verified', verification: '运行/文档原文、固定引用、报告与成果包实测；撤销阻断新交付', notes: '固定ID、源码/测试、原始产物和页段可回查，旧正文/包字节保留。审查accept、退出码和文件存在不证明科学结论。' },
     { id: 'latex', name: 'LaTeX / PDF 编译预览', stage: 'M6', status: 'partial', verification: '隔离三引擎/Bib、真实PDF、固定图形来源及论文审查/导出已验', notes: '需已配置固定Docker镜像及单独批准，禁shell escape和网络。编译成功不等于排版或科学审查通过；缺包/错误/超限明确失败，新模板按需。' },
     { id: 'remote', name: 'SSH', stage: 'M7', status: 'partial', verification: 'SSH→Linux Docker隔离回环及嵌套源码修复已实测；独立GPU协议的三UUID实际运算、旧协议保留通过', notes: '限用户配置并探测的SSH目标与受信Linux Docker监管器；NVIDIA 完整 UUID 声明与共享占用已接入，需独立 GPU helper。外部 SSH/GPU 主机仍需目标验收，回环不代替真实远端设备证据。' },

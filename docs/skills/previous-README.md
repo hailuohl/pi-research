@@ -47,7 +47,6 @@ node scripts/compare-variants.mjs ../fixed/pi-research .
 - `docs/adoption/DECISION.md`：吸纳/暂不吸纳的决定与试验限制。
 - `docs/adoption/LOCAL-TEXT-CONTRACT.md`：API、方法、权限、容量与证据合同。
 - `docs/acceptance/0.3.0-experimental/`：本轮实际构建/测试/对比记录。
-- `docs/history/README-0.2.2.md`：较早模块说明，属于历史版本。
 
 ## 未完成的验证
 
