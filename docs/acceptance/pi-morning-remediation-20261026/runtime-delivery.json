@@ -1,0 +1,100 @@
+{
+  "status": "implemented_tested_reviewed_and_live",
+  "checkedAt": "2026-10-27T00:54:49.397534+00:00",
+  "canonicalCodeCommits": [
+    "27e530f150492112e4d19a538b74d4cf470ae381",
+    "e5673a114429e4c781dbe9e00189bf761058c6d5",
+    "1e6906f46179fad631967fad5d8edb8c1d32efaa",
+    "96c626e68ded7943938fd6403e4bc128fc513c79"
+  ],
+  "branch": "implementation/pr01-reproducible-baseline",
+  "repository": "https://github.com/hailuohl/pi-research",
+  "canonicalCumulativeFull": {
+    "tests": 2866,
+    "passed": 2839,
+    "failed": 0,
+    "skipped": 27
+  },
+  "originalRuntimeIntegration": {
+    "baselineHead": "c7e1dfaa92ef576cad307e8d6d2513fab84f7870",
+    "reason": "Preserve original uncommitted scientific, handoff, process-claim capabilities and historical release archives; integrate only bounded repair hunks.",
+    "fullFrozenSnapshot": {
+      "ownedFiles": 130,
+      "tests": 2813,
+      "passed": 2787,
+      "failed": 0,
+      "skipped": 26
+    },
+    "subsequentFix": "Remove two unsupported fixed-text-v1 guidance sentences; publish new current bundle and preserve original archives.",
+    "finalOwnedFiles": 186,
+    "finalFocusedTests": {
+      "passed": 79,
+      "failed": 0
+    },
+    "finalCleanBuild": {
+      "status": "passed",
+      "freshNpmCiBuildTypecheck": true,
+      "identicalDistFiles": 767
+    },
+    "independentReview": {
+      "modelRequested": "gpt-6-astra",
+      "effortRequested": "xhigh",
+      "runtimeEcho": "not returned",
+      "status": "passed whole integration and affected follow-up scopes"
+    },
+    "deploymentManifestSha256": "8bfcd0cc1f80c0b06cf612a7bcd5be2229818e20432a39aae5f3ba79beb81aa8",
+    "limitedPatchSha256": "c742ecae2cdcebab9daf08ca36dff0467b691755ecdecbb9a02c4f49b1437c36",
+    "unrelatedOriginalFilesPreserved": 5223,
+    "sourcePatchLocation": "original runtime candidate scratch/runtime-fix1-only-task.patch; not committed because original contains other in-flight work"
+  },
+  "realPi": {
+    "retrieval": "passed actual worker: controlled 13-second response and public Crossref query",
+    "compiler": "passed five real Docker builds and old-job recovery/upgrade history flow",
+    "quoteRecovery": {
+      "status": "passed actual AgentHost/managed HTTP/SDK; rejected inaccurate quote then re-read and exact registration",
+      "evidenceSha256": "037a6ef376d2da0699df9f18ec1c5a7b875670c705d0321c45cbeaf6fbb3fc23"
+    },
+    "draftRecovery": {
+      "status": "passed actual AgentHost/managed HTTP/SDK two-round recovery; legitimate approval and old/new manuscript history",
+      "evidenceSha256": "419ae68dbef80f1b20d427ad0e5c3901408ab963b4bdc77917b908acbab242ea"
+    },
+    "credentialsPersisted": false
+  },
+  "live": {
+    "port": 4794,
+    "bind": "127.0.0.1",
+    "pid": 232952,
+    "startedAt": "2026-10-27T00:51:40.4426415Z",
+    "health": "HTTP 200; original data directory retained",
+    "compilerVersion": 2,
+    "compilerImage": "sha256:6ef2080fda1d4c9c44c891245116d5733cd2fd9b19dbae5646ba62e44141e0fa",
+    "compilerProfile": "d10bc5d2d5324db78e4d3bfc5725086f584271d053c699a3f2a9f368a6a842a6",
+    "currentSkillBundle": "cca91dd6c521a9ad3659478ad16b6e7b7b179b9ede8f972ca8c52c8e3d3b28d8",
+    "oldSessionMetadataPreserved": 81,
+    "oldBuildJobsUnchanged": 16,
+    "oldSkillBlobsVerified": 55,
+    "oldSessionsRebound": false,
+    "dataMigration": false,
+    "codeFilesVerified": 186,
+    "nonTargetFilesUnchanged": 5223,
+    "oldProcessesExitedNormally": [
+      242640,
+      200048
+    ],
+    "exitCodes": [
+      0,
+      0
+    ],
+    "temporaryInspectorClosed": true,
+    "stopNote": "Control-console attempt did not stop server; official node inspect verified PID/cwd/handler, closed inspector and emitted existing SIGINT once per identified server. Original was externally restarted once before deployment; second shutdown and wildcard exclusive port guard protected apply.",
+    "verificationEvidenceSha256": "bb570a67d17924955f97f4ed3024e93f07a439e822a33f78c52c2deb4c77d48d",
+    "compilerConfigureEvidenceSha256": "af93f934350c94a66d36cfb07c654d27df3b307ab5eba061ab3547161c901b00"
+  },
+  "limits": [
+    "Platform/live-condition skipped tests are not counted as passed.",
+    "Full data backup blocked/not_created by pre-existing three pending purges and three unknown attempts; these states were not changed.",
+    "Code-only rollback saves 72 replaced files plus public old compiler configuration; it cannot undo later business data.",
+    "External-source availability and model exact-quote compliance are not guaranteed; strict approval/source checks remain enforced.",
+    "Frontend layout remains paused; no new browser visual acceptance run was needed."
+  ]
+}
