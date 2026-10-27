@@ -1,0 +1,41 @@
+\documentclass[border=4pt]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc,shapes.geometric}
+\definecolor{piBlue}{HTML}{0072B2}
+\definecolor{piOrange}{HTML}{E69F00}
+\definecolor{piGreen}{HTML}{009E73}
+\definecolor{piInk}{HTML}{202830}
+\definecolor{piGray}{HTML}{7F7F7F}
+\tikzset{
+  research box/.style={draw=piInk,line width=.6pt,rounded corners=2pt,
+    minimum width=23mm,minimum height=11mm,align=center,
+    font=\sffamily\small,inner sep=4pt,fill=white},
+  research data/.style={research box,trapezium,trapezium left angle=75,
+    trapezium right angle=105,rounded corners=0pt,fill=piGreen!9},
+  research method/.style={research box,draw=piBlue,line width=1pt,
+    fill=piBlue!9,font=\sffamily\bfseries\small},
+  research muted/.style={research box,draw=piGray,text=piGray,fill=black!3},
+  research flow/.style={-{Latex[length=2mm]},draw=piInk,line width=.7pt},
+  research feedback/.style={research flow,dashed,draw=piBlue},
+  research edge label/.style={font=\sffamily\scriptsize,fill=white,inner sep=2pt,text=piInk},
+  research stage/.style={draw=piBlue!45,densely dotted,rounded corners=4pt,
+    fill=piBlue!3,inner sep=6pt,font=\sffamily\scriptsize}
+}
+\begin{document}
+\begin{tikzpicture}[node distance=7mm]
+  \node[research data] (data) {Data\\$x$};
+  \node[research box,right=of data] (encode) {Encode\\$z=f(x)$};
+  \node[research method,right=of encode] (method) {Our method\\$h_{\theta}(z)$};
+  \node[research data,right=of method] (output) {Output\\$\hat y$};
+  \begin{scope}[on background layer]
+    \node[research stage,fit=(encode)(method),label={[font=\sffamily\scriptsize,text=piBlue]above:Inference stage}] {};
+  \end{scope}
+  \draw[research flow] (data) -- (encode);
+  \draw[research flow] (encode) -- (method);
+  \draw[research flow] (method) -- (output);
+  \draw[research feedback] (output.south) -- ++(0,-10mm)
+    -| node[pos=.25,below,research edge label] {feedback / update} (encode.south);
+\end{tikzpicture}
+\end{document}

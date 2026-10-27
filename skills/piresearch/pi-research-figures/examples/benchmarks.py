@@ -1,89 +1,68 @@
-# SOFTWARE DEMONSTRATION TEMPLATE — NOT RESEARCH RESULTS.
-"""Accuracy across benchmarks. Regenerate: python figs/benchmarks.py"""
-
+"""Grouped benchmark accuracy, preserving declared method-group colors."""
 import csv
-import math
-from collections import defaultdict
+from pathlib import Path
 
 import numpy as np
-from pi_figstyle import MUTED, WIDE, family, figure, save, use_style
+from pi_figstyle import BASELINE, WIDE, family, figure, save, use_style
 
 DATA = "figs/benchmarks.csv"
-
-# Fixed order everywhere, and the family each method belongs to. Grey for the
-# untuned model, blue for prior work, red for ours.
-METHODS = [
-    ("Qwen2.5-Math-7B", "base"),
-    ("SimpleRL-Zero-7B (GRPO)", "prior"),
-    ("OpenReasoner-Zero-7B (PPO)", "prior"),
-    ("Oat-Zero-7B (Dr.GRPO)", "prior"),
-    (r"ES$_\mathrm{CHKPT-1}$", "ours"),
-    (r"ES$_\mathrm{CHKPT-2}$", "ours"),
-    (r"ES$_\mathrm{CHKPT-3}$", "ours"),
-]
+METHODS = [("Qwen2.5-Math-7B", "base"), ("SimpleRL-Zero-7B (GRPO)", "prior"),
+           ("OpenReasoner-Zero-7B (PPO)", "prior"), ("Oat-Zero-7B (Dr.GRPO)", "prior"),
+           (r"ES$_\mathrm{CHKPT-1}$", "ours"), (r"ES$_\mathrm{CHKPT-2}$", "ours"),
+           (r"ES$_\mathrm{CHKPT-3}$", "ours")]
 BENCHMARKS = ["AIME 2024", "Minerva Math", "OlympiadBench", "AMC", "MATH500"]
 
 
 def method_colors():
-    members = defaultdict(list)
+    palettes = {"base": [BASELINE] * sum(group == "base" for _, group in METHODS),
+                "prior": family("blue", max(1, sum(group == "prior" for _, group in METHODS))),
+                "ours": family("red", max(1, sum(group == "ours" for _, group in METHODS)))}
+    counts, result = dict.fromkeys(palettes, 0), {}
     for name, group in METHODS:
-        members[group].append(name)
-    shades = {
-        "base": [MUTED] * len(members["base"]),
-        "prior": family("blue", len(members["prior"])),
-        "ours": family("red", len(members["ours"])),
-    }
-    return {
-        name: shades[group][members[group].index(name)] for name, group in METHODS
-    }
+        if group not in palettes:
+            raise ValueError(f"unknown method group: {group}")
+        result[name] = palettes[group][counts[group]]
+        counts[group] += 1
+    return result
 
 
 def load(path):
-    scores = defaultdict(dict)
-    with open(path) as handle:
-        for row in csv.DictReader(handle):
-            scores[row["method"]][row["benchmark"]] = float(row["score"])
+    with Path(path).open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    scores = {}
+    names = {name for name, _ in METHODS}
+    for row in rows:
+        benchmark, method = row["benchmark"], row["method"]
+        if benchmark not in BENCHMARKS or method not in names or benchmark in scores.get(method, {}):
+            raise ValueError(f"duplicate or undeclared benchmark/method: {(benchmark, method)}")
+        score = float(row["score"])
+        if not np.isfinite(score):
+            raise ValueError("benchmark scores must be finite")
+        scores.setdefault(method, {})[benchmark] = score
+    if not scores:
+        raise ValueError("benchmark data is empty")
     return scores
 
 
 def main():
+    scores, colors = load(DATA), method_colors()
     use_style()
-    scores = load(DATA)
-    colors = method_colors()
-
-    fig, ax = figure(width=WIDE, ratio=0.42)
-    x = np.arange(len(BENCHMARKS))
-    # Near-touching bars inside a group; the gap between groups does the separating.
-    width = 0.9 / len(METHODS)
-
-    for i, (name, _) in enumerate(METHODS):
-        offset = (i - (len(METHODS) - 1) / 2) * width
-        bars = ax.bar(
-            x + offset,
-            [scores[name][benchmark] for benchmark in BENCHMARKS],
-            width,
-            label=name,
-            color=colors[name],
-            edgecolor="black",
-            linewidth=0.4,
-        )
-        # Redundant with the bar height, so it may sit at the 5pt floor.
-        ax.bar_label(bars, fmt="%.1f", fontsize=5, padding=1.5)
-
-    ax.set_xticks(x, BENCHMARKS)
-    ax.set_ylabel("Accuracy (%)")
-    # Derived, never hardcoded: a bar clipped at the axes edge no longer
-    # encodes its value, which is the failure this whole reference is about.
-    highest = max(v for row in scores.values() for v in row.values())
-    top = max(10, 10 * math.ceil(highest * 1.12 / 10))
-    ax.set_ylim(0, top)
-    ax.set_yticks(range(0, top + 1, 10))
-    ax.tick_params(axis="x", length=0)
-    ax.legend(
-        ncol=2, loc="lower left", bbox_to_anchor=(0, 1.02), fontsize=6.5,
-        frameon=False, borderaxespad=0,
-    )
-
+    fig, ax = figure(width=WIDE, ratio=.73)
+    height, positions = .8 / len(METHODS), np.arange(len(BENCHMARKS))
+    for index, (method, _) in enumerate(METHODS):
+        values = [scores.get(method, {}).get(name, np.nan) for name in BENCHMARKS]
+        bars = ax.barh(positions + (index - (len(METHODS) - 1) / 2) * height,
+                       values, height=height * .9, label=method, color=colors[method])
+        ax.bar_label(bars, labels=[f"{value:g}" if np.isfinite(value) else "" for value in values], padding=2, fontsize=5.5)
+    values = [value for observations in scores.values() for value in observations.values()]
+    low, high = min(values), max(values)
+    ax.set_xlim(min(0, low) - .03 * max(1, abs(low)), high + .2 * max(1, abs(high)))
+    ax.set(yticks=positions, yticklabels=BENCHMARKS, xlabel="Accuracy (%)")
+    ax.invert_yaxis()
+    ax.grid(axis="y", visible=False)
+    ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1), frameon=False, fontsize=6)
+    missing = len(METHODS) * len(BENCHMARKS) - len(values)
+    print(f"Single reported accuracy per cell; missing cells={missing}, rendered blank; no CI inferred.")
     save(fig, "figs/benchmarks")
 
 

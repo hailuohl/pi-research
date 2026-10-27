@@ -16,6 +16,8 @@ const functional=skill=>({id:skill.id,name:skill.name,description:skill.descript
 test('current adaptation cleanup preserves functional resources and the previous fixed release',()=>{
  const service=new SkillService(root),current=JSON.parse(readFileSync(join(root,'skills/piresearch/manifest.json'),'utf8'));
  const archive=JSON.parse(readFileSync(join(root,'skills/releases',previous,'manifest.json'),'utf8'));
+ const legacy=archive.skills[0].source,[owner,project]=legacy.repository.split('/');
+ const retiredMarkers=new RegExp(project+'|Copyright[^\n]*'+owner+'|'+legacy.commit.slice(0,8)+'|PROVENANCE\\.md','i');
  assert.equal(sha(JSON.stringify(archive.skills)),previous);
  assert.equal(current.skills.length,14);
  assert.notEqual(current.bundleId,previous,'cleanup must publish a new release');
@@ -27,7 +29,7 @@ test('current adaptation cleanup preserves functional resources and the previous
    assert.equal(result.bundleId,current.bundleId);
    assert.equal(sha(Buffer.from(result.content)),result.digest);
    assert.equal(result.content,readFileSync(join(root,resource?join(dirname(entry.path),resource):entry.path),'utf8'));
-   assert.doesNotMatch(result.content,/OpenResearch|Copyright[^\n]*alphaXiv|3037f727|PROVENANCE\.md/i);
+   assert.doesNotMatch(result.content,retiredMarkers);
    if(entry.id==='pi-research-code-debugging')assert.equal(result.source.repository,'hailuohl/pi-research');
    else {assert.equal(Object.hasOwn(entry,'source'),false);assert.equal(Object.hasOwn(catalog,'source'),false);assert.equal(Object.hasOwn(result,'source'),false);}
   }

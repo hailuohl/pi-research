@@ -1,5 +1,5 @@
 {
-  "bundleId": "b149e69295f55d092fc7357b2d1134eefdd57bf7e78624ab6a2bc3bf62f17dd9",
+  "bundleId": "92adf4d0f0bfa17cd7c8ff8e00578d556c018feaa921ec31952c104fed70c6e1",
   "skills": [
     {
       "id": "pi-research-overview",
@@ -230,75 +230,75 @@
         "reviewer"
       ],
       "path": "skills/piresearch/pi-research-figures/SKILL.md",
-      "digest": "863212e49d5582b036f069fa650ce030b58f35bbe9631761507dce1d2898051d",
+      "digest": "05169500480c1426da51fe126fd7ed6f98c8d5e4742b6677d570fc25f70fb082",
       "resources": [
         {
           "path": "references/curves.md",
-          "digest": "86091d2aa550cc126bc11e683d6503a3c1c7ec0b0475255bffe133a36122a149"
+          "digest": "30bee19f5ea4486d95ae599de73cecc2d695e6b437ea3149f0d84d4adbc4e103"
         },
         {
           "path": "references/scaling.md",
-          "digest": "25dd8eaabae924321303aff9fc12e5cbce71ba8aec46920a0e120c8e9a9dede5"
+          "digest": "b8f8083796fd1004b0c3ece5515f3aa14a25f5a40f3bbc85e8d774d8c08f461e"
         },
         {
           "path": "references/comparison.md",
-          "digest": "dc229f00b306740913c2a04c226f27c7e12652a88e4703b383bf717aa064fc72"
+          "digest": "30b22a4d2849dcde4d0017cb273939206b0ad5c99284deb8a0f0a604dcf1d0b3"
         },
         {
           "path": "references/pareto.md",
-          "digest": "eb862fa373979ac40592a8bd06ad4f477d040abc8fb51577a9b07042649c16e6"
+          "digest": "d29cbb0abde2ad8c6717c5963b6305264bf86827e1e1c6853b877264309a2429"
         },
         {
           "path": "references/matrix.md",
-          "digest": "2d9561a3923a37677b166f58ff5a781484135a2fd92b21c06dfda0dec954e54c"
+          "digest": "7fe5cfccd5a9f5cabec8e75741a8182761f1b825e11caec7875b1293072dd26f"
         },
         {
           "path": "references/diagram.md",
-          "digest": "d1ed17f82fefd65393327e14dbbe1a14f56e8c60451f4682b26227aff50843fd"
+          "digest": "2ebf23eacaff7badeb805afa318023dd58ce83bab768c60fae10f1f404a90d41"
         },
         {
           "path": "assets/pi_figstyle.py",
-          "digest": "bd62647c00efa071f83aa37ffd6a1719ffb72edc213ceb20eb1157ae51275138"
+          "digest": "b9317138009648c528c3d35878359ea68e88317e1dbf6c27fd8b423ac19470d1"
         },
         {
           "path": "assets/pi-tikz-preamble.tex",
-          "digest": "cadecada94210943f8843b87d29ac6e5756bccc0d9c6d1c81e128d9f88226d6b"
+          "digest": "dba5dc47fe62396b6892350d0d7634bb1ac7209ad367b8afc8246277562967d0"
         },
         {
           "path": "examples/README.md",
-          "digest": "7ed06479ccaeeec323d45f0994785479a28326f1a1a36dbfe57ffe8efb956efb"
+          "digest": "dd9b226bbea3531dfd224ac304fef121db01657997465946f84ea7a176770e3b"
         },
         {
           "path": "examples/loss_curve.py",
-          "digest": "888a8843fc1636bcf825453f29da8624329770b7c09db8056bd0f3822832a1a3"
+          "digest": "75ced2e5fa081b2138d4f8cd7f381d45374879ef999807d2ca0eb287f6b298a8"
         },
         {
           "path": "examples/scaling.py",
-          "digest": "8eb7de9d961d0c7b04e4c718cb585e19278134219ce9a8fc67751f9fdad80a7e"
+          "digest": "75f60058a6fffe8b73729f31189f3ece05e235be26e80ad8806528596d188987"
         },
         {
           "path": "examples/benchmarks.py",
-          "digest": "779b6491f3cdf2d551f9c53501d8b82feb14fc34e7b09cabd5d3513265cd81ce"
+          "digest": "fa95221a19d3f7e0ced1e7fecd5f39d82b63ff7170ba0d204055619e4ac37747"
         },
         {
           "path": "examples/ablation.py",
-          "digest": "8fb8131f140a9bc04303781c5bf705077eab37c6daed7efa24ff0c7e431a092b"
+          "digest": "0807e7988a97d3a7f0f6e5964c852f3ab6db48ceef34c40dc711341e03600065"
         },
         {
           "path": "examples/pareto.py",
-          "digest": "c2841565348b1296d3d658cf57bceffd6965228a128e7c37f67fe93296d4c285"
+          "digest": "f4d1ddb7d9b4c3ee8e622e124b45fb28f332a859350fc6f4f8ea3f0e4864c59c"
         },
         {
           "path": "examples/sweep.py",
-          "digest": "a21d0a886b35f2059d427b382f71bfb569446870cb87f4e6b11b6107c830683c"
+          "digest": "22aef7daddee92f8fb4e6ba100505758767e25aa8b9920f15cdd486aaa7d587f"
         },
         {
           "path": "examples/confusion.py",
-          "digest": "12fee947de688870ed612e7277291539dec9492be91908735a18bbbc912b9dd3"
+          "digest": "287b96c978d087e162604f04f05fa9851f432a772ac078f4cbecde3ea350e588"
         },
         {
           "path": "examples/method.tex",
-          "digest": "c4c89f130e7640845823f69e417e46a5cc8187d40ed824c89b030161e78af5ed"
+          "digest": "dcab45de866f96812a1b62c6362044ac7e250cf4596d0f8a6553320935d19587"
         },
         {
           "path": "examples/software-demo-data.py",

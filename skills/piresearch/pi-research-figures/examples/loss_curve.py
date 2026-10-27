@@ -1,58 +1,54 @@
-# SOFTWARE DEMONSTRATION TEMPLATE — NOT RESEARCH RESULTS.
-"""Validation loss over training. Regenerate: python figs/loss_curve.py"""
-
+"""Independent-seed trajectories, interpolated only within shared coverage."""
 import csv
-from collections import defaultdict
+from pathlib import Path
 
 import numpy as np
-from pi_figstyle import BASELINE, COLUMN, band, figure, label_ends, save, si_ticks, use_style
+from pi_figstyle import BASELINE, band, figure, label_ends, save, si_ticks, use_style
 
 DATA = "figs/loss_curve.csv"
 
 
 def load(path):
-    """-> {variant: (steps, runs)} with runs shaped (n_seeds, n_steps)."""
-    raw = defaultdict(lambda: defaultdict(list))
-    with open(path) as handle:
-        for row in csv.DictReader(handle):
-            raw[row["variant"]][row["seed"]].append((float(row["step"]), float(row["value"])))
-
-    series = {}
-    for variant, seeds in raw.items():
-        curves = [sorted(points) for points in seeds.values()]
-        grid = np.array([step for step, _ in curves[0]])
-        # Seeds log on slightly different grids, so interpolate before
-        # averaging — but only across the range every seed actually reached.
-        # np.interp clamps outside its input, which would invent a flat tail
-        # for a run that stopped early and narrow the band around it.
-        first = max(curve[0][0] for curve in curves)
-        last = min(curve[-1][0] for curve in curves)
-        if first > last:
-            raise ValueError(f"{variant}: seeds cover no common range of steps")
-        grid = grid[(grid >= first) & (grid <= last)]
-        runs = np.stack([
-            np.interp(grid, [s for s, _ in curve], [v for _, v in curve]) for curve in curves
-        ])
-        series[variant] = (grid, runs)
-    return series
+    with Path(path).open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    groups = {}
+    for row in rows:
+        steps = groups.setdefault(row["variant"], {}).setdefault(row["seed"], {})
+        step, value = float(row["step"]), float(row["value"])
+        if step in steps or not np.all(np.isfinite([step, value])):
+            raise ValueError("loss trajectories require unique finite seed/step observations")
+        steps[step] = value
+    if not groups:
+        raise ValueError("loss data is empty")
+    aligned = {}
+    for variant, seeds in groups.items():
+        trajectories = [np.array(sorted(observations.items())) for observations in seeds.values()]
+        left = max(points[0, 0] for points in trajectories)
+        right = min(points[-1, 0] for points in trajectories)
+        if left > right:
+            raise ValueError(f"{variant} seeds have no common coverage")
+        reference = trajectories[0][:, 0]
+        grid = reference[(reference >= left) & (reference <= right)]
+        if not len(grid):
+            raise ValueError(f"{variant} first-seed grid has no point within common coverage")
+        runs = np.array([np.interp(grid, points[:, 0], points[:, 1]) for points in trajectories])
+        aligned[variant] = (grid, runs)
+    return aligned
 
 
 def main():
+    groups = load(DATA)
     use_style()
-    series = load(DATA)
-
-    fig, ax = figure(width=COLUMN, ratio=0.72)
+    fig, ax = figure()
     lines, labels = [], []
-    for variant, (steps, runs) in series.items():
-        color = BASELINE if variant == "baseline" else None
-        lines.append(band(ax, steps, runs, color=color))
-        labels.append(f"{variant} (n={runs.shape[0]})")
-
-    ax.set_xlabel("Optimizer steps")
-    ax.set_ylabel("Validation loss")
+    for variant, (steps, runs) in groups.items():
+        label = f"{variant} (n={len(runs)})"
+        lines.append(band(ax, steps, runs, color=BASELINE if variant == "baseline" else None, label=label))
+        labels.append(label)
+        print(f"{variant}: {len(runs)} independent seeds; pointwise 95% t intervals; no extrapolation")
+    ax.set(xlabel="Optimizer steps", ylabel="Loss")
+    si_ticks(ax)
     label_ends(ax, lines, labels)
-    si_ticks(ax, "x")  # after label_ends, which moves the right limit
-
     save(fig, "figs/loss_curve")
 
 

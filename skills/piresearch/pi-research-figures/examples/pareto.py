@@ -1,55 +1,54 @@
-# SOFTWARE DEMONSTRATION TEMPLATE — NOT RESEARCH RESULTS.
-"""Reward against KL divergence. Regenerate: python figs/pareto.py"""
-
+"""KL/reward: every raw run and per-method frontiers with color/shape redundancy."""
 import csv
-from collections import defaultdict
+from pathlib import Path
 
 import numpy as np
-from pi_figstyle import PALETTE, TEXT, figure, pareto_front, save, use_style
+from pi_figstyle import PALETTE, figure, pareto_front, save, use_style
 
 DATA = "figs/pareto.csv"
-
-# Shape and hue both carry the method: redundant so the figure survives
-# greyscale and a colorblind reader.
 METHODS = {"GRPO": ("blue", "o"), "ES": ("red", "D")}
 
 
 def load(path):
-    runs = defaultdict(lambda: ([], [], set()))
-    with open(path) as handle:
-        for row in csv.DictReader(handle):
-            kl, reward, settings = runs[row["method"]]
-            kl.append(float(row["kl"]))
-            reward.append(float(row["reward"]))
-            settings.add(row["setting"])
-    return {
-        method: (np.array(kl), np.array(reward), len(settings))
-        for method, (kl, reward, settings) in runs.items()
-    }
+    with Path(path).open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    groups, seen = {}, set()
+    for row in rows:
+        key = row["method"], row["setting"], row["seed"]
+        if key in seen:
+            raise ValueError(f"duplicate setting/seed: {key}")
+        seen.add(key)
+        point = [float(row["kl"]), float(row["reward"])]
+        if not np.all(np.isfinite(point)):
+            raise ValueError("KL/reward observations must be finite")
+        groups.setdefault(row["method"], []).append((row["setting"], point))
+    if not groups:
+        raise ValueError("pareto data is empty")
+    return {method: (np.array([point[0] for _, point in records]),
+                     np.array([point[1] for _, point in records]),
+                     len({setting for setting, _ in records}))
+            for method, records in groups.items()}
 
 
 def main():
+    groups = load(DATA)
+    unknown = groups.keys() - METHODS.keys()
+    if unknown:
+        raise ValueError(f"configure METHODS colors/markers for: {sorted(unknown)}")
     use_style()
-    runs = load(DATA)
-
-    fig, ax = figure(width=TEXT, ratio=0.62)
+    fig, ax = figure()
     for method, (color_name, marker) in METHODS.items():
-        kl, reward, n_settings = runs[method]
+        if method not in groups:
+            continue
+        x, y, settings = groups[method]
         color = PALETTE[color_name]
-        # Every run, faded: the spread is part of the result.
-        ax.scatter(kl, reward, marker=marker, s=16, color=color, alpha=0.35, linewidth=0)
-        front = pareto_front(kl, reward, minimize_x=True, maximize_y=True)
-        ax.plot(
-            kl[front], reward[front],
-            marker=marker, markersize=4, color=color, linewidth=1.1, zorder=3,
-            label=f"{method} ({n_settings} settings)",
-        )
-
-    ax.set_xlabel("KL divergence from the base model (lower is better)")
-    ax.set_ylabel("Reward (higher is better)")
-    ax.grid(True, axis="both")
-    ax.legend(loc="lower right", frameon=True, framealpha=1.0, edgecolor="black")
-
+        ax.scatter(x, y, color=color, marker=marker, alpha=.25, s=12, linewidths=0)
+        frontier = pareto_front(x, y)
+        ax.plot(x[frontier], y[frontier], color=color, marker=marker,
+                label=f"{method} (runs={len(x)}, settings={settings})")
+        print(f"{method}: observed runs={len(x)}, distinct settings={settings}; raw-point frontier")
+    ax.set(xlabel="KL divergence", ylabel="Reward")
+    ax.legend(frameon=False, fontsize=6)
     save(fig, "figs/pareto")
 
 

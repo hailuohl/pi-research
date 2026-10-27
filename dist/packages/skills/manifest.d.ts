@@ -1,4 +1,4 @@
-export declare const BUNDLE_ID = "b149e69295f55d092fc7357b2d1134eefdd57bf7e78624ab6a2bc3bf62f17dd9";
+export declare const BUNDLE_ID = "92adf4d0f0bfa17cd7c8ff8e00578d556c018feaa921ec31952c104fed70c6e1";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
@@ -136,58 +136,58 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "用真实数据制作论文级 matplotlib/TikZ 图，保留打印尺寸、统计区间、矢量输出及来源；分别执行脚本自检、获准视觉检查与科学论证核查，按图的问题读取参考。";
     readonly roles: readonly ["coordinator", "analyst", "writer", "reviewer"];
     readonly path: "skills/piresearch/pi-research-figures/SKILL.md";
-    readonly digest: "863212e49d5582b036f069fa650ce030b58f35bbe9631761507dce1d2898051d";
+    readonly digest: "05169500480c1426da51fe126fd7ed6f98c8d5e4742b6677d570fc25f70fb082";
     readonly resources: readonly [{
         readonly path: "references/curves.md";
-        readonly digest: "86091d2aa550cc126bc11e683d6503a3c1c7ec0b0475255bffe133a36122a149";
+        readonly digest: "30bee19f5ea4486d95ae599de73cecc2d695e6b437ea3149f0d84d4adbc4e103";
     }, {
         readonly path: "references/scaling.md";
-        readonly digest: "25dd8eaabae924321303aff9fc12e5cbce71ba8aec46920a0e120c8e9a9dede5";
+        readonly digest: "b8f8083796fd1004b0c3ece5515f3aa14a25f5a40f3bbc85e8d774d8c08f461e";
     }, {
         readonly path: "references/comparison.md";
-        readonly digest: "dc229f00b306740913c2a04c226f27c7e12652a88e4703b383bf717aa064fc72";
+        readonly digest: "30b22a4d2849dcde4d0017cb273939206b0ad5c99284deb8a0f0a604dcf1d0b3";
     }, {
         readonly path: "references/pareto.md";
-        readonly digest: "eb862fa373979ac40592a8bd06ad4f477d040abc8fb51577a9b07042649c16e6";
+        readonly digest: "d29cbb0abde2ad8c6717c5963b6305264bf86827e1e1c6853b877264309a2429";
     }, {
         readonly path: "references/matrix.md";
-        readonly digest: "2d9561a3923a37677b166f58ff5a781484135a2fd92b21c06dfda0dec954e54c";
+        readonly digest: "7fe5cfccd5a9f5cabec8e75741a8182761f1b825e11caec7875b1293072dd26f";
     }, {
         readonly path: "references/diagram.md";
-        readonly digest: "d1ed17f82fefd65393327e14dbbe1a14f56e8c60451f4682b26227aff50843fd";
+        readonly digest: "2ebf23eacaff7badeb805afa318023dd58ce83bab768c60fae10f1f404a90d41";
     }, {
         readonly path: "assets/pi_figstyle.py";
-        readonly digest: "bd62647c00efa071f83aa37ffd6a1719ffb72edc213ceb20eb1157ae51275138";
+        readonly digest: "b9317138009648c528c3d35878359ea68e88317e1dbf6c27fd8b423ac19470d1";
     }, {
         readonly path: "assets/pi-tikz-preamble.tex";
-        readonly digest: "cadecada94210943f8843b87d29ac6e5756bccc0d9c6d1c81e128d9f88226d6b";
+        readonly digest: "dba5dc47fe62396b6892350d0d7634bb1ac7209ad367b8afc8246277562967d0";
     }, {
         readonly path: "examples/README.md";
-        readonly digest: "7ed06479ccaeeec323d45f0994785479a28326f1a1a36dbfe57ffe8efb956efb";
+        readonly digest: "dd9b226bbea3531dfd224ac304fef121db01657997465946f84ea7a176770e3b";
     }, {
         readonly path: "examples/loss_curve.py";
-        readonly digest: "888a8843fc1636bcf825453f29da8624329770b7c09db8056bd0f3822832a1a3";
+        readonly digest: "75ced2e5fa081b2138d4f8cd7f381d45374879ef999807d2ca0eb287f6b298a8";
     }, {
         readonly path: "examples/scaling.py";
-        readonly digest: "8eb7de9d961d0c7b04e4c718cb585e19278134219ce9a8fc67751f9fdad80a7e";
+        readonly digest: "75f60058a6fffe8b73729f31189f3ece05e235be26e80ad8806528596d188987";
     }, {
         readonly path: "examples/benchmarks.py";
-        readonly digest: "779b6491f3cdf2d551f9c53501d8b82feb14fc34e7b09cabd5d3513265cd81ce";
+        readonly digest: "fa95221a19d3f7e0ced1e7fecd5f39d82b63ff7170ba0d204055619e4ac37747";
     }, {
         readonly path: "examples/ablation.py";
-        readonly digest: "8fb8131f140a9bc04303781c5bf705077eab37c6daed7efa24ff0c7e431a092b";
+        readonly digest: "0807e7988a97d3a7f0f6e5964c852f3ab6db48ceef34c40dc711341e03600065";
     }, {
         readonly path: "examples/pareto.py";
-        readonly digest: "c2841565348b1296d3d658cf57bceffd6965228a128e7c37f67fe93296d4c285";
+        readonly digest: "f4d1ddb7d9b4c3ee8e622e124b45fb28f332a859350fc6f4f8ea3f0e4864c59c";
     }, {
         readonly path: "examples/sweep.py";
-        readonly digest: "a21d0a886b35f2059d427b382f71bfb569446870cb87f4e6b11b6107c830683c";
+        readonly digest: "22aef7daddee92f8fb4e6ba100505758767e25aa8b9920f15cdd486aaa7d587f";
     }, {
         readonly path: "examples/confusion.py";
-        readonly digest: "12fee947de688870ed612e7277291539dec9492be91908735a18bbbc912b9dd3";
+        readonly digest: "287b96c978d087e162604f04f05fa9851f432a772ac078f4cbecde3ea350e588";
     }, {
         readonly path: "examples/method.tex";
-        readonly digest: "c4c89f130e7640845823f69e417e46a5cc8187d40ed824c89b030161e78af5ed";
+        readonly digest: "dcab45de866f96812a1b62c6362044ac7e250cf4596d0f8a6553320935d19587";
     }, {
         readonly path: "examples/software-demo-data.py";
         readonly digest: "21a1f640df88384656908cba48b3cb2eab7d0656834683d8ce34d874f8e7fbc3";

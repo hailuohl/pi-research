@@ -1,7 +1,7 @@
 import type {DiscoveryContext,DiscoveryGrantReference} from '../policy/discovery-grant-types.js';
 import {environmentVariables} from '../runtime/environment.js';
 import {discoveryContext,assertDiscoveryContext,discoveryScope,reserveConnectorCall,discoveryProof,ownerSearchNextPage} from '../policy/discovery-grant-validation.js';
-/** Bounded, host-owned literature adapters. No ORX CLI, hosted account or model calls. */
+/** Host-owned literature adapters with bounded requests and explicit source settings. */
 import type {AppContext} from '../domain/context.js';
 import type {Actor,Row,Session,Task,TaskAttempt} from '../domain/types.js';
 import {scope,userOnly} from '../policy/permissions.js';

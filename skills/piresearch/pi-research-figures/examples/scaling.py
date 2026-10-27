@@ -1,118 +1,116 @@
-# SOFTWARE DEMONSTRATION TEMPLATE — NOT RESEARCH RESULTS.
-"""Loss vs. parameters with a fitted power law. Regenerate: python figs/scaling.py"""
-
+"""Fit L=E+A*N**(-alpha) in loss space, with bootstrap and residual diagnostics."""
 import csv
+from pathlib import Path
 
 import numpy as np
-from pi_figstyle import BASELINE, PALETTE, TEXT, figure_grid, save, si_ticks, use_style
+from pi_figstyle import BASELINE, PALETTE, TEXT, figure_grid, panel_labels, save, si_ticks, use_style
 
 DATA = "figs/scaling.csv"
-PREDICT_TO = 1e11  # extrapolate the fit out to this many parameters
+PREDICT_TO = 1e11
 
 
 def load(path):
-    n, loss, fitted, family = [], [], [], []
-    with open(path) as handle:
-        for row in csv.DictReader(handle):
-            n.append(float(row["n_params"]))
-            loss.append(float(row["loss"]))
-            fitted.append(row["fit"] == "1")
-            family.append(row["family"])
-    return np.array(n), np.array(loss), np.array(fitted), np.array(family)
+    with Path(path).open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    if not rows:
+        raise ValueError("scaling data is empty")
+    n = np.array([float(row["n_params"]) for row in rows])
+    loss = np.array([float(row["loss"]) for row in rows])
+    flags = [row["fit"].strip() for row in rows]
+    if any(flag not in ("0", "1") for flag in flags):
+        raise ValueError("fit must be 0 or 1")
+    if not np.all(np.isfinite([n, loss])) or np.any(n <= 0):
+        raise ValueError("parameter counts must be positive and observations finite")
+    return n, loss, np.array([flag == "1" for flag in flags]), np.array([row["family"] for row in rows])
 
 
-def fit_power_law(n, loss, alphas=np.linspace(0.02, 1.5, 800)):
-    """Least squares for L = E + A*N^-alpha.
-
-    For a fixed alpha the model is linear in (E, A), so scanning alpha and
-    solving each slice exactly needs no nonlinear optimizer. It also fits the
-    error on L rather than on log(L - E), which is dominated by whichever runs
-    sit closest to the floor and collapses the fit to E = 0.
-    """
-    best = None
-    for alpha in alphas:
-        design = np.stack([np.ones_like(n), n**-alpha], axis=1)
-        coef, *_ = np.linalg.lstsq(design, loss, rcond=None)
-        if coef[0] < 0 or coef[1] <= 0:
-            continue  # a negative floor or amplitude is not a scaling law
-        sse = float(((design @ coef - loss) ** 2).sum())
-        if best is None or sse < best[0]:
-            best = (sse, float(coef[0]), float(coef[1]), float(alpha))
-    if best is None:
-        raise ValueError("no fit with a non-negative irreducible term")
-    _, e, a, alpha = best
-    return e, a, alpha
+def fit_power_law(n, loss, alphas=None):
+    """Profile alpha with an analytic linear fit; reject illegal free coefficients."""
+    n, loss = np.asarray(n, float), np.asarray(loss, float)
+    if n.ndim != 1 or n.shape != loss.shape or len(n) < 2 or len(np.unique(n)) < 2:
+        raise ValueError("a floor power-law fit needs two distinct parameter counts")
+    if not np.all(np.isfinite([n, loss])) or np.any(n <= 0):
+        raise ValueError("fit data must be finite with positive parameter counts")
+    alpha = np.linspace(.02, 1.5, 800) if alphas is None else np.asarray(alphas, float)
+    if alpha.ndim != 1 or not len(alpha) or not np.all(np.isfinite(alpha)) or np.any(alpha <= 0):
+        raise ValueError("alpha candidates must be positive finite values")
+    log_reference = np.log(n).mean()
+    basis = np.exp(-alpha[:, None] * (np.log(n) - log_reference))
+    centered = basis - basis.mean(axis=1, keepdims=True)
+    variance = np.sum(centered ** 2, axis=1)
+    amplitude = np.divide(centered @ (loss - loss.mean()), variance,
+                          out=np.full(len(alpha), np.nan), where=variance > 0)
+    floor = loss.mean() - amplitude * basis.mean(axis=1)
+    coefficients = amplitude * np.exp(alpha * log_reference)
+    legal = np.isfinite(coefficients) & np.isfinite(floor) & (coefficients > 0) & (floor >= 0)
+    errors = np.sum((floor[:, None] + amplitude[:, None] * basis - loss) ** 2, axis=1)
+    errors[~legal] = np.inf
+    if not np.isfinite(errors).any():
+        raise ValueError("no legal E>=0, A>0 power-law fit")
+    best = np.argmin(errors)
+    return float(floor[best]), float(coefficients[best]), float(alpha[best])
 
 
 def bootstrap_alpha(n, loss, draws=200, seed=0):
-    rng = np.random.default_rng(seed)
-    alphas = []
+    """Paired row bootstrap, skipping resamples with fewer than three source rows."""
+    n, loss = np.asarray(n, float), np.asarray(loss, float)
+    if n.ndim != 1 or n.shape != loss.shape or len(n) < 3:
+        raise ValueError("bootstrap needs at least three paired observations")
+    if not isinstance(draws, (int, np.integer)) or draws < 1:
+        raise ValueError("draws must be a positive integer")
+    if not np.all(np.isfinite([n, loss])) or np.any(n <= 0):
+        raise ValueError("bootstrap data must be finite with positive parameter counts")
+    rng, estimates = np.random.default_rng(seed), []
     for _ in range(draws):
-        idx = rng.integers(0, len(n), len(n))
-        if len(set(idx.tolist())) < 3:
+        indices = rng.integers(0, len(n), len(n))
+        if len(np.unique(indices)) < 3:
             continue
         try:
-            alphas.append(fit_power_law(n[idx], loss[idx])[2])
+            estimates.append(fit_power_law(n[indices], loss[indices])[2])
         except ValueError:
-            continue  # a degenerate resample is not a reason to lose the figure
-    if len(alphas) < draws // 4:
-        raise ValueError(f"only {len(alphas)}/{draws} resamples fit; too few runs for an interval")
-    return np.percentile(alphas, [2.5, 97.5])
+            continue
+    if not estimates or len(estimates) < draws // 4:
+        raise ValueError(f"too few successful bootstrap fits: {len(estimates)}/{draws}")
+    return tuple(np.percentile(estimates, [2.5, 97.5]))
 
 
 def main():
+    n, loss, selected, families = load(DATA)
+    if np.any(loss <= 0):
+        raise ValueError("logarithmic loss display requires positive observations")
+    e, a, alpha = fit_power_law(n[selected], loss[selected])
+    low, high = bootstrap_alpha(n[selected], loss[selected])
+    predict = lambda parameters: e + a * np.asarray(parameters) ** -alpha
+    start, end = n[selected].min(), n[selected].max()
     use_style()
-    n, loss, fitted, family = load(DATA)
-    e, a, alpha = fit_power_law(n[fitted], loss[fitted])
-    lo, hi = bootstrap_alpha(n[fitted], loss[fitted])
-
-    fig, (ax, res) = figure_grid(
-        nrows=2, ncols=1, width=TEXT, ratio=0.62,
-        sharex=True, gridspec_kw={"height_ratios": [3, 1]},
-    )
-
-    def curve(x):
-        return e + a * x**-alpha
-
-    measured = np.geomspace(n[fitted].min(), n[fitted].max(), 100)
-    beyond = np.geomspace(n[fitted].max(), PREDICT_TO, 100)
-
-    ax.plot(measured, curve(measured), color=BASELINE, zorder=1)
-    ax.plot(beyond, curve(beyond), color=BASELINE, linestyle="--", zorder=1)
-    ax.axvspan(n[fitted].max(), PREDICT_TO, color=BASELINE, alpha=0.08, linewidth=0)
-
-    markers = ("o", "s", "^", "v", "P", "X")
-    families = sorted(set(family))
-    if len(families) > len(markers):
-        raise ValueError(f"{len(families)} families, {len(markers)} markers: add more")
-    for marker, name in zip(markers, families):
-        pick = family == name
-        ax.scatter(n[pick & fitted], loss[pick & fitted], marker=marker,
-                   color=PALETTE["blue"], label=name, zorder=2)
-        ax.scatter(n[pick & ~fitted], loss[pick & ~fitted], marker=marker,
-                   facecolor="none", edgecolor=PALETTE["blue"], linewidth=0.7, zorder=2)
-
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    ax.set_ylabel("Validation loss")
-    ax.set_xlim(right=PREDICT_TO)
-    ax.text(
-        0.03, 0.06,
-        rf"$L = {e:.2f} + {a:.1f}\,N^{{-{alpha:.3f}}}$" "\n"
-        rf"$\alpha \in [{lo:.3f},\ {hi:.3f}]$, {int(fitted.sum())} runs",
-        transform=ax.transAxes, va="bottom", fontsize=7,
-    )
-    if len(set(family)) > 1:
-        ax.legend(loc="upper right")
-
-    res.axhline(0, color=BASELINE, linewidth=0.6)
-    res.scatter(n[fitted], 100 * (loss[fitted] - curve(n[fitted])) / loss[fitted],
-                color=PALETTE["blue"], s=8)
-    res.set_ylabel("Resid. (%)")
-    res.set_xlabel("Non-embedding parameters")
-    si_ticks(ax, "y")
-    si_ticks(res, "x")
-
+    fig, (ax, residual) = figure_grid(2, 1, width=TEXT, ratio=.88, sharex=True,
+                                     gridspec_kw={"height_ratios": [3, 1.1]})
+    grid = np.geomspace(start, end, 150)
+    ax.plot(grid, predict(grid), color=PALETTE["black"], label="Joint floor-law fit")
+    if PREDICT_TO > end:
+        extra = np.geomspace(end, PREDICT_TO, 100)
+        ax.plot(extra, predict(extra), color=BASELINE, linestyle="--", label="Extrapolation")
+        ax.axvspan(end, PREDICT_TO, color=PALETTE["orange"], alpha=.09, linewidth=0)
+    for index, family in enumerate(dict.fromkeys(families)):
+        color = list(PALETTE.values())[index % 6]
+        for fitted, marker in ((True, "o"), (False, "s")):
+            mask = (families == family) & (selected == fitted)
+            if not mask.any():
+                continue
+            options = {"edgecolors": color, "facecolors": color if fitted else "none", "marker": marker, "zorder": 3}
+            ax.scatter(n[mask], loss[mask], label=f"{family}: {'fit' if fitted else 'held out'} (n={mask.sum()})", **options)
+            residual.scatter(n[mask], 100 * (loss[mask] - predict(n[mask])) / loss[mask], **options)
+    ax.set(xscale="log", yscale="log", ylabel="Loss")
+    ax.text(.03, .03, rf"$L={e:.3g}+{a:.3g}N^{{-{alpha:.3f}}}$" + "\n" +
+            f"alpha 95% bootstrap [{low:.3f}, {high:.3f}]; fit n={selected.sum()}",
+            transform=ax.transAxes, fontsize=7, va="bottom")
+    ax.legend(frameon=False, fontsize=6, loc="upper right")
+    residual.axhline(0, color=BASELINE, linestyle="--", linewidth=.6)
+    residual.set(xscale="log", xlabel="Parameters", ylabel="Residual (%)")
+    si_ticks(residual)
+    panel_labels([ax, residual])
+    print(f"Joint fit over all fit=1 rows: E={e:.8g}, A={a:.8g}, alpha={alpha:.8g}; "
+          f"alpha bootstrap 95% [{low:.8g}, {high:.8g}]; n={selected.sum()}, held out n={(~selected).sum()}")
     save(fig, "figs/scaling")
 
 

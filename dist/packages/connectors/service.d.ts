@@ -1,5 +1,5 @@
 import type { DiscoveryGrantReference } from '../policy/discovery-grant-types.js';
-/** Bounded, host-owned literature adapters. No ORX CLI, hosted account or model calls. */
+/** Host-owned literature adapters with bounded requests and explicit source settings. */
 import type { AppContext } from '../domain/context.js';
 import type { Actor, Row } from '../domain/types.js';
 import type { EvidenceService } from '../evidence/service.js';

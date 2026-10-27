@@ -1,0 +1,11 @@
+[
+  [
+    "openresearch-skills.test.mjs",
+    [
+      [
+        "const p=join(dir,'skills/openresearch/pi-research-overview/SKILL.md');rmSync(p);symlinkSync('/etc/hostname',p);",
+        "const p=join(dir,'skills/openresearch/pi-research-overview'),outside=join(dir,'outside');cpSync(p,outside,{recursive:true});rmSync(p,{recursive:true});symlinkSync(outside,p,process.platform==='win32'?'junction':'dir');"
+      ]
+    ]
+  ]
+]

@@ -1,11 +1,9 @@
-# SOFTWARE DEMONSTRATION TEMPLATE — NOT RESEARCH RESULTS.
-"""Accuracy change vs. the baseline. Regenerate: python figs/ablation.py"""
-
+"""Independent-arm ablation effects, sorted relative to a configurable reference."""
 import csv
-from collections import defaultdict
+from pathlib import Path
 
 import numpy as np
-from pi_figstyle import BASELINE, COLUMN, PALETTE, diff_ci, figure, save, use_style
+from pi_figstyle import BASELINE, PALETTE, TEXT, diff_ci, figure, save, use_style
 
 DATA = "figs/ablation.csv"
 REFERENCE = "baseline"
@@ -13,49 +11,46 @@ HIGHLIGHT = "ours"
 
 
 def load(path):
-    runs = defaultdict(list)
-    with open(path) as handle:
-        for row in csv.DictReader(handle):
-            runs[row["variant"]].append(float(row["value"]))
-    return {variant: np.array(values) for variant, values in runs.items()}
+    with Path(path).open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    groups, seen = {}, set()
+    for row in rows:
+        key = row["variant"], row["seed"]
+        value = float(row["value"])
+        if key in seen or not np.isfinite(value):
+            raise ValueError(f"duplicate or nonfinite independent observation: {key}")
+        seen.add(key)
+        groups.setdefault(row["variant"], []).append(value)
+    if not groups:
+        raise ValueError("ablation data is empty")
+    return {name: np.asarray(values) for name, values in groups.items()}
 
 
 def main():
+    groups = load(DATA)
+    if REFERENCE not in groups:
+        raise ValueError(f"ablation data must contain reference arm {REFERENCE!r}")
+    for name, values in groups.items():
+        print(f"{name}: n={len(values)} independent runs")
+    comparisons = [(diff_ci(values, groups[REFERENCE]), name) for name, values in groups.items() if name != REFERENCE]
+    comparisons.sort(key=lambda item: (item[0][0], item[1]))
+    if not comparisons:
+        raise ValueError("an ablation requires at least one comparison arm")
     use_style()
-    runs = load(DATA)
-    reference = runs[REFERENCE]
-    seed_counts = {variant: len(values) for variant, values in runs.items()}
-
-    effects = [
-        (variant, *diff_ci(values, reference))
-        for variant, values in runs.items()
-        if variant != REFERENCE
-    ]
-    effects.sort(key=lambda row: row[1])  # ascending: best ends up on top
-
-    fig, ax = figure(width=COLUMN, ratio=0.1 + 0.16 * len(effects))
-    ax.axvline(0, color=BASELINE, linewidth=0.8, zorder=1)
-
-    for y, (variant, delta, lo, hi) in enumerate(effects):
-        color = PALETTE["blue"] if variant == HIGHLIGHT else "#4D4D4D"
-        ax.plot([lo, hi], [y, y], color=color, linewidth=1.0, solid_capstyle="round", zorder=2)
-        ax.plot([delta], [y], "o", color=color, zorder=3)
-        # Sign included: a delta figure is read for direction first.
-        ax.annotate(
-            f"{delta:+.2f}",
-            xy=(hi, y), xytext=(4, 0), textcoords="offset points",
-            va="center", fontsize=7, color=color,
-        )
-
-    ax.set_yticks(range(len(effects)), [variant for variant, *_ in effects])
-    ax.set_ylim(-0.6, len(effects) - 0.4)
-    ax.set_xlabel(f"Accuracy vs. {REFERENCE} (points)")
-    ax.grid(axis="x")
+    fig, ax = figure(width=TEXT, ratio=.5)
+    for position, ((difference, low, high), name) in enumerate(comparisons):
+        color = PALETTE["red"] if name == HIGHLIGHT else BASELINE
+        ax.errorbar(difference, position, xerr=[[difference - low], [high - difference]],
+                    fmt="o", capsize=3, color=color)
+        ax.annotate(f"{difference:+.2f}", (high, position), xytext=(5, 0),
+                    textcoords="offset points", ha="left", va="center", color=color, fontsize=7)
+    ax.axvline(0, color=BASELINE, linestyle="--", linewidth=.8)
+    ax.set(yticks=range(len(comparisons)),
+           yticklabels=[f"{name} (n={len(groups[name])})" for _, name in comparisons],
+           xlabel=f"Difference from {REFERENCE} (n={len(groups[REFERENCE])}); 95% Welch CI")
+    ax.set_ylim(-.6, len(comparisons) - .4)
+    ax.margins(x=.25)
     ax.grid(axis="y", visible=False)
-    ax.tick_params(axis="y", length=0)
-    ax.margins(x=0.18)
-    print(f"seeds per variant: {seed_counts} — state the actual counts in the caption")
-
     save(fig, "figs/ablation")
 
 

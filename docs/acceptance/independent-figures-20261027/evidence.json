@@ -1,0 +1,164 @@
+{
+  "date": "2026-10-27",
+  "base": "d9664b7a6df502302d66ad05a1379e25d1b524a6",
+  "branch": "implementation/pr01-reproducible-baseline",
+  "deliveryBundle": "92adf4d0f0bfa17cd7c8ff8e00578d556c018feaa921ec31952c104fed70c6e1",
+  "originalBundle": "b81f3954067053143873f298d26b45e7feafc132de62c7ccdde2ba2b26e42d07",
+  "evidenceRoot": "D:\\项目\\pi research\\.worktrees\\independent-figures-20261027\\.validation\\independent-figures",
+  "originalEvidenceRoot": "D:\\项目\\pi research\\pi-research\\.validation\\independent-figures",
+  "checks": {
+    "fullRegression": {
+      "tests": 2870,
+      "pass": 2843,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 27,
+      "todo": 0
+    },
+    "affectedFinal": {
+      "tests": 34,
+      "pass": 34,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "parity": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "originalFocused": {
+      "tests": 23,
+      "pass": 23,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "pythonContract": {
+      "tests": 17,
+      "status": "passed",
+      "log": "originalEvidenceRoot/graphics-contract-final.log"
+    },
+    "outputRouting": {
+      "status": "passed",
+      "log": "originalEvidenceRoot/graphics-output-final.log"
+    },
+    "numericCompatibility": {
+      "checks": {
+        "mean_ci": 30,
+        "diff_ci": 16,
+        "pareto_front": 16,
+        "floor_fit": 3,
+        "bootstrap": 1
+      },
+      "status": "passed",
+      "numericalTolerance": "1e-12 intervals; 1e-8 fitted parameters; exact frontiers/bootstrap example",
+      "sameNameFunctionsCompared": 15,
+      "identicalFunctionBodies": [],
+      "scope": "Compatibility samples and syntax comparison; not a certification of authorship or all scientific uses"
+    },
+    "pdfArtifacts": {
+      "status": "passed",
+      "pdfs": 9,
+      "svgs": 7,
+      "type3Fonts": 0,
+      "metadata": "pdf-metadata.json"
+    },
+    "cleanBuild": {
+      "status": "passed",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "files": 796,
+      "identical": true,
+      "distManifestSha256": "ac7b0b4bffb8830b8ca2b9b83616b6c1433795c66649e11fce491787a9ca7c13",
+      "summary": "D:\\项目\\pi research\\.worktrees\\independent-figures-20261027\\.validation\\clean-build-yjj3G4\\summary.json"
+    },
+    "currentNameScan": {
+      "delivery": {
+        "files": 829,
+        "hits": []
+      },
+      "original": {
+        "files": 822,
+        "hits": []
+      }
+    },
+    "scanRoots": [
+      "apps",
+      "packages",
+      "scripts",
+      "tests",
+      "skills/piresearch",
+      "docs/skills",
+      "docs/specs",
+      "docs/architecture",
+      "docs/reference-baseline",
+      "third_party/scientific-agent-skills",
+      "README.md",
+      "THIRD_PARTY_NOTICES.md",
+      "docs/acceptance/capability-matrix.json",
+      "docs/contest/2026-ai-open-source/TECHNICAL-REPORT.zh-CN.md"
+    ],
+    "historyExclusions": [
+      "skills/releases",
+      "docs/history",
+      "dated acceptance/QA/design/planning evidence",
+      "Git history"
+    ],
+    "immutableHistory": {
+      "deliveryFiles": 1871,
+      "originalFiles": 2741,
+      "status": "byte-identical"
+    },
+    "review": {
+      "status": "passed-after-scoped-fixes",
+      "snapshot": "review-fixed-snapshot.json",
+      "diff": "D:\\项目\\pi research\\.worktrees\\independent-figures-20261027\\.validation\\independent-figures\\review-fixed.diff",
+      "diffSha256": "8dc60c26b5ce34ec521cafe3999efc75517d5b7c8b64dd82c8d07efa06738e16",
+      "report": "review-result.md",
+      "reportSha256": "11f9613e2f3d54a7608362ad4c05ce912b8f454fee91375a189bf0cc77b3a582"
+    }
+  },
+  "models": [
+    {
+      "task": "graphics implementation",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high",
+      "runtimeVerification": "accepted; not echoed"
+    },
+    {
+      "task": "independent review",
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "xhigh",
+      "runtimeVerification": "accepted; not echoed"
+    }
+  ],
+  "notRun": [
+    "production service restart",
+    "paid live Pi research",
+    "Docker/SSH research job",
+    "new browser layout check"
+  ],
+  "notes": [
+    "No new npm/Python dependency or lockfile change. Latin Modern already exists in the pinned compiler environment.",
+    "Frozen history retains original text and source metadata. Original workspace retains unrelated unfinished work and therefore uses a separate current bundle.",
+    "Validation figures use synthetic software fixtures, not research results."
+  ]
+}

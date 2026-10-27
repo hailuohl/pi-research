@@ -6,7 +6,7 @@
 
 `Campaign` 保存研究目标、共同运行契约、主模型、预算和边界；`ResearchRound` 保存同一轮共同父实验；`CampaignMember` 绑定固定 `RunIntent`；`RunObservation` 保存终态实际观测及原始指标证据；`CampaignDecision` 保存有版本约束的决定；`Wakeup` 保存主会话的待处理通知。
 
-继续使用唯一 `ResearchApp`、SQLite 事务、Run/Evidence/Approval/Session 与独立 Runner。未引入第二套 Agent 框架、ORX 服务、第二份实验事实源或外部队列。
+继续使用唯一 `ResearchApp`、SQLite 事务、Run/Evidence/Approval/Session 与独立 Runner。所有研究活动共用现有执行内核、实验记录和持久化队列。
 
 `Campaign.state=stopped` 表示不再新增研究决策与自动分析。当前轮次关闭表示停止分配，不表示它的全部计算成功。已经存在的 Run 仍受监管且继续采集结果。只取消指定 Run 才请求停止正式计算。
 

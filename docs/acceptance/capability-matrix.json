@@ -9,11 +9,11 @@
   },
   {
     "id": "reviewed-skills",
-    "name": "OpenResearch适配技能",
+    "name": "受管科研技能",
     "stage": "M2/M4",
     "status": "partial",
     "verification": "目录/哈希/角色/工具和Worker IPC契约；真实Pi行为未测",
-    "notes": "13个模块与总览，按需读取并绑定bundle摘要。无ORX执行器；不可用能力显式标记。"
+    "notes": "13个模块与总览，按需读取并绑定bundle摘要；不可用能力显式标记。"
   },
   {
     "id": "projects",

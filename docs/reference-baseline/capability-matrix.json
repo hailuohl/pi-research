@@ -71,7 +71,7 @@
         "PR11"
       ],
       "alignment": "intentional-deviation",
-      "reason": "适配技能文本，不加载ORX执行内核；受管导入与回滚仍待PR11。",
+      "reason": "受管技能文本按需加载；导入与回滚的历史计划见PR11。",
       "files": [
         "packages/skills/service.ts",
         "skills/piresearch/manifest.json"

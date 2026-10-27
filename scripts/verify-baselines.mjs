@@ -34,6 +34,9 @@ const allowed = path => {
   return !excluded.has(name) && !((name === '.env' || name.startsWith('.env.')) && name !== '.env.example');
 };
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+const frozenOverlayBytes = readFileSync(join(root, 'docs/history/skill-test-overlays.json'));
+if (hash(frozenOverlayBytes) !== '504d40903811829c8c86a4c7a2ad27fedcb26abd6d274e63b37815ac79034ea0') throw Error('FROZEN_BASELINE_OVERLAY_MISMATCH: archived test replacement bytes changed');
+const frozenOverlays = JSON.parse(frozenOverlayBytes.toString('utf8'));
 function businessDigest(dir) {
   const digest = createHash('sha256');
   let files = 0;
@@ -76,10 +79,7 @@ function overlay(dir, version) {
       "symlinkSync(root,join(s.dir,'linked'))",
       "symlinkSync(root,join(s.dir,'linked'),process.platform==='win32'?'junction':'dir')"
     ]]],
-    ['openresearch-skills.test.mjs', [[
-      "const p=join(dir,'skills/openresearch/pi-research-overview/SKILL.md');rmSync(p);symlinkSync('/etc/hostname',p);",
-      "const p=join(dir,'skills/openresearch/pi-research-overview'),outside=join(dir,'outside');cpSync(p,outside,{recursive:true});rmSync(p,{recursive:true});symlinkSync(outside,p,process.platform==='win32'?'junction':'dir');"
-    ]]],
+    ...frozenOverlays,
     ['handoff-hardening.test.mjs', [[
       "import {setup,USER,approve}from'../support/research.mjs';",
       "import {join} from 'node:path';\nimport {setup,USER,approve}from'../support/research.mjs';"

@@ -19,7 +19,7 @@ type CatalogEntry = {
 export declare class SkillService {
     private root;
     private context?;
-    readonly bundleId = "b149e69295f55d092fc7357b2d1134eefdd57bf7e78624ab6a2bc3bf62f17dd9";
+    readonly bundleId = "92adf4d0f0bfa17cd7c8ff8e00578d556c018feaa921ec31952c104fed70c6e1";
     constructor(root: string, context?: AppContext | undefined);
     private get c();
     private builtin;
@@ -113,7 +113,7 @@ export declare class SkillService {
         builtinReleases: {
             bundleId: string;
             current: boolean;
-            skillCount: 13 | 14;
+            skillCount: number;
         }[];
         revisions: {
             revision: Row<SkillPackageRevision>;
