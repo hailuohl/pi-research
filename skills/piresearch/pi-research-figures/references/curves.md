@@ -47,4 +47,4 @@
 - 灰基线、约4条强调曲线、诚实y范围；提前停止有解释。
 - 检查 `save()` 审查并查看打印尺寸PDF。
 
-来源/版权见 [../PROVENANCE.md](../PROVENANCE.md) 与 [../LICENSE](../LICENSE)。执行与归档边界沿 SKILL.md，不由模板授予。
+执行与归档边界沿 SKILL.md，不由模板授予。

@@ -44,4 +44,4 @@
 - 两轴好方向明确；需要时成本log。
 - 形状+色相可区分，无多余第三通道；审查并看实图。
 
-来源/版权见 [../PROVENANCE.md](../PROVENANCE.md) 与 [../LICENSE](../LICENSE)。执行与归档边界沿 SKILL.md，不由模板授予。
+执行与归档边界沿 SKILL.md，不由模板授予。

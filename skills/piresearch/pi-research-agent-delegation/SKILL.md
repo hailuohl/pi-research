@@ -5,7 +5,7 @@ description: "Use before proposing helpers or a team, writing standalone briefs,
 
 # 有边界的助手委派
 
-Pi助手是同项目Team里的独立Task/Attempt/Session，收到不可变最小简报和独立工作区，不是上游agent spawn的新顶层聊天。计划提案立即返回持久Team/Task标识，助手停止和结果验收不是同一件事。主协调者保留范围、最终研究判断与整合责任。
+Pi助手是同项目Team里的独立Task/Attempt/Session，收到不可变最小简报和独立工作区，不创建新的顶层聊天。计划提案立即返回持久Team/Task标识，助手停止和结果验收不是同一件事。主协调者保留范围、最终研究判断与整合责任。
 
 ## 选择清楚、独立的任务
 
@@ -19,7 +19,7 @@ Pi助手是同项目Team里的独立Task/Attempt/Session，收到不可变最小
 
 简报围绕本轮已有输入与缺少的产物：源码任务固定父来源和允许文件、交付真实差异及检查证据；分析任务固定终态Run/证据、交付比较和限制；写作任务固定已验收结论、交付可读取的正文。沿用主协调者确定的验收条件，缺必要输入时报告blocked，不让助手自行扩批或用示例数据填缺口。
 
-collaboration_plan_submit（或同义agent_delegate）输入有goal、tasks、budget、autoSummarize；任务字段key、role、objective及可选dependencies、required、critical、inputEvidenceIds、reviewOf、expectedOutputs、acceptanceRuleIds、skillIds。skillIds用完整pi-research-*名称。模型/harness不能靠上游--model/--harness旗标指定；当前计划schema没有这些字段，模型按用户项目角色设置，缺配置由用户补齐。
+collaboration_plan_submit（或同义agent_delegate）输入有goal、tasks、budget、autoSummarize；任务字段key、role、objective及可选dependencies、required、critical、inputEvidenceIds、reviewOf、expectedOutputs、acceptanceRuleIds、skillIds。skillIds用完整pi-research-*名称。当前计划schema没有model/harness字段，模型按用户项目角色设置，缺配置由用户补齐。
 
 下面示例是对已完成且已授权结果的“分析→独立审查→写作”计划；需先把placeholder替换为真实输入证据ID、在objective补上具体对照/指标，budget按用户实际额度调整：
 
@@ -41,7 +41,7 @@ natural language“写报告”不是机器产物合同；expectedOutputs需匹�
 
 项目协作开关允许提案，用户还须批准有界团队计划后宿主调度；助手不能agent_delegate/collaboration_plan_submit，也不能自创建更多助手。计划拒绝、配额耗尽、依赖未验收时主会话自己处理/等待/补前置，不重复派相同任务。
 
-autoSummarize:true预留一次原主会话综合额度，批准后结束可唤醒原对话；false无此综合承诺。不是上游--no-wake的永久独立顶层会话，不能猜唤醒已发生。查询task_inspect({input:{teamId:"<真实Team ID>"}})及task_result_read({input:{taskId:"<实际Task ID>"}})，用宿主通知推进，不持续忙轮询或一次工具等待整队。
+autoSummarize:true预留一次原主会话综合额度，批准后结束可唤醒原对话；false无此综合承诺。不能猜唤醒已发生。查询task_inspect({input:{teamId:"<真实Team ID>"}})及task_result_read({input:{taskId:"<实际Task ID>"}})，用宿主通知推进，不持续忙轮询或一次工具等待整队。
 
 依赖的是**结果验收**，不是助手execution已结束。reviewOf指向已提交的固定结果，不能要求被审任务先accepted造成死锁；审查/依赖图须无环。所有必需审查通过且前提当前才采纳；相反意见是disputed，不靠多数票/最后写入获胜。
 
@@ -54,7 +54,3 @@ autoSummarize:true预留一次原主会话综合额度，批准后结束可唤�
 重试一个助手不会恢复整队，观察超时不等任务失败；先查原attempt/session再决定恢复。用户前提变化会使采纳、Claim、交接/审查失效；旧accepted不能作当前真相。审查失败标明待人工/重试，不伪称active仍推进。
 
 恢复需批准有效、来源/计划/指令版本与租约当前，不能用旧身份扩大权限。关闭协作停止新委派，不自动取消正式Run；已有结束与失败历史保留。自动综合仅受限读取/提案，不继承交互主会话计算、委派、host_execute权限。通知队列或助手存在不意味着模型已完成科学分析。
-
-## 来源与适配声明
-
-基于 alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835 的 `agent-skills/orx-agent-delegation/SKILL.md`（blob `2cb9938569dca476c99c108df491835eadc19b65`），MIT，Copyright (c) 2026 alphaXiv。Pi Research 改写了命令、存储、权限、返回状态和不可用能力；并非上游逐字文本或原版运行认证。技能不会授予权限。

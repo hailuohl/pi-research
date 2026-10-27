@@ -1,5 +1,4 @@
 # SOFTWARE DEMONSTRATION TEMPLATE — NOT RESEARCH RESULTS.
-# Copyright (c) 2026 alphaXiv; MIT; see ../LICENSE and ../PROVENANCE.md.
 """Loss vs. parameters with a fitted power law. Regenerate: python figs/scaling.py"""
 
 import csv

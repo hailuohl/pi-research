@@ -1,5 +1,4 @@
 # SOFTWARE DEMONSTRATION TEMPLATE — NOT RESEARCH RESULTS.
-# Copyright (c) 2026 alphaXiv; MIT; see ../LICENSE and ../PROVENANCE.md.
 import matplotlib as mpl
 import numpy as np
 from pi_figstyle import COLUMN, MUTED, SEQUENTIAL, annotate_matrix, figure, save, use_style

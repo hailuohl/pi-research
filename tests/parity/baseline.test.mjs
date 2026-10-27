@@ -11,9 +11,9 @@ const root = resolve(import.meta.dirname, '../..');
 const json = path => JSON.parse(readFileSync(join(root, path), 'utf8'));
 const sha = path => createHash('sha256').update(readFileSync(join(root, path))).digest('hex');
 
-test('baseline matrix preserves the fixed upstream, all capabilities and five independent evidence dimensions', () => {
+test('baseline matrix preserves all capabilities and five independent evidence dimensions', () => {
   const matrix = json('docs/reference-baseline/capability-matrix.json');
-  assert.ok(matrix.basis.upstream.endsWith('@3037f727e80e0ab20c61a87c613a50dde009a835'));
+  assert.equal('upstream' in matrix.basis, false);
   assert.deepEqual(matrix.capabilities.map(c => c.id).sort(), CAPABILITIES.map(c => c.id).sort());
   for (const capability of matrix.capabilities) {
     assert.ok(['exact', 'equivalent', 'intentional-deviation'].includes(capability.alignment));

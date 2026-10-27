@@ -1,4 +1,3 @@
-/** Protocol adaptation from alphaXiv/OpenResearch client.rs, MIT; see THIRD_PARTY_NOTICES.md. */
 import { ensure } from '../domain/errors.js';
 import { object, text, integer, oneOf } from '../contracts/validation.js';
 export const SOURCES = ['alphaxiv', 'openalex', 'biorxiv', 'pubmed', 'crossref'];

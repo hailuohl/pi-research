@@ -5465,7 +5465,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("id" | "source" | "digest" | "description" | "resources")[];
+                    readonly required: ("id" | "digest" | "description" | "resources")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -5566,12 +5566,12 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly minItems: number;
                         };
                     };
-                    readonly required: ("id" | "source" | "content" | "digest" | "bundleId" | "resource")[];
+                    readonly required: ("id" | "content" | "digest" | "bundleId" | "resource")[];
                     readonly additionalProperties: false;
                 };
             };
         };
-        readonly required: ("id" | "source" | "content" | "digest" | "bundleId" | "resource")[];
+        readonly required: ("id" | "content" | "digest" | "bundleId" | "resource")[];
         readonly additionalProperties: false;
     };
     readonly connector_status: {
@@ -34733,7 +34733,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("id" | "source" | "digest" | "description" | "resources")[];
+                    readonly required: readonly ["id", "description", "digest", "resources"];
                     readonly additionalProperties: false;
                 };
             };

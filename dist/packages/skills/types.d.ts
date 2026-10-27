@@ -15,7 +15,7 @@ export interface SkillText {
     content: string;
     digest: string;
     bundleId: string;
-    source: {
+    source?: {
         repository: string;
         commit: string;
         path: string;

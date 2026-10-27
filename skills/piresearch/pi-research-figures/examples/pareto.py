@@ -1,5 +1,4 @@
 # SOFTWARE DEMONSTRATION TEMPLATE — NOT RESEARCH RESULTS.
-# Copyright (c) 2026 alphaXiv; MIT; see ../LICENSE and ../PROVENANCE.md.
 """Reward against KL divergence. Regenerate: python figs/pareto.py"""
 
 import csv

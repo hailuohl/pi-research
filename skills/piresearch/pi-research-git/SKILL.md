@@ -25,7 +25,7 @@ GitHub配置、暂停/恢复/重试与状态是用户设置入口，不是Agent�
 
 其他会话可能在同项目独立工作区处理相邻任务。先读 project_inspect、相关任务结果/实验备注及固定源码索引，避免重复实现。受管 Git 是真实实现，不再写“没有 Git 工具”。用户启用项目本地历史；创建时选择GitHub同步的项目会同时启用受管历史，其他项目仍沿既有入口。Agent不代替用户调用history-enable或更改同步设置。
 
-每个 Session 有自己的受管分支（服务返回 branch，如 refs/heads/session-…）及 worktree，源码由固定 sourceRevisionId 绑定。不沿用上游 orx/<slug> 分支、不随意 checkout 任意分支。不占用另一会话 worktree；branch/worktree 所有权不等于能读任意数据或改共享项目。
+每个 Session 有自己的受管分支（服务返回 branch，如 refs/heads/session-…）及 worktree，源码由固定 sourceRevisionId 绑定。不随意 checkout 任意分支。不占用另一会话 worktree；branch/worktree 所有权不等于能读任意数据或改共享项目。
 
 准备自己工作区：
 
@@ -111,7 +111,7 @@ observedAt 是本次读取时间，recordedAt 是回执更新记录时间；不�
 
 ## 比较子节点和父节点
 
-不要依赖上游 git diff 父分支三点语法猜本项目差异；用两份固定来源：
+不要依赖git diff父分支三点语法猜本项目差异；用两份固定来源：
 
 ```json
 {"input":{"from":{"experimentId":"<真实父ID>","revision":1},"to":{"experimentId":"<真实子ID>","revision":1}}}
@@ -124,7 +124,3 @@ experiment_source_diff 返回各文件 before/after digest及模式；逐项 exp
 一旦Run回答节点，实验源码/历史不可重写，不 merge/rebase/reset 冻结分支；整合其他工作放新子实验。尚未回答的修复要先核对真实结果语义及运行已终态，再由用户受控改当前 provisional 实验；Agent 的私有提交不会直接修掉正式节点。
 
 GIT_HEAD_CONFLICT、工作区 pending、来源不匹配、WorkingGrant失效都先补证据或恢复前置条件。观察超时不等于Git失败；回查原operation，禁止重复启动同任务。恢复保留旧操作、原提交、源码摘要与未完成内容，不能为“干净历史”删除失败记录或重写已有commit。
-
-## 来源与适配声明
-
-基于 alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835 的 `agent-skills/orx-git/SKILL.md`（blob `13af3bae031a9434c111c9c5ef77bbb8c80cc3bf`），MIT，Copyright (c) 2026 alphaXiv。Pi Research 改写了命令、存储、权限、返回状态和不可用能力；并非上游逐字文本或原版运行认证。技能不会授予权限。

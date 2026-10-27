@@ -32,8 +32,8 @@ sourceDigest、manifestDigest、固定引擎/容器ID和镜像ID用于恢复；�
 
 后续通知逐完成对账所有获准Run，读stdout/stderr分页、metrics/evidence、运行时source，按pi-research-experiment-tree区分未回答/冻结。两次未回答/共享设置错误停止补证据，不用扩大shape掩盖bug。
 
-## 范围与来源
+## 范围与验证
 
 交互主协调者读取 run_inspect(includeScheduling:true) 的当前队列观察，target_unresolved/unavailable/changed 交用户核对原目标；gpu_busy 等待确认终态，不能删除 unknown 记录腾位。配额等待与实际容器失败分别解释；Task/wakeup 仍使用原 Run 查询。
 
-从本项目 references/local.md 分离 Docker 合同与开发检查，复用既有 Linux Docker 执行能力。研究方法基于 alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835 的 agent-skills/orx-compute/SKILL.md（blob 60566d92cd5e86f1d6684d731444af512531ea0c）和 references/local.md（blob e0c1df9c6a516dfc0fd2d3bf82206ad8a0592e45），MIT，Copyright (c) 2026 alphaXiv。上游没有此同名 Docker 参考；这是当前项目的能力适配，资源读取不授予执行/安装权限。
+Docker合同与开发检查复用既有Linux Docker执行能力，资源读取不授予执行或安装权限。

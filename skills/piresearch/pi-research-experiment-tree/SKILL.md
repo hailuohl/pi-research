@@ -78,7 +78,7 @@ root                root                   baseline
 
 4. **实现、保存、核对证据输出。** 按pi-research-git保存真实修改，独立审查与用户整合后读子源码。运行前读取pi-research-evidence，使已固定代码输出有效配置、最终指标、summary和必要轨迹；不修改已经回答的父。
 5. **准备并启动批准候选。** run_prepare固定各自intent，用户单独批准后run_submit。共享CPU/RAM/PID/目标/端口/数据都限制并行，不把助手数当GPU数；当前为本地/Docker/SSH的CPU或显式NVIDIA设备，不支持云调度；同一UUID在应用作业间共享预留，未知状态不释放。
-6. **每次完成推进，不等整批。** run_submit立即返回。结束回合，由宿主持久化监管和可选唤醒/结果分析；没有orx exp wait/wake工具，不能捏造CLI等待。每次通知后执行下面的对账循环，处理所有尚未处理的终态。
+6. **每次完成推进，不等整批。** run_submit立即返回。结束回合，由宿主持久化监管和可选唤醒/结果分析；不能捏造CLI等待。每次通知后执行下面的对账循环，处理所有尚未处理的终态。
 
 ```text
 每次收到宿主通知/用户恢复：
@@ -116,9 +116,3 @@ root                root                   baseline
 上游exp desc是整文覆盖，本项目没有Agent“覆盖实验描述”工具；创建时hypothesis写清问题，用户实验详情可追加备注（保留notes历史），主协调者可用现有artifact_create保存真实观察草稿。不要声称新草稿已经写入experiment.notes；若用户要修改整个描述，列为入口差异。
 
 每个运行/修改实验的回合结束列一行：真实节点/Run、测试什么、状态/完整性、已读headline结果及限制、下一步。普通问答无需强制实验总结。停止时按pi-research-reports用描述性题名保存实际树结果草稿，最终固定报告由用户生成；保持旧节点、失败产物和失效状态可回查。
-
-## 来源与适配声明
-
-基于 alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835 的 `agent-skills/orx-experiment-tree/SKILL.md`（blob `e888fc9d179ddfae87c4a0732224cf354a9c5430`），MIT，Copyright (c) 2026 alphaXiv。Pi Research 改写了命令、存储、权限、返回状态和不可用能力；并非上游逐字文本或原版运行认证。技能不会授予权限。
-
-本轮节点用途边界另参考 alphaXiv/OpenResearch@a243fa5da6a884ed11d64bf502ab62c86ff13b0b 的同源文件（blob `d7611fa4d5834f68243b3b0246470b54f8266549`），沿用 MIT；未改变既有冻结、父关系和停止规则。

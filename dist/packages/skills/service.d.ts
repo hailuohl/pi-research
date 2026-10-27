@@ -6,7 +6,7 @@ type CatalogEntry = {
     description: string;
     digest: string;
     resources: string[];
-    source: {
+    source?: {
         repository: string;
         commit: string;
         path: string;
@@ -19,7 +19,7 @@ type CatalogEntry = {
 export declare class SkillService {
     private root;
     private context?;
-    readonly bundleId = "cf8638daffd84643b72fd4bfaa298c8daf5eb0d2d36640985916cc57cae463da";
+    readonly bundleId = "b149e69295f55d092fc7357b2d1134eefdd57bf7e78624ab6a2bc3bf62f17dd9";
     constructor(root: string, context?: AppContext | undefined);
     private get c();
     private builtin;

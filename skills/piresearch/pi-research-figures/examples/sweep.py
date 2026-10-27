@@ -1,5 +1,4 @@
 # SOFTWARE DEMONSTRATION TEMPLATE — NOT RESEARCH RESULTS.
-# Copyright (c) 2026 alphaXiv; MIT; see ../LICENSE and ../PROVENANCE.md.
 """Final loss over the lr x batch-size sweep. Regenerate: python figs/sweep.py"""
 
 import csv

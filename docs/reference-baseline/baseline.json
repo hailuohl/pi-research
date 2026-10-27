@@ -1,7 +1,4 @@
 {
-  "referenceRepository": "alphaXiv/OpenResearch",
-  "referenceCommitFromUserDesign": "3037f727e80e0ab20c61a87c613a50dde009a835",
-  "upstreamAppExecuted": false,
   "baselineScreenshotsCaptured": false,
   "fullParityValidated": false,
   "intentionalDeviations": [
@@ -14,7 +11,7 @@
   "sourceSpecs": [
     {
       "path": "docs/specs/project-design.txt",
-      "sha256": "d264982823165ecd8416971451ccce953d1dbecc4232a31d503bfd91d832416c"
+      "sha256": "c4a65316c92c599844c4cf75b3c16324c3e361ce707d2f5c7221819370823af4"
     },
     {
       "path": "docs/specs/multi-agent-design.md",
@@ -24,5 +21,5 @@
   "piSdkReferenceVersion": "0.87.1",
   "piSdkLiveVerified": false,
   "workflowSourceReviewedAt": "2026-09-27",
-  "workflowSourceReview": "OPENRESEARCH-COMPARISON.md"
+  "workflowSourceReview": "WORKFLOW-COMPARISON.md"
 }

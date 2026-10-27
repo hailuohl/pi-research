@@ -1,5 +1,4 @@
 # SOFTWARE DEMONSTRATION TEMPLATE — NOT RESEARCH RESULTS.
-# Copyright (c) 2026 alphaXiv; MIT; see ../LICENSE and ../PROVENANCE.md.
 """Accuracy across benchmarks. Regenerate: python figs/benchmarks.py"""
 
 import csv

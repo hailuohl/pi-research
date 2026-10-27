@@ -33,4 +33,4 @@ coordinator组织定位和受管流程，implementer在获准私有工作区实�
 
 ## 来源
 
-本项目原创调试指导；受管开发、审查与整合流程复用`hailuohl/pi-research`基线`c087e1b64ad0c8e205d5178602fadfe46b06aab4`的`skills/piresearch/pi-research-git/SKILL.md`（Git blob `88551aa3d83bb3a828599b4fd6bf43e7ccfb366c`）。该文件的上游适配归因保留在其自身声明中；本技能未复制或安装Superpowers正文、代码、脚本或权限配置。
+本项目原创调试指导；受管开发、审查与整合流程复用`hailuohl/pi-research`基线`c087e1b64ad0c8e205d5178602fadfe46b06aab4`的`skills/piresearch/pi-research-git/SKILL.md`（Git blob `88551aa3d83bb3a828599b4fd6bf43e7ccfb366c`）。本技能未复制或安装Superpowers正文、代码、脚本或权限配置。

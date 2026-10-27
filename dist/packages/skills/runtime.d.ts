@@ -21,7 +21,7 @@ export declare function readCatalog(app: ResearchApp, actor: Actor, pid: string)
         description: string;
         digest: string;
         resources: string[];
-        source: {
+        source?: {
             repository: string;
             commit: string;
             path: string;

@@ -82,4 +82,4 @@ Codex 的终端、图像和 LaTeX 工具不是 Pi Research 工具；这些示例
 
 `manuscript_list`/`manuscript_inspect`/`manuscript_source_read` 按原 revision ID 和文件路径回查源码，`publication_build_list` 按原 revisionId 回查 job，`publication_result` 及 review 入口回查结果与意见。个人模板按旧 templateId 读取；同名新上传不改旧模板与已有固定稿。无权、来源失效或摘要不符时保留合法历史并报告具体缺口，不回退到最新文件冒充原版本。
 
-本文沿用 paper 的固定上游来源与 MIT 许可，详细出处见 [../SKILL.md](../SKILL.md)。技能与示例不授予权限。
+技能与示例不授予权限。

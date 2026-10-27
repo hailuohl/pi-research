@@ -12,7 +12,7 @@ const configuration=obj({version:num,bundleId:str,builtinBundleId:str,revisionId
 // Old durable configuration receipts retain their original wire shape on replay.
 const configurationReply=s.object({version:num,bundleId:str,builtinBundleId:str,revisionIds:arr(str),disabledBuiltinIds:arr(str)},['version','bundleId','revisionIds']);
 const builtinRelease=obj({bundleId:str,current:s.boolean(),skillCount:num});
-const builtinSkill=obj({id:str,description:str,digest:str,resources:arr(str),source:obj({repository:str,commit:str,path:str,blob:str})});
+const builtinSkill=s.object({id:str,description:str,digest:str,resources:arr(str),source:obj({repository:str,commit:str,path:str,blob:str})},['id','description','digest','resources']);
 const preflight=obj({sessionId:str,version:num,skillBundleId:s.nullable(str),skillIds:arr(str),ready:s.boolean(),missing:arr(obj({skillId:str,kind:s.enum(['tool','backend','artifact','binding']),value:str,reason:str}))});
 const id=s.string(100);
 const upload=s.object({packageId:id,revisionTag:s.string(100),description:s.string(2000),roles:s.array(roles,7,1),license:s.nullable(s.string(2000)),requirements:s.object({tools:s.array(s.string(1000),100),backends:s.array(s.string(1000),30),artifactIds:s.array(s.string(1000),64)},['tools','backends','artifactIds']),files:s.array(s.object({path:s.string(200),contentBase64:s.string(174764,0)},['path','contentBase64']),64,1),zipBase64:s.string(2796204)},['packageId','revisionTag','description','roles','license','requirements']);

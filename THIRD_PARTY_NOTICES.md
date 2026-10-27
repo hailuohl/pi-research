@@ -48,13 +48,6 @@ Pi packages are not bundled. Install the pinned Pi runtime separately and
 retain the upstream notices distributed with those packages. Their runtime
 and transitive lockfile is generated in `.pi-runtime/` when installed.
 
-No OpenResearch application runtime, database, CLI or hosted service is bundled.
-The adapted skills and selected figure resources are described below.
-The original project design names OpenResearch as a functional reference;
-that is not a claim of endorsement, behavioral parity or completed cloning.
-
-## OpenResearch skills and literature protocol adaptation
-Copyright (c) 2026 alphaXiv. MIT; full text in `third_party/openresearch/LICENSE`. Based on commit 3037f727e80e0ab20c61a87c613a50dde009a835. The current `skills/piresearch` release adapts twelve thematic modules plus the overview to existing Pi Research tools and role boundaries; historical releases retain their original scope. Six figure references and the selected matplotlib/TikZ assets are adapted from the same verified upstream revision. The figure assets retain their license notices when copied into a work product. Loading a resource does not execute it. `packages/connectors` ports selected literature protocol behavior from Rust `src/client.rs` to TypeScript and adds independent validation, cancellation, settings and bounded requests. No ORX application runtime, hosted account or telemetry is included. Source identities and the current adaptation scope are recorded in `third_party/openresearch/source-manifest.json`.
 
 ## Scientific Agent Skills method adaptation
 
@@ -71,8 +64,7 @@ They are rewritten in Chinese for the existing Pi Research roles, tools, evidenc
 and approval boundaries. Upstream scripts, Python dependencies, hosted services,
 image generation and advertising instructions are not bundled. Source paths,
 hashes and adapted resource locations are recorded in
-`third_party/scientific-agent-skills/source-manifest.json`; the existing skill
-modules retain their separate OpenResearch provenance.
+`third_party/scientific-agent-skills/source-manifest.json`.
 
 The original `examples/regression-libraries` code uses separately installed
 scientific libraries only in its optional research image. Package license and

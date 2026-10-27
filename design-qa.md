@@ -1,6 +1,6 @@
 # Pi Research 前端视觉复核
 
-Source visual truth: `.validation/frontend-design/research-conversation-desk.png`（用户选择的方案 2）；实验页修订 `.validation/frontend-redesign-20261002/selected-experiment-design.png`；本地 OpenResearch 实际截图 `openresearch-tree-reference.jpg`。
+Source visual truth: `.validation/frontend-design/research-conversation-desk.png`（用户选择的方案 2）；实验页修订 `.validation/frontend-redesign-20261002/selected-experiment-design.png`；本地 科研工作台 实际截图 `research-adaptation-tree-reference.jpg`。
 
 Implementation: `http://127.0.0.1:4794`，独立合成项目与未运行实验。最终截图见 `docs/acceptance/flow-frontend-redesign/experiments-desktop.jpg`、`chat-desktop.jpg` 与 `experiments-mobile.jpg`。
 
@@ -32,14 +32,14 @@ Focused-region evidence: 同屏原尺度对照中的节点文字、连线、右�
 
 ## Follow-up polish
 
-- [P3] 部分历史能力说明仍沿用后端阶段记录；完整 OpenResearch 行为一致性和对话内待确认操作卡片不在本批证明范围。
+- [P3] 部分历史能力说明仍沿用后端阶段记录；完整 科研工作台 行为一致性和对话内待确认操作卡片不在本批证明范围。
 - [P3] 很大树图仍全量渲染；实际项目达到该规模后再考虑可见节点裁剪。
 
 final result: passed
 
 ## 2026-10-02 输入框控件复核
 
-Source visual truth: 用户提供的 OpenResearch 图片 2（3585×1931）：`C:/Users/HAILUO~1/AppData/Local/Temp/codex-clipboard-eaebddbd-f70a-4178-84c7-a863cc8d0aca.png`。本批只对齐输入框左下来源/附件、右下模型/发送及展开菜单；按项目现有设计保留暖白和酒红配色、五种实际来源及多智能体开关。
+Source visual truth: 用户提供的 科研工作台 图片 2（3585×1931）：`C:/Users/HAILUO~1/AppData/Local/Temp/codex-clipboard-eaebddbd-f70a-4178-84c7-a863cc8d0aca.png`。本批只对齐输入框左下来源/附件、右下模型/发送及展开菜单；按项目现有设计保留暖白和酒红配色、五种实际来源及多智能体开关。
 
 Implementation: `http://127.0.0.1:4794/`，独立本机夹具项目。桌面1280×720、手机390×844；实现截图均为CSS像素1:1。原图全视图等比缩至1280×689，保留剩余留白；来源图裁剪1320,1615–2560,1930，实现区域312,310–902,654，再各自等比缩放，比较控件关系，不把未知原图密度或有意保留的配色差异当作缺陷。
 
@@ -67,9 +67,9 @@ final result: passed
 
 ## 2026-10-02 网站图标、紧凑菜单及即时开关
 
-Source visual truth: 同一用户OpenResearch参考图，及上一批`.validation/composer-controls/composer-desktop-final.png`。Implementation: `.validation/source-brand-icons/desktop-immediate.png`、`mobile-immediate.png`。桌面1280×720、手机390×844，CSS与捕获1:1；最终全视图组合`comparison-full-final.png`和控件裁剪组合`comparison-focused-final.png`已在同一输入中打开比较。两边来源菜单均展开、选择4/5且模型相同；主对话历史来自上一批验收，变化在本次编辑区域之外，不据此评判设计漂移。
+Source visual truth: 同一用户科研工作台参考图，及上一批`.validation/composer-controls/composer-desktop-final.png`。Implementation: `.validation/source-brand-icons/desktop-immediate.png`、`mobile-immediate.png`。桌面1280×720、手机390×844，CSS与捕获1:1；最终全视图组合`comparison-full-final.png`和控件裁剪组合`comparison-focused-final.png`已在同一输入中打开比较。两边来源菜单均展开、选择4/5且模型相同；主对话历史来自上一批验收，变化在本次编辑区域之外，不据此评判设计漂移。
 
-Fonts/typography: 沿用11–12px工具条/菜单文字，网站名保留；28px行仍可点选。Spacing/layout: 菜单270→218px、约271.8→179.3px，输入最小高度80→64px，工具栏减少留白，取消独立保存按钮。Colors/tokens: 保留网站原始色彩和本项目暖白酒红。Asset fidelity: 五网站真实文件，三个SVG与本地OpenResearch原件哈希一致；PubMed使用官网NCBI favicon，未用上游Pm占位；Crossref为官网ICO。Copy/content: 网站名称、勾选语义和模型/附件入口保持清楚，移除常驻说明，更新失败才显示实际错误。
+Fonts/typography: 沿用11–12px工具条/菜单文字，网站名保留；28px行仍可点选。Spacing/layout: 菜单270→218px、约271.8→179.3px，输入最小高度80→64px，工具栏减少留白，取消独立保存按钮。Colors/tokens: 保留网站原始色彩和本项目暖白酒红。Asset fidelity: 五网站真实文件，三个SVG与本地科研工作台原件哈希一致；PubMed使用官网NCBI favicon，未用上游Pm占位；Crossref为官网ICO。Copy/content: 网站名称、勾选语义和模型/附件入口保持清楚，移除常驻说明，更新失败才显示实际错误。
 
 Interactions: 5图标全部加载，保存按钮0个；勾选PubMed后刷新仍勾选，取消后刷新仍取消。失败/未知状态与重开恢复、并发点击、卸载回写由最终相关39项覆盖。390/1280px菜单完整，无横向溢出，模型和发送同排；控制台0错误。来源版本冲突的旧待办由这次即时更新所需的实际状态回读处理，队列重复CSS仍属原非阻断待办。本批无新P0/P1/P2。
 

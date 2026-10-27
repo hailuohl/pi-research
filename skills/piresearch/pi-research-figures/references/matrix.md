@@ -50,4 +50,4 @@
 - 混淆归一化方式和support写图注，无样本不当零。
 - 审查文字、打印尺寸并看实际图。
 
-来源/版权见 [../PROVENANCE.md](../PROVENANCE.md) 与 [../LICENSE](../LICENSE)。执行与归档边界沿 SKILL.md，不由模板授予。
+执行与归档边界沿 SKILL.md，不由模板授予。

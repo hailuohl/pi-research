@@ -53,7 +53,7 @@ autoAnalyze:true可同时准备终态后最多一次Pi结果分析任务，模�
 | docker | Linux Docker CPU/NVIDIA正式Run及CPU独立开发检查、日志、取消、固定容器恢复 | references/docker.md |
 | ssh | 用户配置/探测的固定SSH目标，经版本化受信Linux Docker监管器执行CPU/NVIDIA容器 | references/ssh.md |
 
-调用research_skill_read，skillId:"pi-research-compute"，resource:"references/local.md"、"references/docker.md"或"references/ssh.md"。只读所选指南，不自动执行资源或安装依赖。若不可读报具体资源/完整性错误，不退回任意路径/ORX指南。
+调用research_skill_read，skillId:"pi-research-compute"，resource:"references/local.md"、"references/docker.md"或"references/ssh.md"。只读所选指南，不自动执行资源或安装依赖。若不可读报具体资源/完整性错误，不退回任意路径或未登记指南。
 
 其他云/集群后端、托管资源目录与实例生命周期已从当前范围移除，不加载这些参考，也不把配置凭据当恢复它们的授权。NVIDIA以完整UUID显式选择，先由用户在资源与调度核对目标；Agent只能读取已保存目录，不能探测设备/改运行环境。设备查询不等于运算成功，已有本机或SSH回环记录不外推所有主机、镜像或本次运行。“CPU限制”不意味着GPU隔离；AMD/Metal尚未支持，不得把GPU请求静默改为CPU。
 
@@ -105,7 +105,3 @@ Docker/SSH的CPU/RAM/PID/时间/工作空间/日志/输出受各自约束；loca
 ## 开发测试不是正式Run
 
 当前development_*真实可用，主协调者/implementer/writer按权限可准备自己的私有源码测试；单独开发批准和WorkingGrant适用。development_prepare输入command、已存在的environmentImageDigest（repo@sha256）、可选dockerContext/resources/deadline/expectedArtifacts/dataArtifactIds，冻结精确snapshot。用户批准后development_submit输入developmentTaskId；development_inspect/logs确认state/integrity/exitCode/真实产物。不能以development job结果冒充正式假设检验；后续代码整合和Run仍另行批准。
-
-## 来源与适配声明
-
-基于 alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835 的 `agent-skills/orx-compute/SKILL.md`（blob `60566d92cd5e86f1d6684d731444af512531ea0c`），MIT，Copyright (c) 2026 alphaXiv。Pi Research 改写了命令、存储、权限、返回状态和不可用能力；并非上游逐字文本或原版运行认证。技能不会授予权限。

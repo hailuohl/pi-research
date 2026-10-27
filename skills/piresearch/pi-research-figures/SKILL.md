@@ -32,7 +32,7 @@ description: "用真实数据制作论文级 matplotlib/TikZ 图，保留打印�
 {"input":{"skillId":"pi-research-figures","resource":"assets/pi_figstyle.py"}}
 ```
 
-具备 `workspace_write` 的主协调者/writer 等获准执行者把返回的完整文本保存为自己的私有工作区 `figs/pi_figstyle.py`；创建 `expectedDigest:null`，修改先读取当前 digest。检查读取成功且非空，不从错误响应生成空模块。模块与调用它的脚本放一起；报告脚本也需要同目录副本，以便以后复现。保留 MIT 版权和 [PROVENANCE.md](PROVENANCE.md)。
+具备 `workspace_write` 的主协调者/writer 等获准执行者把返回的完整文本保存为自己的私有工作区 `figs/pi_figstyle.py`；创建 `expectedDigest:null`，修改先读取当前 digest。检查读取成功且非空，不从错误响应生成空模块。模块与调用它的脚本放一起；报告脚本也需要同目录副本，以便以后复现。保留配套脚本和真实数据，以便复现。
 
 analyst 可读数据并用获准的 `artifact_create` 保存文本分析，但没有工作区写入和开发绘图执行工具；reviewer 只读核对，不保存或修图。二者可在 Task 的 `task_result_submit` 中交回分析、图注、问题和真实来源，由获准主协调者/writer 接收、保存并回读，不能因技能可读而要求自行生成图。自动结果分析仅用本次实际工具核对获准 Run，不能写工作区、执行绘图、读页图或新开计算；若可用 `artifact_create` 可保存正文，没有 `artifact_read` 时交回真实 ID 与未回读状态，由交互协调者回读。工具缺失或动作被拒绝据实交接，不扩角色或审批。
 
@@ -122,7 +122,3 @@ Pi Research 不实现上游 `<file path="..." />` 根目录解析器。不能加
 脚本退出码、PDF生成和模型自述都不能代替实际图片到达模型。仅检查已读页，工具实际拒绝、超限或撤权时记录具体未完成项，不绕过模型目录或权限校验；视觉可读性不证明数据、误差条或结论正确。Task/reviewer 不自动拥有该图片工具，不把主协调者布局观察当独立科学审查。修图后重新实际编译并看新页，不能重复交付旧图。
 
 交付分别报告图/脚本与来源保存状态、audit 结果、实际视觉检查范围、数据与论证核查及限制；其中一项通过不替代其他项。
-
-## 来源
-
-适配 alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835，MIT，Copyright (c) 2026 alphaXiv。精确上游文件、blob、改名及差异见 [PROVENANCE.md](PROVENANCE.md)，许可见 [LICENSE](LICENSE)。保留方法与自动审查；替换CLI、角色、归档与执行流程。资源不授予额外权限，也不表示原版服务或全部示例已在用户环境验收。

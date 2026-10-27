@@ -110,7 +110,7 @@ abort 原因由触发端记录，防止后续 `validate()` 把期限中止再次
 
 主要修改：`packages/connectors/transport.ts`、`packages/connectors/service.ts`、`packages/literature/service.ts`、`apps/agent-worker/index.ts`、`packages/pi-adapter/tool-diagnostic.ts`；旧入口信号接线按实际调用修改 `packages/contracts/operations/registry.ts`。新增可选观测字段还须同步 `packages/policy/discovery-grant-types.ts`、`packages/contracts/operations/discovery-grant-schemas.ts`、`packages/contracts/operations/outputs.ts` 和 `ConnectorService.observations` 的投影，不能只写库而被输出 schema 拒绝或丢弃。
 
-优先扩展已有 `tests/unit/paper-read-resilience.test.mjs` 的虚拟时钟及响应流夹具、`tests/unit/openresearch-connectors.test.mjs`、`tests/unit/tool-error-diagnostics.test.mjs` 和 `tests/unit/discovery-grants.test.mjs`。复用 `tests/integration/tool-rpc-timeout.test.mjs` 及 `tests/fixtures/tool-rpc-clock-worker.mjs` 验证普通调用和批准恢复路径的 Worker/Host 接线，时钟夹具同时识别新的 75 秒计时器；不另建重复的 RPC 测试框架。
+优先扩展已有 `tests/unit/paper-read-resilience.test.mjs` 的虚拟时钟及响应流夹具、`tests/unit/research-adaptation-connectors.test.mjs`、`tests/unit/tool-error-diagnostics.test.mjs` 和 `tests/unit/discovery-grants.test.mjs`。复用 `tests/integration/tool-rpc-timeout.test.mjs` 及 `tests/fixtures/tool-rpc-clock-worker.mjs` 验证普通调用和批准恢复路径的 Worker/Host 接线，时钟夹具同时识别新的 75 秒计时器；不另建重复的 RPC 测试框架。
 
 保留“普通 transport 13 秒响应应失败”原断言，另加“检索显式 30 秒配置下 13 秒完整响应成功”和“超过 30 秒网络期限失败”。不能删除旧断言把默认行为变化藏起来。
 

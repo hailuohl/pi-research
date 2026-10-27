@@ -5,7 +5,7 @@ description: "Use when starting, resuming, or handing over research in Pi Resear
 
 # Pi Research 科研入口
 
-本项目管理本地项目、实验树、源码快照、执行与证据。总览只保留必须始终遵守的规则及入口；具体工作先按需读取对应模块。Pi是唯一Agent执行内核，不调用ORX CLI、服务或数据库。默认内置技能始终开启，技能文本不签发工具、计算、联网或发布权限。
+本项目管理本地项目、实验树、源码快照、执行与证据。总览只保留必须始终遵守的规则及入口；具体工作先按需读取对应模块。Pi是唯一Agent执行内核。默认内置技能始终开启，技能文本不签发工具、计算、联网或发布权限。
 
 读取资源时，宿主在同一返回的`prerequisites`中交付其父SKILL及固定发行声明的前置方法，每份保留独立content/digest/bundleId。它们已随本次工具结果到达，不必为计数重复调用；正文交付不等于理解正确或科学验收。旧发行只加载其原有声明，不静默补入新版本方法。
 
@@ -38,7 +38,7 @@ description: "Use when starting, resuming, or handing over research in Pi Resear
 
 ## 设置与对象发现
 
-用户从工作台创建项目，或使用当前 CLI 导入本地源码副本；模型与连接器由用户设置。没有上游 `orx login/logout`、组织、OAuth token 或云实例入口，不读取上游凭据路径。实例及云算力由用户明确排除；来源授权、研究协作授权和正式运行审批是三种不同权限。
+用户从工作台创建项目，或使用当前 CLI 导入本地源码副本；模型与连接器由用户设置。没有组织、OAuth token 或云实例入口，不读取无关凭据路径。实例及云算力由用户明确排除；来源授权、研究协作授权和正式运行审批是三种不同权限。
 
 先 `connector_status({input:{}})` 查看实际连接授权和观察；implemented 不是目标实测成功。再 `project_inspect({input:{}})` 获取当前授权项目、实验 revision、运行、证据、活动和本主会话意向。Agent 不能用它切换项目。Project、Experiment、Run、Session、Task、Artifact、Evidence ID 不能互换，全部来自真实返回。
 
@@ -97,7 +97,3 @@ description: "Use when starting, resuming, or handing over research in Pi Resear
 驱动研究：读取固定父源码/config → 一个决策的一轮假设 → 建同父子实验（或私有代码实现、开发测试、独立审查、人工整合）→ run_prepare → 用户批准 → run_submit → 结束当前回合。宿主通知后重新读全部获准 Run/活动，处理尚未处理的终态，读日志/产物/差异，再决定 repair、refill、promote 或 stop。通知是信号，实际记录才是状态真相；空队列且无下一候选时退出，不忙轮询。
 
 可前向检查的具体曲线拟合流程见 pi-research-create 的“当前示例：实验到报告”。只有实测才写成功：未运行、未测试、未编译及环境阻断必须明示；技能方法本身不证明真实模型自主科研已验收。
-
-## 来源与适配声明
-
-基于 alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835 的 `SKILL.md`（blob `904b26802cf62d7ba84fa99f3c2c804026cd9e46`），MIT，Copyright (c) 2026 alphaXiv。Pi Research 改写了命令、存储、权限、返回状态和不可用能力；并非上游逐字文本或原版运行认证。技能不会授予权限。

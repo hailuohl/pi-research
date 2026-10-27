@@ -37,7 +37,7 @@ coordinator/designer在创建真实研究实验前，按需要用 `research_skil
 
 ## 添加实验节点
 
-首次无父节点的是基线；本项目后续 parentId 为空同样创建根，**不会**照搬上游“自动挂最老根”。同轮选项必须显式 parentId，替代基线应明确写 parentId:null，不因遗漏形成意外新根。
+首次无父节点的是基线；后续parentId为空同样创建根，不会自动挂到已有根。同轮选项必须显式 parentId，替代基线应明确写 parentId:null，不因遗漏形成意外新根。
 
 下例 input 用于交互主协调者，或用户入口；设计助手是否可用以当前权限与任务上下文为准。ID 和 revision 取自真实 project_inspect/源码返回。
 
@@ -84,7 +84,3 @@ experiment_plan_submit 复制父/项目源码，只能改配置，不会把私�
 5. Agent 用 artifact_create 保存描述性结果草稿（pi-research-reports）；用户在“报告与成果”选择真实终态 runIds，用 report_create 固定报告；report_inspect 核查引用和效力后 report_export 本地成果包。ID、摘要和指标一律取实际返回，不生成示例成功输出。
 
 失败分支：未批 run_submit 必须拒绝；改 experiment.mjs 后用 trusted-example 运行必须被固定源码哈希拒绝；更改子契约必须拒绝；缺指标/超限产物不能写完整成功。语义不明结果等待用户评议后才修复；已经 answered 的基线不得原地改。unknown/恢复时先回查原 intent/Run/handle，不重复提交。重开对话只复用仍有效的固定历史，不复用旧批准给新代码。
-
-## 来源与适配声明
-
-基于 alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835 的 `agent-skills/orx-create/SKILL.md`（blob `6d502f794f82a124cdd93723e2676d8cf0f8861b`），MIT，Copyright (c) 2026 alphaXiv。Pi Research 改写了命令、存储、权限、返回状态和不可用能力；并非上游逐字文本或原版运行认证。技能不会授予权限。

@@ -39,7 +39,7 @@ description: "Write and save evidence-backed research reports and run comparison
 
 当前工具包含 workspace_list/read 时查看自己的相关源文件，用可用的 project_inspect/task_result_read 查看获准产物索引；自动分析不假设拥有工作区或 artifact_read。报告按研究主题/交付物分组，优先复用已有相关目录；描述性名称，不在根不断积累report1/report2，不为空目录提前搭架子。coordinator/analyst/writer/reviewer绘图前读pi-research-figures；coordinator/writer/reviewer准备论文读pi-research-paper，其他角色交接给具备权限者；所有角色的运行结论读pi-research-evidence。
 
-私有草稿目录可以保留上游的组织示例（仅当这些实际输出存在）：
+私有草稿目录可以按以下示例组织（仅当这些实际输出存在）：
 
 ```text
 transformer-sweep/
@@ -94,18 +94,14 @@ transformer-sweep/
 
 ## 链接、重开与产品差异
 
-工作区报告可用真实相对链接，如 `![Patch size](figures/patch-size.svg)`，前提文件已生成且可随交付解析；不可变artifact之间没有自动目录相对解析保证，实际artifact/evidence ID留在绑定或独立来源记录，不伪造正文链接。固定报告使用服务生成的reference链接，不自造其URL。聊天交付给返回的真实嵌套路径/下载入口或ID及用途，本项目不保证上游 `<file path="…"/>` 富引用渲染。
+工作区报告可用真实相对链接，如 `![Patch size](figures/patch-size.svg)`，前提文件已生成且可随交付解析；不可变artifact之间没有自动目录相对解析保证，实际artifact/evidence ID留在绑定或独立来源记录，不伪造正文链接。固定报告使用服务生成的reference链接，不自造其URL。聊天交付给返回的真实嵌套路径/下载入口或ID及用途，本项目不保证 `<file path="…"/>` 富引用渲染。
 
 分析正文修改形成新产物版本；旧正文、旧固定报告及其原绑定保留，不用最新来源替换历史。重开后使用结论或新导出前按参考文件核对来源效力。只有已批准且成功的真实绘图/文稿构建才说图/PDF已生成；只保存 .tex/.py 仍是源码草稿。
 
-已实现：实际分析正文/文本产物、用户固定 Markdown 报告、引用回读、本地 tar.gz 导出及有效性检查。Pi 没有上游“往任意 artifacts 目录写文件立即成为项目成果”的隐式行为；Agent 正文接入固定报告与成果导出、外部成果发布和 Overleaf 等外部目标尚未实现，不用技能文字或默认 Shell 绕过这些缺口。
+已实现：实际分析正文/文本产物、用户固定 Markdown 报告、引用回读、本地 tar.gz 导出及有效性检查。往任意artifacts目录写文件不会自动成为项目成果；Agent 正文接入固定报告与成果导出、外部成果发布和 Overleaf 等外部目标尚未实现，不用技能文字或默认 Shell 绕过这些缺口。
 
 ## 记录视觉验收范围
 
 引用文稿时分别写明固定 publicationResultId、成功完整构建、实际看过的 pageNumber，以及未看/失败原因。交互主协调者可沿 pi-research-paper 的准确页批准和图片读取做布局观察；不能以结果目录有 PNG 或编译成功就填“已视觉检查”。科学数字仍回读原始 Run/数据/证据，单页布局意见不等于全文或科学结论验收。
 
 默认模型具备图片识别能力，获准真实图片到达后直接视觉阅读；工具实际拒绝、图片超限、来源/授权失效时明确未看或未验证，不绕过校验。原固定成果和历史保留，新修订另行编译与核对。报告与本地导出仍由已有用户流程选择固定结果，不因图片批准而自动发布。
-
-## 来源与适配声明
-
-基于 alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835 的 `agent-skills/orx-reports/SKILL.md`（blob `313d3ca61372e5f2e101cac6e78828393d03ad87`），MIT，Copyright (c) 2026 alphaXiv。Pi Research 改写了命令、存储、权限、返回状态和不可用能力；并非上游逐字文本或原版运行认证。技能不会授予权限。

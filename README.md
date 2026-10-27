@@ -12,15 +12,13 @@
 
 随后移除远程实例技能及占位、云资源管理和完整远程工作台部署规划，保留13个内置技能；GPU扩展及既有资源调度保持，见[继续清理记录](docs/acceptance/flow-compute-related-cleanup/RESULT.md)。
 
-技能已按当前已完成功能适配，提供41份按需资源，包括计算、绘图、文稿交付与8项科研方法。新增实验设计、功效规划、数据检查、统计分析、测量不确定性、假设生成、批判性评价和系统综述方法，沿现有角色与固定版本加载；方法参考不等于新增自动计算工具。见[当前功能及上游差异](docs/openresearch/CURRENT-SKILLS.zh-CN.md)和[方法补强验收](docs/acceptance/flow-scientific-methods-20261017/RESULT.md)。
+技能已按当前已完成功能适配，提供39份按需资源，包括计算、绘图、文稿交付与8项科研方法。新增实验设计、功效规划、数据检查、统计分析、测量不确定性、假设生成、批判性评价和系统综述方法，沿现有角色与固定版本加载；方法参考不等于新增自动计算工具。见[当前技能与功能边界](docs/skills/CURRENT-SKILLS.zh-CN.md)和[方法补强验收](docs/acceptance/flow-scientific-methods-20261017/RESULT.md)。
 
 2026-10-17的[真实Pi科研实测](docs/acceptance/flow-scientific-methods-live-20261017/RESULT.md)发现自动触发仍不足：原入口自然读取0/8，补充方法触发表后相同提示读取2/8，提醒后才读齐8/8；代码与科学解释还需独立复核纠正。已补强入口并保留失败证据，不能据此宣称八项方法已能全自动正确使用。
 
 随后前置方法选择，并补充公式/实现/报告核对步骤；[无提醒复测](docs/acceptance/flow-scientific-methods-autonomous-20261017/RESULT.md)自然读取达到8/8，普通问答不加载方法，但首稿仍有指标格式、交叉验证和科学解释等阻断。计划已拒绝，本轮未提交正式Run；自动读取改善不等于使用正确性通过。
 
 再按具体反例补充格式/分折断言与来源核对后，[第二次无提醒复测](docs/acceptance/flow-scientific-methods-autonomous-v2-20261017/RESULT.md)自然读取为7/8，仍有运行格式和科学解释阻断。两次失败都保留，未通过的计划均未进入正式Run；当前不能宣称稳定自动触发或正确使用已达标。
-
-历史目标（2026-09-29）：曾要求对齐OpenResearch前端，并把桌面分发及自建托管范围移出当时排期。该排期由上面的当前阶段目标取代；已有成果与在途改动继续保留。
 
 2026-10-04 已将用户选定的[浅色视觉方案正式接入](docs/acceptance/flow-light-frontend/RESULT.md)：保持原布局，更新真实聊天、列表和图标；设计预览与正式应用入口、回归及干净构建证据见该记录。
 
@@ -36,7 +34,7 @@
 
 输入框左下提供带网站图标的文献来源与附件入口，右下选择当前会话模型并发送。来源勾选即启用、取消即禁用，无需另行保存；后续检索跳过未勾选的网站，更新失败回读实际状态并提示。见[紧凑来源控件验收](docs/acceptance/flow-source-brand-icons/RESULT.md)。设置页可保存最多20个供应商/模型ID/思考级别组合，并设为新会话默认；当前会话选型独立，运行、排队、Worker未退出或已有固定授权时不能切换。附件复用项目原件归档，支持每条消息最多5份PDF/TXT/MD、每份32 MiB；文本可由当前交互主会话分页读取，PDF仅保存原件并提示显式解析。队列修改/移除保留原件，失败保留草稿与已上传引用。供应商凭据仍使用现有本地配置。见[输入框控件验收](docs/acceptance/flow-composer-controls/RESULT.md)。
 
-由 0.3.0-experimental 独立派生。保留既有实验、审批、快照、协作、Campaign 与有效性修复；新增受管技能目录和五源文献接口。不是完整 OpenResearch 替代品，也不是所有后端已连接的生产系统。
+由 0.3.0-experimental 独立派生。保留既有实验、审批、快照、协作、Campaign 与有效性修复；新增受管技能目录和五源文献接口。外部后端与生产环境仍需按实际任务验证。
 
 ## 启动
 
@@ -136,11 +134,11 @@ npm run test:live
 - [当前阶段目标与完成状态](docs/PROJECT-GOAL.zh-CN.md)
 - [后端入口、可用范围与环境限制](docs/BACKEND-READINESS.zh-CN.md)
 - [实际任务结果、人工步骤及CLI回查](docs/acceptance/flow-wine-grouped-trial/RESULT.md) · [机器证据](docs/acceptance/flow-wine-grouped-trial/evidence.json)
-- [适配细节、技能及连接器映射](docs/openresearch/ADAPTATION.md)
-- [验证记录与未验收项](docs/openresearch/VALIDATION.md)
-- [升级与双版本并排对比](docs/openresearch/UPGRADE.md)
-- [本次版本来源](docs/openresearch/edition.json)
+- [适配细节、技能及连接器映射](docs/skills/ADAPTATION.md)
+- [验证记录与未验收项](docs/skills/VALIDATION.md)
+- [升级与双版本并排对比](docs/skills/UPGRADE.md)
+- [本次版本来源](docs/skills/edition.json)
 - [许可证/修改说明](THIRD_PARTY_NOTICES.md)
-- [上一个版本README（历史）](docs/openresearch/previous-README.md)
+- [上一个版本README（历史）](docs/skills/previous-README.md)
 
 各阶段证据按实际范围保留：智谱Pi、本机CPU Docker、有限授权、PubMed摘要/PMC原文、固定文档/文稿、Wine与Anscombe比较及备份迁移已有记录；其他原PDF来源、自动root唤醒、GPU/外部SSH目标仍受限或待验。用户授权主代理拟定的[分组红酒任务](docs/acceptance/flow-wine-grouped-trial/RESULT.md)已完成真实后端试用，当前转入按需维护，不循环追加示例。完整前端、桌面/团队暂缓。准确入口与科学/环境限制以[后端清单](docs/BACKEND-READINESS.zh-CN.md)为准。

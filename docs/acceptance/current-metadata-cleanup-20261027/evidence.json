@@ -1,0 +1,103 @@
+{
+  "date": "2026-10-27",
+  "base": "17f39731ea2e3e8d31b312550bc862989b3ac5f1",
+  "bundle": "b149e69295f55d092fc7357b2d1134eefdd57bf7e78624ab6a2bc3bf62f17dd9",
+  "checks": {
+    "fullInitial": {
+      "summary": {
+        "tests": 2867,
+        "pass": 2811,
+        "fail": 29,
+        "cancelled": 0,
+        "skipped": 27,
+        "todo": 0
+      },
+      "failedFiles": [
+        "tests/integration/builtin-skill-binding-worker.test.mjs",
+        "tests/integration/builtin-skill-http.test.mjs",
+        "tests/integration/research-adaptation-worker.test.mjs",
+        "tests/integration/skill-auto-activation-http.test.mjs",
+        "tests/integration/skill-lifecycle-http.test.mjs",
+        "tests/integration/skill-manager-http.test.mjs",
+        "tests/unit/bearing-method-outputs.test.mjs",
+        "tests/unit/method-contracts.test.mjs",
+        "tests/unit/operation-outputs.test.mjs",
+        "tests/unit/research-adaptation-integration.test.mjs",
+        "tests/unit/synthetic-method-plan.test.mjs"
+      ]
+    },
+    "affectedRerun": {
+      "command": "node --test --test-concurrency=1 <all failed files> tests/unit/research-adaptation-release-cleanup.test.mjs",
+      "summary": {
+        "tests": 88,
+        "pass": 88,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "log": ".validation/current-metadata-cleanup/repair-suite.log"
+    },
+    "cleanBuild": {
+      "command": "npm run verify:build",
+      "node": "24.19.0",
+      "platform": "win32",
+      "identical": true,
+      "files": 796,
+      "manifestSha256": "47299e25bc3b136eb4fe1c37a8f3e71af5961c279a65c771e46de123103326d2",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ]
+    },
+    "focused": {
+      "tests": 36,
+      "pass": 36,
+      "fail": 0,
+      "skipped": 0
+    },
+    "parity": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "skipped": 0
+    }
+  },
+  "review": {
+    "blocking": 0,
+    "requestedModel": "gpt-6.1-sol",
+    "requestedReasoningEffort": "high",
+    "runtime": "not echoed"
+  },
+  "primaryIntegration": {
+    "bundle": "fb0c97c9fb87201210b5982e400b3f12fa022724d139ae2bae93c9f56169112c",
+    "focused": 36,
+    "interfaceRerun": 27,
+    "planningRerun": 12,
+    "allPassed": true,
+    "fullRerun": false,
+    "preexistingWipExcludedFromDelivery": true
+  },
+  "preserved": {
+    "historicalArchives": true,
+    "historicalEvidence": true,
+    "gitHistory": true,
+    "unrelatedLicenses": true
+  },
+  "limitations": [
+    "Initial full run failed; all failed files passed the affected rerun. Unaffected passing checks were reused.",
+    "27 initially skipped tests were not counted as passed.",
+    "Primary checkout preexisting WIP was preserved and excluded from the isolated delivery.",
+    "Removing notices from adapted resources carries license compliance risk."
+  ]
+}

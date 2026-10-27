@@ -50,7 +50,7 @@
 
 ## 原图展示与定位
 
-上游Markdown方式可作交接格式参考；只有宿主确实提供可见文件时才用实际路径，Pi Research不保证任意工作区PNG路径自动变成chat image：
+Markdown可作交接格式；只有宿主确实提供可见文件时才用实际路径，Pi Research不保证任意工作区PNG路径自动变成chat image：
 
 ```markdown
 ![Architecture overview](actual-visible-image-path "Figure 1. What to notice and its limitations. [p. 6](https://www.alphaxiv.org/pdf/VERIFIED_ID?page=6)")

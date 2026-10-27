@@ -40,8 +40,8 @@ sourceDigest、manifestDigest、固定引擎/容器ID和镜像ID用于恢复；�
 
 后续通知逐完成对账所有获准Run，读stdout/stderr分页、metrics/evidence、运行时source，按pi-research-experiment-tree区分未回答/冻结。两次未回答/共享设置错误停止补证据，不用扩大shape掩盖bug。
 
-## 与上游差异及来源
+## 运行边界
 
-上游local是机器自身环境的detached进程、无flavor/host/image/timeout选项，抽出源码再执行，取消进程组、orx supervise监管。本项目保留固定源码/非worktree训练/共享资源/监管/取消方法，改为受管local或固定示例（Docker另有独立参考），显式CPU/NVIDIA、清单资源/身份/批准/恢复；不存在orx supervise、local-runs路径或无审批任意宿主执行。
+本地运行使用受管local或固定示例（Docker另有独立参考），固定源码，不在worktree训练，遵守共享资源、监管和取消规则；显式声明CPU/NVIDIA及清单资源，核对身份、批准和恢复记录，不允许无审批任意宿主执行。
 
-基于alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835的agent-skills/orx-compute/references/local.md，blob e0c1df9c6a516dfc0fd2d3bf82206ad8a0592e45，MIT，Copyright (c) 2026 alphaXiv。本地改写不是上游原版执行认证；资源只按需读取，不授予执行/安装权限。
+资源只按需读取，不授予执行或安装权限。

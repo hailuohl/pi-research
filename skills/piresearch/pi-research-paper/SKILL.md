@@ -88,7 +88,3 @@ writer 没有 `publication_templates`、`publication_template_inspect/read`，�
 - 科学证据支持的结论与尚未验证部分。
 
 本项目没有上游 Overleaf 双向同步、自动远端发布或投稿。用户另行导出使用外部工具不等于本技能已实现自动流程。
-
-## 来源
-
-基于 alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835，`agent-skills/orx-paper/SKILL.md`，blob `46fdc3e4207e1ca9c3c8ec51649bc1b242c6ecaa`，MIT，Copyright (c) 2026 alphaXiv。保留模板、结构、图/引用、引擎与错误方法，替换实际工具、存储、角色和构建状态；版权完整文本见 [figures/LICENSE](../pi-research-figures/LICENSE) 与仓库 third_party/openresearch/LICENSE。技能与软件示例不授予权限。
