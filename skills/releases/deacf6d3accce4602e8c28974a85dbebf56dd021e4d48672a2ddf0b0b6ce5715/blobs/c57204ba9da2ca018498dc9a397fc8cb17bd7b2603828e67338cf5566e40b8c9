@@ -1,9 +1,0 @@
-% SOFTWARE DEMONSTRATION OF BIBLIOGRAPHY SYNTAX ONLY.
-% Metadata reproduces the upstream orx-paper example; read and verify the
-% selected source/version before using it as claim-level evidence.
-% Copyright (c) 2026 alphaXiv. MIT: third_party/openresearch/LICENSE.
-@misc{kaplan2020,
-  author = {Kaplan and others},
-  title = {Scaling laws for neural language models},
-  year = {2020}
-}
