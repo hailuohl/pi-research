@@ -6,7 +6,7 @@ import {synchronousState} from '../support/ui.mjs';
 import {PublicationDialogue} from '../../dist/web/assets/publication-dialogue.js';
 
 const root={id:'root',role:'coordinator',state:'idle'},revision={id:'revision',rootSessionId:'root',title:'Fixed paper',sourceDigest:'source',engine:'pdflatex',files:[]};
-const job={id:'job',revisionId:'revision',manifestDigest:'fixed',sourceDigest:'source',approvalId:'approval',state:'prepared',integrity:'pending',engine:'pdflatex',mainFile:'main.tex',resources:{cpus:1,memoryMb:256,timeoutSeconds:60},imageDigest:'image'};
+const job={sourceAvailability:'available',id:'job',revisionId:'revision',manifestDigest:'fixed',sourceDigest:'source',approvalId:'approval',state:'prepared',integrity:'pending',engine:'pdflatex',mainFile:'main.tex',resources:{cpus:1,memoryMb:256,timeoutSeconds:60},imageDigest:'image'};
 const base=()=>({project:{id:'project',settings:{enabled:true}},manuscripts:[revision],publicationJobs:[job],publicationReviews:[],publicationExports:[],reports:[],approvals:[{id:'approval',subjectId:'job',scope:'publication.build',digest:'fixed',status:'pending',version:1}]});
 const view=data=>synchronousState(new PublicationDialogue({data,session:root,disabled:false,perform:fn=>fn()}));
 const text=node=>Array.isArray(node)?node.map(text).join(''):node&&typeof node==='object'?text(node.props?.children):typeof node==='string'||typeof node==='number'?String(node):'';
@@ -19,6 +19,17 @@ test('paper dialogue stays empty without own manuscripts and excludes foreign re
     assert.equal(view({...base(),manuscripts:[]}).render(),null);
     const rendered=text(view({...base(),manuscripts:[revision,{...revision,id:'other',rootSessionId:'other-root',title:'Foreign manuscript'}]}).render());
     assert.match(rendered,/Fixed paper/);assert.doesNotMatch(rendered,/Foreign manuscript/);
+});
+
+test('unavailable and unknown manuscript sources preserve history but cannot approve or export',async()=>{
+ for(const sourceAvailability of ['unavailable','invalid',undefined]){
+  const blocked={...job,sourceAvailability,sourceError:sourceAvailability==='invalid'?'PUBLICATION_SOURCE_CORRUPTED':'PUBLICATION_SOURCE_UNAVAILABLE'},ui=view({...base(),publicationJobs:[blocked]});
+  assert.match(text(ui.render()),sourceAvailability?/固定文稿清单当前不可用|固定文稿清单无效/:/固定文稿清单状态未知/);
+  assert.equal(nodes(ui.render()).find(n=>n.type==='button'&&text(n)==='批准并编译').props.disabled,true);
+  await assert.rejects(ui.submit(blocked),/清单/);
+  ui.props={...ui.props,data:{...ui.props.data,publicationJobs:[{...blocked,state:'succeeded',integrity:'complete',resultId:'result'}]}};
+  assert.equal(nodes(ui.render()).find(n=>n.type==='button'&&text(n)==='导出成果包').props.disabled,true);
+ }
 });
 
 test('queued dialogue publication tracks the same queue item and clears its unavailable hint when ready',()=>{

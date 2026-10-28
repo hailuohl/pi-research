@@ -205,6 +205,8 @@ export declare class PublicationBuildService {
         cancelRequested: boolean;
         exitCode: number | null;
         artifactIds: string[];
+        sourceError?: string | undefined;
+        sourceAvailability: "unavailable" | "available" | "invalid";
     };
     assertCurrent(job: Row<PublicationBuildJob>, verifyBytes?: boolean): Row<ManuscriptRevision>;
     submitAutomatic(actor: Actor, ref: import('../policy/automatic-approvals.js').AutomaticApprovalReference, pid: string, id: string): {
@@ -245,6 +247,8 @@ export declare class PublicationBuildService {
         cancelRequested: boolean;
         exitCode: number | null;
         artifactIds: string[];
+        sourceError?: string | undefined;
+        sourceAvailability: "unavailable" | "available" | "invalid";
     };
     submit(actor: Actor, pid: string, id: string): {
         endedAt?: string | undefined;
@@ -284,6 +288,8 @@ export declare class PublicationBuildService {
         cancelRequested: boolean;
         exitCode: number | null;
         artifactIds: string[];
+        sourceError?: string | undefined;
+        sourceAvailability: "unavailable" | "available" | "invalid";
     };
     inspect(actor: Actor, pid: string, id: string): {
         endedAt?: string | undefined;
@@ -323,6 +329,8 @@ export declare class PublicationBuildService {
         cancelRequested: boolean;
         exitCode: number | null;
         artifactIds: string[];
+        sourceError?: string | undefined;
+        sourceAvailability: "unavailable" | "available" | "invalid";
     };
     jobs(actor: Actor, pid: string, options?: {
         cursor?: number;
@@ -367,6 +375,8 @@ export declare class PublicationBuildService {
             cancelRequested: boolean;
             exitCode: number | null;
             artifactIds: string[];
+            sourceError?: string | undefined;
+            sourceAvailability: "unavailable" | "available" | "invalid";
         }[];
         nextCursor: number | null;
     };
@@ -408,6 +418,8 @@ export declare class PublicationBuildService {
         cancelRequested: boolean;
         exitCode: number | null;
         artifactIds: string[];
+        sourceError?: string | undefined;
+        sourceAvailability: "unavailable" | "available" | "invalid";
     };
     result(actor: Actor, pid: string, id: string): {
         sourceError?: string | undefined;

@@ -1828,6 +1828,12 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
             readonly profileDigest: {
                 readonly type: "string";
             };
+            readonly sourceAvailability: {
+                readonly enum: readonly ["available", "unavailable", "invalid"];
+            };
+            readonly sourceError: {
+                readonly type: "string";
+            };
             readonly id: {
                 readonly type: "string";
             };
@@ -1952,6 +1958,12 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
             readonly profileDigest: {
+                readonly type: "string";
+            };
+            readonly sourceAvailability: {
+                readonly enum: readonly ["available", "unavailable", "invalid"];
+            };
+            readonly sourceError: {
                 readonly type: "string";
             };
             readonly id: {
@@ -2080,6 +2092,12 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
             readonly profileDigest: {
                 readonly type: "string";
             };
+            readonly sourceAvailability: {
+                readonly enum: readonly ["available", "unavailable", "invalid"];
+            };
+            readonly sourceError: {
+                readonly type: "string";
+            };
             readonly id: {
                 readonly type: "string";
             };
@@ -2204,6 +2222,12 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
             readonly profileDigest: {
+                readonly type: "string";
+            };
+            readonly sourceAvailability: {
+                readonly enum: readonly ["available", "unavailable", "invalid"];
+            };
+            readonly sourceError: {
                 readonly type: "string";
             };
             readonly id: {
@@ -2541,6 +2565,12 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                         readonly profileDigest: {
+                            readonly type: "string";
+                        };
+                        readonly sourceAvailability: {
+                            readonly enum: readonly ["available", "unavailable", "invalid"];
+                        };
+                        readonly sourceError: {
                             readonly type: "string";
                         };
                         readonly id: {

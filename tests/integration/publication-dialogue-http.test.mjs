@@ -14,6 +14,22 @@ function readyBrief(app,pid,session){const brief=app.researchBriefs.save(USER,pi
 function agent(app,pid,session){let row=app.store.get('session',session.id,pid);row=app.store.update('session',row.id,row.version,{state:'running',generation:row.generation+1,leaseUntil:Date.now()+120000});return {type:'agent',projectId:pid,sessionId:row.id,role:'coordinator',generation:row.generation};}
 const body=(title='UNIT dialogue HTTP')=>({title,engine:'pdflatex',mainFile:'main.tex',bibliography:'none',files:[{path:'main.tex',contentBase64:Buffer.from('UNIT HTTP manuscript').toString('base64')}]});
 
+test('HTTP project and selected historical session remain readable when a fixed manifest disappears',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'pi-publication-history-http-')),server=createHttpServer({dataDir:dir,repoRoot:process.cwd(),port:0,computeMonitoring:false});
+ try{
+  const app=server.app,p=app.projects.create(USER,{name:'UNIT missing historic source'}),root=app.sessions.create(USER,p.id,{}),f=publicationFixture(app,p.id,{rootSessionId:root.id}),pending=app.publicationBuilds.prepare(USER,p.id,{revisionId:f.revision.id}),port=await server.listen(),base=`http://127.0.0.1:${port}/api`,get=async suffix=>{const response=await fetch(base+suffix);return {status:response.status,value:await response.json()};},call=async(name,input)=>{const response=await fetch(base+'/operations/'+name,{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':randomUUID()},body:JSON.stringify({projectId:p.id,input})});return {status:response.status,value:await response.json()};};
+  const normal=await get(`/projects/${p.id}/state`);assert.equal(normal.status,200);assert.equal(normal.value.publicationJobs.find(j=>j.id===f.job.id).sourceAvailability,'available');
+  rmSync(app.store.paths.physical(app.store.get('artifact',f.revision.manifestArtifactId).path));
+  const records=()=>app.store.db.prepare('SELECT * FROM records ORDER BY kind,id').all(),before=records();
+  for(const suffix of ['',`?sessionId=${root.id}`]){const state=await get(`/projects/${p.id}/state${suffix}`);assert.equal(state.status,200,JSON.stringify(state.value));assert.equal(state.value.publicationJobs.find(j=>j.id===f.job.id).sourceAvailability,'unavailable');assert.equal(state.value.publicationJobs.find(j=>j.id===f.job.id).resultId,f.result.id);}
+  const inspected=await call('publication_inspect',{jobId:f.job.id});assert.equal(inspected.status,200);assert.equal(inspected.value.sourceError,'PUBLICATION_SOURCE_UNAVAILABLE');assert.deepEqual(records(),before);
+  for(const [name,input] of [['publication_prepare',{revisionId:f.revision.id}],['publication_submit',{jobId:pending.id}],['publication_result',{resultId:f.result.id}]]){const rejected=await call(name,input);assert.equal(rejected.status,409);assert.equal(rejected.value.error.code,'PUBLICATION_SOURCE_UNAVAILABLE');}
+  assert.deepEqual(records(),before);
+  const recent=app.sessions.create(USER,p.id,{title:'New root'}),empty=await get(`/projects/${p.id}/state?sessionId=${recent.id}`);assert.equal(empty.status,200);assert.deepEqual(empty.value.publicationJobs,[]);
+  const reopened=await get(`/projects/${p.id}/state?sessionId=${root.id}`);assert.equal(reopened.status,200);assert.equal(reopened.value.publicationJobs.find(j=>j.id===f.job.id).sourceAvailability,'unavailable');
+ }finally{await server.close();assert.ok(resolve(dir).startsWith(resolve(tmpdir())+sep));rmSync(dir,{recursive:true,force:true});}
+});
+
 test('HTTP session binding stays compatible while coordinator tools prepare only their own fixed builds',async()=>{
  const dir=mkdtempSync(join(tmpdir(),'pi-publication-dialogue-http-')),server=createHttpServer({dataDir:dir,repoRoot:process.cwd(),port:0});
  try{

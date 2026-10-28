@@ -153,10 +153,44 @@ export class PublicationBuildService {
         ensure(end > cursor + 1, 'WINDOW_TOO_SMALL', '读取窗口不能容纳完整字符');
         end--;
     } ensure(cursor === 0 || !/[\uDC00-\uDFFF]/.test(content[cursor]), 'INVALID_INPUT', '游标拆分字符'); return { path, content: content.slice(cursor, end), digest: file.digest, mediaType: file.mediaType, cursor, end, complete: end === content.length }; }
-    assertRevision(r, verifyBytes) { const sourceDigest = digest({ engine: r.engine, mainFile: r.mainFile, bibliography: r.bibliography, files: r.files.map(f => ({ path: f.path, digest: f.digest, size: f.size })) }); ensure(sourceDigest === r.sourceDigest, 'PUBLICATION_SOURCE_CORRUPTED', '文稿配置或文件清单摘要改变'); const archived = this.app.store.get('artifact', r.manifestArtifactId, r.projectId); ensure(archived.digest === r.manifestArtifactDigest, 'PUBLICATION_SOURCE_CORRUPTED', '文稿清单资产改变'); if (verifyBytes) {
-        const bytes = this.app.evidence.read({ type: 'user' }, archived.id).bytes, fixed = JSON.parse(bytes.toString('utf8')), expected = { formatVersion: 1, title: r.title, engine: r.engine, mainFile: r.mainFile, bibliography: r.bibliography, templateId: r.templateId ?? null, ...(r.rootSessionId ? { rootSessionId: r.rootSessionId } : {}), ...(r.previousRevisionId ? { previousRevisionId: r.previousRevisionId } : {}), ...(r.researchBrief ? { researchBrief: r.researchBrief } : {}), ...(r.evidenceIds ? { evidenceIds: r.evidenceIds } : {}), sourceDigest: r.sourceDigest, files: r.files.map(({ artifactId, ...f }) => f) };
-        ensure(digest(fixed) === digest(expected), 'PUBLICATION_SOURCE_CORRUPTED', '文稿原始清单改变');
-    } }
+    assertRevision(r, verifyBytes) {
+        const sourceDigest = digest({ engine: r.engine, mainFile: r.mainFile, bibliography: r.bibliography, files: r.files.map(f => ({ path: f.path, digest: f.digest, size: f.size })) });
+        ensure(sourceDigest === r.sourceDigest, 'PUBLICATION_SOURCE_CORRUPTED', '文稿配置或文件清单摘要改变');
+        let archived;
+        try {
+            archived = this.app.store.get('artifact', r.manifestArtifactId, r.projectId);
+        }
+        catch (error) {
+            if (error instanceof DomainError && error.code === 'NOT_FOUND')
+                throw new DomainError('PUBLICATION_SOURCE_UNAVAILABLE', '固定文稿清单资产记录不存在');
+            throw error;
+        }
+        ensure(archived.digest === r.manifestArtifactDigest, 'PUBLICATION_SOURCE_CORRUPTED', '文稿清单资产改变');
+        if (verifyBytes) {
+            let bytes;
+            try {
+                bytes = this.app.evidence.read({ type: 'user' }, archived.id).bytes;
+            }
+            catch (error) {
+                if (error instanceof DomainError && error.code === 'ARTIFACT_CORRUPTED')
+                    throw new DomainError('PUBLICATION_SOURCE_CORRUPTED', '文稿清单资产内容校验失败');
+                if (error instanceof Error && !(error instanceof DomainError) && 'code' in error && ['ENOENT', 'ENOTDIR', 'EISDIR', 'EACCES', 'EPERM'].includes(String(error.code)))
+                    throw new DomainError('PUBLICATION_SOURCE_UNAVAILABLE', '固定文稿清单资产当前不可读取');
+                throw error;
+            }
+            let fixed;
+            try {
+                fixed = JSON.parse(bytes.toString('utf8'));
+            }
+            catch (error) {
+                if (error instanceof SyntaxError)
+                    throw new DomainError('PUBLICATION_SOURCE_CORRUPTED', '文稿清单不是有效 JSON');
+                throw error;
+            }
+            const expected = { formatVersion: 1, title: r.title, engine: r.engine, mainFile: r.mainFile, bibliography: r.bibliography, templateId: r.templateId ?? null, ...(r.rootSessionId ? { rootSessionId: r.rootSessionId } : {}), ...(r.previousRevisionId ? { previousRevisionId: r.previousRevisionId } : {}), ...(r.researchBrief ? { researchBrief: r.researchBrief } : {}), ...(r.evidenceIds ? { evidenceIds: r.evidenceIds } : {}), sourceDigest: r.sourceDigest, files: r.files.map(({ artifactId, ...f }) => f) };
+            ensure(digest(fixed) === digest(expected), 'PUBLICATION_SOURCE_CORRUPTED', '文稿原始清单改变');
+        }
+    }
     provenance(actor, pid, artifact, previous) { assertDiscoveryArtifact(this.app.store, pid, artifact); if (artifact.runId) {
         const r = this.app.store.get('run', artifact.runId, pid);
         assertRunGrantRun(this.app.store, r);
@@ -331,7 +365,23 @@ export class PublicationBuildService {
     submit(actor, pid, id) { userOnly(actor); const before = this.get(actor, pid, id); if (before.state === 'prepared')
         this.assertCurrent(before, true); return this.app.store.transaction(() => { const job = this.get(actor, pid, id); if (job.state !== 'prepared')
         return this.inspect(actor, pid, id); this.assertCurrent(job, false); this.app.compute.assertEnqueue('publication', pid, job.manifest.dockerContext); this.app.store.update('publication-build-job', id, job.version, { state: 'queued' }); return this.inspect(actor, pid, id); }); }
-    inspect(actor, pid, id) { const j = this.get(actor, pid, id), m = j.manifest; return { id: j.id, jobId: j.id, revisionId: j.revisionId, approvalId: j.approvalId, state: j.state, integrity: j.integrity, manifestDigest: j.manifestDigest, sourceDigest: m.sourceDigest, profileId: m.profileId, profileDigest: m.profileDigest, lockDigest: m.lockDigest, scriptDigest: m.scriptDigest, dockerfileDigest: m.dockerfileDigest, engine: m.engine, mainFile: m.mainFile, bibliography: m.bibliography, imageDigest: m.environmentImageDigest, dockerContext: m.dockerContext, resources: m.resources, generation: j.generation, startRequested: j.startRequested, cancelRequested: j.cancelRequested, exitCode: j.exitCode ?? null, artifactIds: j.artifactIds, ...(j.imageId ? { imageId: j.imageId } : {}), ...(j.resultId ? { resultId: j.resultId } : {}), ...(j.error ? { error: j.error } : {}), ...(j.startedAt ? { startedAt: j.startedAt } : {}), ...(j.endedAt ? { endedAt: j.endedAt } : {}) }; }
+    inspect(actor, pid, id) {
+        this.coordinator(actor, pid);
+        const j = this.app.store.get('publication-build-job', id, pid), r = this.app.store.get('manuscript-revision', j.revisionId, pid), m = j.manifest;
+        this.assertAgentRevision(actor, pid, r);
+        // Historical state is preserved; manifest availability never qualifies a new execution or result.
+        let sourceAvailability = 'available', sourceError;
+        try {
+            this.assertRevision(r, true);
+        }
+        catch (error) {
+            if (!(error instanceof DomainError) || !['PUBLICATION_SOURCE_UNAVAILABLE', 'PUBLICATION_SOURCE_CORRUPTED'].includes(error.code))
+                throw error;
+            sourceAvailability = error.code === 'PUBLICATION_SOURCE_UNAVAILABLE' ? 'unavailable' : 'invalid';
+            sourceError = error.code;
+        }
+        return { sourceAvailability, ...(sourceError ? { sourceError } : {}), id: j.id, jobId: j.id, revisionId: j.revisionId, approvalId: j.approvalId, state: j.state, integrity: j.integrity, manifestDigest: j.manifestDigest, sourceDigest: m.sourceDigest, profileId: m.profileId, profileDigest: m.profileDigest, lockDigest: m.lockDigest, scriptDigest: m.scriptDigest, dockerfileDigest: m.dockerfileDigest, engine: m.engine, mainFile: m.mainFile, bibliography: m.bibliography, imageDigest: m.environmentImageDigest, dockerContext: m.dockerContext, resources: m.resources, generation: j.generation, startRequested: j.startRequested, cancelRequested: j.cancelRequested, exitCode: j.exitCode ?? null, artifactIds: j.artifactIds, ...(j.imageId ? { imageId: j.imageId } : {}), ...(j.resultId ? { resultId: j.resultId } : {}), ...(j.error ? { error: j.error } : {}), ...(j.startedAt ? { startedAt: j.startedAt } : {}), ...(j.endedAt ? { endedAt: j.endedAt } : {}) };
+    }
     jobs(actor, pid, options = {}) { const root = this.coordinator(actor, pid); if (options.revisionId)
         this.revision(actor, pid, options.revisionId); const cursor = integer(options.cursor ?? 0, 'cursor', 0, Number.MAX_SAFE_INTEGER), limit = integer(options.limit ?? 30, 'limit', 1, 100); const rows = this.app.store.db.prepare("SELECT rowid,id FROM records WHERE kind='publication-build-job' AND project_id=? AND rowid>? " + (options.revisionId ? "AND json_extract(data,'$.revisionId')=? " : '') + (root ? "AND json_extract(data,'$.revisionId') IN (SELECT id FROM records WHERE kind='manuscript-revision' AND project_id=? AND json_extract(data,'$.rootSessionId')=?) " : '') + 'ORDER BY rowid LIMIT ?').all(pid, cursor, ...(options.revisionId ? [options.revisionId] : []), ...(root ? [pid, root.id] : []), limit + 1); return { items: rows.slice(0, limit).map(r => this.inspect(actor, pid, r.id)), nextCursor: rows.length > limit ? Number(rows[limit - 1].rowid) : null }; }
     cancel(actor, pid, id) { userOnly(actor); return this.app.store.transaction(() => { const j = this.get(actor, pid, id); if (!terminal(j.state)) {

@@ -1,0 +1,36 @@
+{
+  "base": "2e8e7e95910670393a83bd59e451c46007dd7c17",
+  "codePatchSha256": "9108f58401c7c7fc7f21e9eb2153a8e2f632aa0a53b79fc8fd2a62246c04a16b",
+  "implementationFiles": 22,
+  "red": {"initial": 5, "receiptReplay": 2},
+  "relatedChecks": {"passed": 136, "failed": 0, "skipped": 0},
+  "affectedChecksAfterNecessaryFix": {"passed": 48, "failed": 0, "skipped": 0},
+  "independentReplayChecks": {"passed": 2, "failed": 0, "skipped": 0},
+  "cleanBuild": {
+    "npmCi": "passed", "build": "passed", "typecheck": "passed",
+    "files": 796, "identical": true,
+    "manifestSha256": "f7e35e78c97afb60406dac7ab55482a84a252e133f5579b6d38ff42f2b73c953"
+  },
+  "live": {
+    "defaultProjectStates200": 11, "readableRootStates200": 40,
+    "deletedRootStates410": 4, "failedChecks": 0,
+    "historyJobsWithUnavailableSource": 16,
+    "originalPageReload": "passed", "projectOptions": 11,
+    "originalSelectionRetained": true, "capturedConsoleWarningsOrErrors": 0
+  },
+  "preservation": {
+    "draftFilesUnchanged": 32, "configurationUnchanged": true,
+    "allRecordCountsUnchanged": true, "researchRecordContentUnchanged": true,
+    "eventsUnchanged": true, "operationReceiptsUnchanged": true,
+    "changedRuntimeRecordKinds": ["compute-connection", "research-runtime"],
+    "databaseOrAssetRestoration": false
+  },
+  "review": {
+    "initialBlockingFindings": 1, "unresolvedBlockingFindings": 0,
+    "requestedImplementation": "gpt-6-astra/high",
+    "requestedIndependentReview": "gpt-6-astra/xhigh",
+    "runtimeConfigurationEcho": "unavailable"
+  },
+  "notRerun": ["full regression", "real Pi", "real Docker"],
+  "limitations": ["Historical files absent before this repair remain unavailable.", "Draft features remain excluded from the runtime build."]
+}

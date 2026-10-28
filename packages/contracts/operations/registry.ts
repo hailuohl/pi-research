@@ -673,7 +673,7 @@ export class OperationRegistry {
             if (['report_export','compute_target_probe','docker_connection_probe','document_import','document_parser_configure','document_parse_prepare','skill_package_import','manuscript_create','publication_configure','publication_prepare','publication_submit'].includes(id)) {
                 const previous=this.app.store.transaction(()=>{if(actor.type==='agent')context.validate();const found=lookup();if(found&&actor.type==='agent'){
                     if(id==='manuscript_create')this.app.publicationBuilds.revision(actor,pid,(found.value as {id:string}).id);
-                    if(id==='publication_prepare')this.app.publicationBuilds.inspect(actor,pid,(found.value as {jobId:string}).jobId);
+                    if(id==='publication_prepare')this.app.publicationBuilds.get(actor,pid,(found.value as {jobId:string}).jobId);
                 }return found;});
                 if(previous)return output(previous.value);
             }

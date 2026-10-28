@@ -431,15 +431,20 @@ class PublicationView extends React.Component {
               Object.entries(j.resources).map(([key, value]) => `${key}=${value}`).join(" \xB7 ")
             ] }),
             ["queued", "starting", "running", "unknown"].includes(j.state) ? /* @__PURE__ */ jsx(ComputeWait, { data: this.props.data, kind: "publication", id: j.id }) : null,
+            j.sourceAvailability !== "available" ? /* @__PURE__ */ jsxs("p", { role: "alert", className: "inline-warning", children: [
+              j.sourceAvailability === "unavailable" ? "\u56FA\u5B9A\u6587\u7A3F\u6E05\u5355\u5F53\u524D\u4E0D\u53EF\u7528" : j.sourceAvailability === "invalid" ? "\u56FA\u5B9A\u6587\u7A3F\u6E05\u5355\u65E0\u6548" : "\u56FA\u5B9A\u6587\u7A3F\u6E05\u5355\u72B6\u6001\u672A\u77E5\uFF0C\u8BF7\u5237\u65B0",
+              "\u3002\u4FDD\u7559\u5386\u53F2\u7F16\u8BD1\u8BB0\u5F55\uFF0C\u4E0D\u80FD\u636E\u6B64\u542F\u52A8\u65B0\u7F16\u8BD1\u3002",
+              j.sourceError
+            ] }) : null,
             j.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: j.error }) : null,
             /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
-              mutable && j.state === "prepared" && approval?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: this.props.data.project.archived || s.busy, onClick: () => void this.run(async () => {
+              mutable && j.state === "prepared" && approval?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: this.props.data.project.archived || s.busy || j.sourceAvailability !== "available", onClick: () => void this.run(async () => {
                 await api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true });
               }), children: "\u6279\u51C6\u6B64\u56FA\u5B9A\u6587\u7A3F\u6784\u5EFA" }) : null,
               mutable && j.state === "prepared" && approval?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "secondary", disabled: this.props.data.project.archived || s.busy, onClick: () => void this.run(async () => {
                 await api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: false });
               }), children: "\u62D2\u7EDD\u6587\u7A3F\u6784\u5EFA" }) : null,
-              mutable && j.state === "prepared" && approval?.status === "approved" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: this.props.data.project.archived || s.busy, onClick: () => void this.run(async () => {
+              mutable && j.state === "prepared" && approval?.status === "approved" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: this.props.data.project.archived || s.busy || j.sourceAvailability !== "available", onClick: () => void this.run(async () => {
                 const epoch = this.jobEpoch, selection = this.selectionEpoch;
                 await this.call("publication_submit", { jobId: j.id });
                 if (this.mounted && epoch === this.jobEpoch && selection === this.selectionEpoch) await this.openJob(j.id);

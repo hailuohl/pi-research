@@ -41,6 +41,7 @@ class PublicationDialogue extends React.Component {
     this.setState((s) => ({ drafts: { ...s.drafts, [revision.id]: { content: source.content, complete: source.complete } } }));
   }
   async submit(job) {
+    if (job.sourceAvailability !== "available") throw Error("\u56FA\u5B9A\u6587\u7A3F\u6E05\u5355\u4E0D\u53EF\u7528\u6216\u5C1A\u672A\u6838\u9A8C\uFF0C\u8BF7\u5237\u65B0\u6B64\u7F16\u8BD1\u72B6\u6001\u3002");
     const c = this.dialogue();
     this.assertJob(c, job);
     const approval = this.props.data.approvals.find((a) => a.id === job.approvalId && a.subjectId === job.id && a.scope === "publication.build" && a.digest === job.manifestDigest);
@@ -113,7 +114,7 @@ class PublicationDialogue extends React.Component {
     const { data, session, disabled, busy, perform } = this.props, revisions = (data.manuscripts ?? []).filter((r) => r.rootSessionId === session.id);
     if (!revisions.length) return null;
     const superseded = new Set(revisions.flatMap((r) => r.previousRevisionId ? [r.previousRevisionId] : []));
-    const needsAttention = (j) => ["prepared", "queued", "starting", "running", "failed", "unknown", "timed_out", "cancelled"].includes(j.state) || !!j.error || (data.publicationReviews ?? []).some((r) => r.publicationResultId === j.resultId && r.status === "awaiting_approval");
+    const needsAttention = (j) => ["prepared", "queued", "starting", "running", "failed", "unknown", "timed_out", "cancelled"].includes(j.state) || !!j.error || j.sourceAvailability !== "available" || (data.publicationReviews ?? []).some((r) => r.publicationResultId === j.resultId && r.status === "awaiting_approval");
     const isCurrent = (r) => !superseded.has(r.id) || (data.publicationJobs ?? []).some((j) => j.revisionId === r.id && needsAttention(j));
     const renderRevision = (revision) => {
       const jobs = (data.publicationJobs ?? []).filter((j) => j.revisionId === revision.id);
@@ -179,7 +180,7 @@ class PublicationDialogue extends React.Component {
               ] })
             ] }),
             ["queued", "starting", "running", "unknown"].includes(job.state) ? /* @__PURE__ */ jsx(ComputeWait, { data, kind: "publication", id: job.id }) : null,
-            job.state === "prepared" && !approval?.automaticApproval ? /* @__PURE__ */ jsx("div", { className: "actions wrap", children: /* @__PURE__ */ jsx("button", { className: "primary compact", disabled, onClick: () => perform(() => this.submit(job), "\u56FA\u5B9A\u6587\u7A3F\u7F16\u8BD1\u5DF2\u63D0\u4EA4"), children: "\u6279\u51C6\u5E76\u7F16\u8BD1" }) }) : null,
+            job.state === "prepared" && !approval?.automaticApproval ? /* @__PURE__ */ jsx("div", { className: "actions wrap", children: /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: disabled || job.sourceAvailability !== "available", onClick: () => perform(() => this.submit(job), "\u56FA\u5B9A\u6587\u7A3F\u7F16\u8BD1\u5DF2\u63D0\u4EA4"), children: "\u6279\u51C6\u5E76\u7F16\u8BD1" }) }) : null,
             ["queued", "starting", "running", "unknown"].includes(job.state) ? /* @__PURE__ */ jsx("div", { className: "actions wrap", children: /* @__PURE__ */ jsx("button", { className: "text-button danger", disabled: disabled || busy || data.project.archived || session.state === "archived" || job.cancelRequested || this.state.cancellingJobIds.includes(job.id), onClick: () => perform(() => this.cancel(job)), children: this.state.cancellingJobIds.includes(job.id) ? "\u6B63\u5728\u8BF7\u6C42\u53D6\u6D88\u2026" : "\u8BF7\u6C42\u53D6\u6D88\u6587\u7A3F\u7F16\u8BD1" }) }) : null,
             job.cancelRequested && ["queued", "starting", "running", "unknown"].includes(job.state) ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u5DF2\u8BF7\u6C42\u53D6\u6D88\uFF0C\u7B49\u5F85\u6267\u884C\u5668\u786E\u8BA4\uFF1B\u7F16\u8BD1\u5C1A\u672A\u786E\u8BA4\u505C\u6B62\u3002" }) : null,
             /* @__PURE__ */ jsx("button", { className: "text-button", disabled: busy, onClick: () => perform(() => this.refreshJob(job)), children: "\u5237\u65B0\u6B64\u7F16\u8BD1\u72B6\u6001" }),
@@ -187,8 +188,13 @@ class PublicationDialogue extends React.Component {
               /* @__PURE__ */ jsx("button", { className: "text-button", disabled: busy, onClick: () => perform(() => this.result(job)), children: "\u67E5\u770B\u7F16\u8BD1\u8BCA\u65AD" }),
               job.state === "succeeded" ? /* @__PURE__ */ jsxs(Fragment, { children: [
                 /* @__PURE__ */ jsx("button", { className: "text-button", disabled: busy, onClick: () => perform(() => this.preview(job)), children: "\u9884\u89C8 PDF" }),
-                /* @__PURE__ */ jsx("button", { className: "text-button", disabled, onClick: () => perform(() => this.export(job), "\u56FA\u5B9A PDF\u3001\u6E90\u7801\u53CA\u590D\u73B0\u6750\u6599\u5DF2\u6253\u5305"), children: "\u5BFC\u51FA\u6210\u679C\u5305" })
+                /* @__PURE__ */ jsx("button", { className: "text-button", disabled: disabled || job.sourceAvailability !== "available", onClick: () => perform(() => this.export(job), "\u56FA\u5B9A PDF\u3001\u6E90\u7801\u53CA\u590D\u73B0\u6750\u6599\u5DF2\u6253\u5305"), children: "\u5BFC\u51FA\u6210\u679C\u5305" })
               ] }) : null
+            ] }) : null,
+            job.sourceAvailability !== "available" ? /* @__PURE__ */ jsxs("p", { role: "alert", className: "inline-warning", children: [
+              job.sourceAvailability === "unavailable" ? "\u56FA\u5B9A\u6587\u7A3F\u6E05\u5355\u5F53\u524D\u4E0D\u53EF\u7528" : job.sourceAvailability === "invalid" ? "\u56FA\u5B9A\u6587\u7A3F\u6E05\u5355\u65E0\u6548" : "\u56FA\u5B9A\u6587\u7A3F\u6E05\u5355\u72B6\u6001\u672A\u77E5\uFF0C\u8BF7\u5237\u65B0",
+              "\u3002\u4FDD\u7559\u5386\u53F2\u7F16\u8BD1\u8BB0\u5F55\uFF0C\u4E0D\u80FD\u636E\u6B64\u542F\u52A8\u65B0\u7F16\u8BD1\u6216\u5BFC\u51FA\u3002",
+              job.sourceError
             ] }) : null,
             job.error ? /* @__PURE__ */ jsx("p", { role: "status", children: job.error }) : null,
             result ? /* @__PURE__ */ jsxs("details", { open: true, children: [

@@ -879,7 +879,7 @@ export class OperationRegistry {
                         if (id === 'manuscript_create')
                             this.app.publicationBuilds.revision(actor, pid, found.value.id);
                         if (id === 'publication_prepare')
-                            this.app.publicationBuilds.inspect(actor, pid, found.value.jobId);
+                            this.app.publicationBuilds.get(actor, pid, found.value.jobId);
                     }
                     return found;
                 });

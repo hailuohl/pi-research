@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {writeFileSync} from 'node:fs';
+import {writeFileSync,rmSync} from 'node:fs';
 import {join} from 'node:path';
 import {setup,USER,approve,fixtureFinish} from '../support/research.mjs';
 import {ToolDispatcher} from '../../dist/packages/research-tools/dispatcher.js';
@@ -14,6 +14,23 @@ function startAgent(s,session=s.session){let row=s.app.store.get('session',sessi
 function config(s){const imageId='sha256:'+'a'.repeat(64);s.app.store.create('publication-compiler-settings',null,{...compilerProfile(process.cwd()),dockerContext:'default',imageDigest:imageId,imageId},'global');}
 function buildFixture(s,revision){const job=s.app.publicationBuilds.prepare(USER,s.project.id,{revisionId:revision.id},'dialogue-build-'+revision.id);approve(s.app,job.approvalId);let row=s.app.store.get('publication-build-job',job.id),control=s.app.store.paths.physical(row.controlDir);writeFileSync(join(control,'stdout.log'),'UNIT fixture\n');writeFileSync(join(control,'stderr.log'),'');row=s.app.store.update('publication-build-job',row.id,row.version,{state:'running',startRequested:true,containerId:'unit-container',imageId:'sha256:'+'a'.repeat(64)});const pdf=Buffer.from('%PDF-1.7\nUNIT fixture, not a real paper'),log=Buffer.from('UNIT diagnostic\n'),desc=(file,bytes)=>({file,digest:digest(bytes),bytes:bytes.length}),output={formatVersion:1,profileId:PUBLICATION_PROFILE,sourceDigest:revision.sourceDigest,engine:revision.engine,bibliography:revision.bibliography,engineVersion:'UNIT fixture',status:'succeeded',hadErrors:false,converged:true,passes:1,diagnostics:[],pdf:{...desc('document.pdf',pdf),pages:1},previews:[{...desc('page-001.png',PNG),pageNumber:1,width:1,height:1}],logs:[desc('build.log',log)]},dir=s.app.store.paths.physical(row.outputDir);for(const [name,bytes] of [['document.pdf',pdf],['page-001.png',PNG],['build.log',log],['build.json',Buffer.from(JSON.stringify(output))]])writeFileSync(join(dir,name),bytes);const done=s.app.publicationBuilds.finalize(row.id,{state:'succeeded',exitCode:0});return s.app.publicationBuilds.result(USER,s.project.id,done.resultId);}
 const body=(files,title='UNIT dialogue manuscript',extra={})=>({title,engine:'pdflatex',mainFile:'main.tex',bibliography:'none',files:[{path:'main.tex',contentBase64:Buffer.from('UNIT fixed manuscript').toString('base64')},...files],...extra});
+
+test('historical manifest fallback still checks the complete agent revision authorization',()=>{const s=setup();try{
+ readyBrief(s,s.session);const actor=startAgent(s),revision=s.app.publicationBuilds.createRevision(actor,s.project.id,body([]));config(s);const job=s.app.publicationBuilds.prepare(actor,s.project.id,{revisionId:revision.id});
+ rmSync(s.app.store.paths.physical(s.app.store.get('artifact',revision.manifestArtifactId).path));assert.equal(s.app.publicationBuilds.inspect(actor,s.project.id,job.id).sourceAvailability,'unavailable');
+ rmSync(s.app.store.paths.physical(s.app.store.get('artifact',revision.files[0].artifactId).path));assert.throws(()=>s.app.publicationBuilds.inspect(actor,s.project.id,job.id),{code:'ENOENT'});
+ }finally{s.close();}});
+
+for(const damage of ['missing','corrupted'])test(`agent publication preparation receipt replay rejects ${damage} fixed manifests without rewriting history`,async()=>{const s=setup();try{
+ readyBrief(s,s.session);const actor=startAgent(s),tools=new ToolDispatcher(s.app),revision=s.app.publicationBuilds.createRevision(actor,s.project.id,body([]));config(s);
+ const input={revisionId:revision.id},key='fixed-preparation-receipt',prepared=await tools.execute(actor,'publication_prepare',input,key);
+ assert.equal(prepared.sourceAvailability,'available');assert.deepEqual(await tools.execute(actor,'publication_prepare',input,key),prepared);
+ const history=()=>({records:s.app.store.db.prepare('SELECT * FROM records ORDER BY kind,id').all(),receipts:s.app.store.db.prepare('SELECT * FROM operations ORDER BY scope,key').all()}),before=history(),path=s.app.store.paths.physical(s.app.store.get('artifact',revision.manifestArtifactId).path);
+ rmSync(path);if(damage==='corrupted')writeFileSync(path,'UNIT corrupted manifest');
+ assert.equal(s.app.publicationBuilds.inspect(actor,s.project.id,prepared.id).sourceAvailability,damage==='missing'?'unavailable':'invalid');
+ await assert.rejects(()=>tools.execute(actor,'publication_prepare',input,key),{code:damage==='missing'?'PUBLICATION_SOURCE_UNAVAILABLE':'PUBLICATION_SOURCE_CORRUPTED'});
+ assert.deepEqual(history(),before);
+ }finally{s.close();}});
 
 test('a coordinator manuscript freezes its confirmed brief and same-root Run assets; exact build is reviewable',async()=>{const s=setup();try{
  const intent=s.app.runs.prepare(USER,s.baseline.id,s.session.id);approve(s.app,intent.approvalId);const run=s.app.runs.submit(USER,intent.id);fixtureFinish(s,run);const archived=s.app.store.get('run',run.id),data=archived.artifactIds.map(id=>s.app.store.get('artifact',id)).find(a=>a.title==='predictions.csv');assert.ok(data);const brief=readyBrief(s,s.session,archived.evidenceIds),actor=startAgent(s),tools=new ToolDispatcher(s.app),input=body([{path:'data.csv',artifactId:data.id}],undefined,{evidenceIds:[archived.evidenceIds[0]]}),created=await tools.execute(actor,'manuscript_create',input,'create-main');
