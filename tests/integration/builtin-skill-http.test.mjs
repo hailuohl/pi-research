@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync,rmSync} from 'node:fs';
+import {mkdtempSync,rmSync,readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join,resolve,sep} from 'node:path';
 import {randomUUID} from 'node:crypto';
@@ -25,7 +25,12 @@ test('HTTP and CLI expose pinned builtin reads and retired-skill boundaries whil
   }
   const kept=await call('skill_bundle_configure',{expectedVersion:configured.value.version,revisionIds:[r.id]});assert.equal(kept.status,200);assert.equal(kept.value.bundleId,configured.value.bundleId);assert.deepEqual(kept.value.revisionIds,[r.id]);
   assert.deepEqual(await call('research_skill_read',{skillId:r.packageId},session.id),custom);
-  const listed=await call('skill_package_list');assert.equal(listed.status,200);assert.ok(listed.value.builtinReleases.some(x=>x.bundleId===BUNDLE_ID&&x.current));assert.equal(listed.value.builtinReleases.filter(x=>!x.current).length,0);assert.equal(listed.value.configuration.builtinBundleId,BUNDLE_ID);assert.ok(!listed.value.builtinSkills.some(e=>e.id==='pi-research-instances'));
+  const listed=await call('skill_package_list');assert.equal(listed.status,200);
+  const archiveIds=JSON.parse(readFileSync(join(process.cwd(),'skills/releases/index.json'),'utf8')).map(x=>x.bundleId);
+  assert.equal(listed.value.builtinReleases.length,44);assert.equal(listed.value.builtinReleases.filter(x=>!x.current).length,43);
+  assert.deepEqual(listed.value.builtinReleases.filter(x=>x.current).map(x=>x.bundleId),[BUNDLE_ID]);
+  assert.deepEqual(listed.value.builtinReleases.map(x=>x.bundleId).sort(),archiveIds.sort());
+  assert.equal(listed.value.configuration.builtinBundleId,BUNDLE_ID);assert.ok(!listed.value.builtinSkills.some(e=>e.id==='pi-research-instances'));
   const cli=spawnSync(process.execPath,['dist/apps/cli/index.js','operation','skill_package_list','--project',p.id,'--input','{}','--data',dir],{encoding:'utf8',timeout:15000,windowsHide:true});assert.equal(cli.status,0,cli.stderr);assert.deepEqual(JSON.parse(cli.stdout),listed.value);
  }finally{await server.close();assert.ok(resolve(dir).startsWith(resolve(tmpdir())+sep));rmSync(dir,{recursive:true,force:true});}
 });

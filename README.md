@@ -125,6 +125,8 @@ npm run test:live
 ```
 
 `test:live` 默认明确跳过。需要在进程环境配置 `PI_LIVE_TEST=1`、`PI_PROVIDER`、`PI_MODEL`、`PI_API_KEY` 后才能调用真实模型（会使用供应商额度）；测试不会读取个人全局 Pi 凭据。真实 SDK 离线契约检查包含在 `npm test` 中，但不算 live 通过。
+
+发布构建和 `typecheck` 按应用入口的实际依赖图检查；包级在途草稿保留在原处。使用 `npm run typecheck:wip` 单独检查这些源码，该命令不会生成运行文件，并会如实报告未完成的接口。应用一旦导入草稿，其错误仍会阻止发布构建。`npm test` 继续执行现有全部测试，草稿功能的失败或未覆盖项单独记录。
 ## 文献配置
 
 界面开启所需来源，也可用 `connector-config --project ID --enable openalex,pubmed`。可选宿主环境变量 OPENALEX_API_KEY、NCBI_API_KEY、NCBI_EMAIL 见 .env.example；不要把密钥写进Agent提示词。默认项目HTTP请求上限100，计入失败/未知尝试，不是账单硬上限。

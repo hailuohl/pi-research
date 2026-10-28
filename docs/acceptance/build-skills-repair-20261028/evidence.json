@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-28",
+  "base": "1776eca34909cff9d6246379a93d3e19ac4e01e7",
+  "scope": "repair released build and skills; keep unfinished research features as drafts",
+  "runtime": {
+    "files": 796,
+    "cleanInstallBuildTypecheck": "passed",
+    "identical": true,
+    "manifestSha256": "3f43c23e17190b2b7f756d9fc83ac2e9a4c9ef7acb5da69c5781014aa87a2d3a"
+  },
+  "fullRegression": {
+    "snapshotPatchSha256": "5effc9b2d999e950fadcf71e0e26412788991d33124addac6714ce88afacd1d4",
+    "formal": {
+      "pass": 2842,
+      "fail": 2,
+      "skipped": 29
+    },
+    "draft": {
+      "pass": 0,
+      "fail": 60,
+      "skipped": 0
+    },
+    "runnerRestarts": 0,
+    "formalFailures": "old empty-history assertion and test fixture cleanup EPERM; both corrected and passed targeted checks",
+    "draftGapsAccepted": false
+  },
+  "targetedChecks": {
+    "parity": {
+      "pass": 4,
+      "fail": 0
+    },
+    "metadataAndAdmissionBoundaries": {
+      "pass": 8,
+      "fail": 0
+    },
+    "relatedRegression": {
+      "pass": 61,
+      "fail": 0
+    },
+    "catalogHttpCli": {
+      "pass": 2,
+      "fail": 0
+    },
+    "permissionFixtureInjectedFailure": {
+      "pass": 1,
+      "fail": 0
+    },
+    "permissionFixtureRealOs": {
+      "pass": 1,
+      "fail": 0
+    },
+    "browser": {
+      "pass": 8,
+      "fail": 0
+    },
+    "browserLifecycleFlows": {
+      "pass": 3,
+      "fail": 0
+    },
+    "realDockerFormalRun": {
+      "pass": 8,
+      "fail": 0
+    },
+    "generatedLineEndings": {
+      "pass": 1,
+      "fail": 0
+    }
+  },
+  "preservation": {
+    "originalDraftSourceAndTestFiles": 32,
+    "preservedDraftGeneratedFiles": 12,
+    "currentSkillFilesUnchanged": 55,
+    "historicalReleases": 44,
+    "databaseMigration": false,
+    "credentialsOrNativeHistoryCommitted": false
+  },
+  "review": {
+    "requestedModel": "gpt-6-astra",
+    "requestedReasoningEffort": "xhigh",
+    "runtimeConfiguration": "not echoed",
+    "necessaryDeltaPatchSha256": "85d0fd162c12838d3b7473b36ba53283d13837cc99253b5e8583094884e196fd",
+    "fixturePatchSha256": "93c36ad3797c8ece49e47379491b3a273ef358e4c87af6c816642aac9d79c600",
+    "remainingCodeBlockers": 0,
+    "generatedLineEndings": {
+      "requestedModel": "gpt-6.1-sol",
+      "requestedReasoningEffort": "high",
+      "runtimeConfiguration": "not echoed",
+      "blockers": 0
+    }
+  },
+  "limits": [
+    "Draft typecheck intentionally reports 94 incomplete interfaces; draft functionality was not published or accepted.",
+    "The historical development protocol remains read-only until its runtime contracts are implemented.",
+    "The first real Windows taskkill exit code 1 has no original stderr and remains unexplained; unknown-effect handling was retained.",
+    "Billable models, GPU, external SSH, live PDF parser and full manuscript compiler were not newly tested."
+  ]
+}

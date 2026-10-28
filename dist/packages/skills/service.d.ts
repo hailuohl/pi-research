@@ -1,6 +1,6 @@
 import type { Role, Actor, Row } from '../domain/types.js';
 import type { AppContext } from '../domain/context.js';
-import type { SkillPackageRevision, ReviewRecord, SkillRevocation, CapabilityRequirement, SkillRead, MethodRequirement } from './types.js';
+import type { SkillPackageRevision, ReviewRecord, SkillRevocation, CapabilityRequirement, SkillRead } from './types.js';
 type CatalogEntry = {
     id: string;
     description: string;
@@ -28,7 +28,7 @@ export declare class SkillService {
     private verifiedBytes;
     private verified;
     private builtinText;
-    bundleMethodRequirements(pid: string, role: Role, bundleId: string): MethodRequirement[];
+    bundleMethodRequirements(pid: string, role: Role, bundleId: string): string[];
     private prerequisites;
     private contextualRead;
     read(role: Role, id: string, resource?: string, builtinBundleId?: string): SkillRead;
@@ -158,6 +158,7 @@ export declare class SkillService {
             disableModelInvocation: boolean;
         }[];
     };
+    ensureBundleRuntimeCompatible(pid: string, bundleId: string): void;
     ensureBundleStartAllowed(pid: string, bundleId: string): {
         bundleId: string;
         revisionIds: string[];

@@ -126,7 +126,7 @@ export class SkillService {
     } const stat = lstatSync(target); ensure(stat.isFile(), 'SKILL_PATH_DENIED', '技能不是普通文件', 403); ensure(stat.size <= MAX_FILE, 'SKILL_TOO_LARGE', '技能资源超过大小限制', 413); const bytes = readFileSync(target); ensure(bytes.length <= MAX_FILE && digest(bytes) === expected, 'SKILL_INTEGRITY_FAILED', '受管技能摘要不匹配；拒绝加载未审核内容'); return bytes; }
     verified(path, expected, rootPath = this.root) { return content(this.verifiedBytes(path, expected, rootPath)); }
     builtinText(role, id, resource, builtinBundleId = BUNDLE_ID) { const release = this.builtin(builtinBundleId), e = release.skills.find(e => e.id === id); ensure(e, 'SKILL_NOT_FOUND', '技能不在受管清单内', 404); ensure(e.roles.includes(role), 'SKILL_SCOPE_DENIED', '该角色无此技能入口', 403); const r = resource ? e.resources.find(r => r.path === resource) : undefined; ensure(!resource || r, 'SKILL_RESOURCE_NOT_FOUND', '资源不在受管清单内', 404); const hash = r?.digest ?? e.digest, path = release.archived ? join('skills/releases', builtinBundleId, 'blobs', hash) : resource ? join(dirname(e.path), resource) : e.path; const requirements = r && 'methodRequirements' in r ? r.methodRequirements : undefined; return { id, resource: resource ?? 'SKILL.md', content: this.verified(path, hash), digest: hash, bundleId: builtinBundleId, ...('source' in e ? { source: e.source } : {}), ...(requirements ? { methodRequirements: [...requirements] } : {}) }; }
-    bundleMethodRequirements(pid, role, bundleId) { const { builtinBundleId, disabledBuiltinIds } = this.resolveBundle(pid, bundleId), requirements = new Set(); for (const skill of this.builtin(builtinBundleId).skills) {
+    bundleMethodRequirements(pid, role, bundleId) { this.ensureBundleRuntimeCompatible(pid, bundleId); const { builtinBundleId, disabledBuiltinIds } = this.resolveBundle(pid, bundleId), requirements = new Set(); for (const skill of this.builtin(builtinBundleId).skills) {
         if (disabledBuiltinIds.includes(skill.id) || !skill.roles.includes(role))
             continue;
         for (const resource of skill.resources)
@@ -363,7 +363,8 @@ export class SkillService {
         return this.contextualRead(read(id, resource), read, name => this.prerequisites(builtinBundleId, name));
     }
     bundleBootstrap(pid, role, bundleId) { const { skills, builtinBundleId } = this.bundleCatalog(pid, role, bundleId); return this.bootstrapEntries(role, bundleId, skills, skills.some(e => e.id === 'pi-research-overview') ? this.bundleRead(pid, role, bundleId, 'pi-research-overview').content : '', builtinBundleId); }
-    ensureBundleStartAllowed(pid, bundleId) { const { builtinBundleId, revisions, disabledBuiltinIds } = this.resolveBundle(pid, bundleId); for (const entry of this.builtin(builtinBundleId).skills.filter(e => !disabledBuiltinIds.includes(e.id))) {
+    ensureBundleRuntimeCompatible(pid, bundleId) { const { builtinBundleId } = this.resolveBundle(pid, bundleId); ensure(this.builtin(builtinBundleId).skills.every(skill => skill.resources.every(resource => !('methodRequirements' in resource) || !resource.methodRequirements?.some(requirement => !['literature-identity', 'quantitative-decision', 'structured-paired-protocol', 'closed-paired-evidence'].includes(requirement)))), 'SKILL_RUNTIME_INCOMPATIBLE', '固定技能包包含当前运行时不支持的方法要求；历史正文保留，请使用兼容运行时继续'); }
+    ensureBundleStartAllowed(pid, bundleId) { this.ensureBundleRuntimeCompatible(pid, bundleId); const { builtinBundleId, revisions, disabledBuiltinIds } = this.resolveBundle(pid, bundleId); for (const entry of this.builtin(builtinBundleId).skills.filter(e => !disabledBuiltinIds.includes(e.id))) {
         const role = entry.roles[0];
         this.read(role, entry.id, undefined, builtinBundleId);
         for (const resource of entry.resources)

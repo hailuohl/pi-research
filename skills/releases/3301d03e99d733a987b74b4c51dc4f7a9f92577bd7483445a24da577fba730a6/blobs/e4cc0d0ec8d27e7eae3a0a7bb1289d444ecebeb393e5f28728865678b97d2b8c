@@ -1,0 +1,131 @@
+# 单输入线性与二次回归：固定协议和证据输出
+
+适用于同一数值输入的一次、二次多项式回归，以共同测试记录的RMSE差为目标。当前发行采用`paired-rmse-plan-v3`/compiler-v6、`planningProfile:"paired-plan-claims-v2"`、`inputDigestCheck:"canonical-python-prefix-v1"`和`outputProfile:"paired-evidence-only-v1"`；其它模型按统计分析资源选择能力，不能为套模板改研究问题。实际读取本资源或显式选择本输出profile后，本主协调会话不能降级消除要求。读取不批准执行，也不改变旧协议或其它科研流程。
+
+## 输入与共享实现
+
+实际读取获准原始输入和字典，固定正式输入path/digest、预测/响应字段、去重/缺失、划分与科学限制。只允许合成开发时，不得复制、抽取或改名真实记录充当合成输入。调用`research_fixture_prepare`：
+
+```json
+{"input":{"profile":"numeric-regression-v1","outputProfile":"paired-evidence-only-v1"}}
+```
+
+工具返回固定`fixtureRef`、`inputPath`和`inputFormat`。用`artifact_read`读夹具原文；它是JSON对象，数组在`/rows`，不是顶层数组，也不靠挂载路径扩展名识别。行字段为`rowId`、`partition`（train/test）、`x`、`observed`。保留固定划分和原数字。宿主独立生成夹具，不接收数据数组、拟合参数或生成脚本；重试复用首次版本。夹具只检查管道，不能推断真实效果、阈值、功效或保证精度。
+
+正式CSV与开发JSON可用不同输入适配器；后续fit、predict、指标、序列化调用同一实现。完成并保存共享实现文件，再用实际path/entryPoint声明它。来源记录中的digest是该文件字节的SHA256，可在运行时读取自身源码计算；它不是整个snapshot的sourceDigest。独立审查仍核对实际调用链，不能用声明替代代码。
+
+## 编译与保存完整协议
+
+本发行声明 `protocolSourceVersion:1`。成功编译返回 `protocolSource:{compileCallId}` 时，用 `workspace_write` 传 `path`、这个完整 `protocolSource`、`expectedDigest`（新文件为null）及 `source:"session"`，不要在参数中抄写长protocol，也不同时传content。宿主从本会话准确成功回执复验当前输入、夹具、pin和权限后落下全部原字节；不改变协议规则或生成读取凭据。仍须随后单独正常 `workspace_read` 完整回读，ready的methodContract传相同specification和实际protocolPath，draftFiles用这个新draftReadId。来源过期须新callId正常compile；写入引用不批准ready、计算或其它副作用。旧pin没有此能力时保留原content路径。
+
+本发行声明 `sourceIntakeVersion:1`。仅当前真实主协调者的 `research_method_compile` 输入中，`literatureSources[].digest`、paired plan的 `quantitative.plan.formalInput.digest`、v5的 `quantitative.planning.basisQuotes[].digest` 可显式填 `"current-source-input"`。宿主按当前根/anchor已有成功完整读取或继承固定输入中的唯一规范path解析精确SHA，无brief也可使用；不需抄写摘要或先建草稿。冲突、缺读取及错误显式SHA仍拒绝。literal调用的ProtocolBinding version2保留raw输入与准确来源映射；输出spec、fixture及所有固定合同仍只含真实SHA。旧pin和USER显式SHA预览保持原语义；新literal不是读取或计算授权。
+
+`research_method_compile`的`specification`含`version:1`、真实`literatureSources`及以下`quantitative`字段；路径、字段名、单位和阈值按研究选择：
+
+- `type:"comparison"`、`template:"paired-rmse-plan-v3"`、`outputProfile:"paired-evidence-only-v1"`。
+- `outcomeUnit`、`minimumGain`、`metrics:{baselineRmse,candidateRmse,gain}`，三个值是平铺指标JSON中的不同键名。
+- `witness:{artifactPath,recordsPointer,idField,observedField,baselinePredictionField,candidatePredictionField}`，映射原始test-only预测；本发行声明 `canonicalPairedOutputsVersion:1`，新计划须明确 `artifactPath:"analysis.json"`，例如 `recordsPointer:"/testPredictions"`。analysis.json须实际承载严格验证的原始预测见证，不是空文件或别名；metrics.json、该analysis.json与fit provenance仍恰三份候选输出，predictions.csv沿既有宿主从同一见证生成。旧pin、旧合同与已归档路径不追溯重命名。
+- `developmentData:{mode:"host-synthetic-only",profile:"numeric-regression-v1",fixtureRef,inputArgumentIndex}`；fixtureRef原样来自工具，命令固定`["python","-I","-S","compare.py",inputPath]`，数据参数位置为4。
+- `plan.formalInput:{path,digest,predictorField,outcomeField}`来自实际读取的正式输入。
+- `plan.models:{baseline:{family:"polynomial",degree:1},candidate:{family:"polynomial",degree:2}}`。
+- `plan.preprocessing:{duplicates,missing,scaling:"training-only"}`；duplicates为`retain`/`drop-exact`，missing为`reject`/`drop-complete-case`。
+- `plan.split:{testFraction,seed,rounding:"floor-test-v1"}`固定正式单次划分，test=floor(处理后记录数*testFraction)、train为其余，不看结果选择；开发沿夹具分配。
+- `precisionGate:null`表示宽度仅描述；有预定精度判据时填`{maxHalfWidth:正有限数}`，单位同RMSE。非null时超界先判inconclusive，再走增益分支。所有实际判据须进入结构化协议。
+- `provenanceArtifact:"fit-provenance.json"`及`fitImplementation:{path:"compare.py",entryPoint:"shared_fit_predict"}`固定真实实现。
+
+新发行的compile成功返回同时自动交付完整`methodContext`；7份适用方法及其父/前置保留实际正文和固定摘要，有真实literatureSources时加入系统综述方法。输出超过限额会失败，不截断成“已读”；旧调用缓存与目录不替代本合同的成功递送。
+
+新profile不接收`decisionOutputs`，旧pin保留其原版本语义。当前完整比较不能降级到v1/v2以跳过受控计划；普通描述性请求不套用本profile。
+
+### 受控计划选择与真实来源
+
+`quantitative.planning`恰含以下六项，不能增加自由数量、判据、功效承诺或notes正文：
+
+- `hypothesisPredictions:["positive-gain","nonpositive-gain","precision-unresolved"]`只是可能操作结果，不是竞争解释。
+- `basisQuotes:[{path,digest,quote,recordPointer?}]`来自本根实际完整读取的固定输入，最多16条、每条2000字符；recordPointer是该记录JSON pointer，文献引用须逐字位于该记录的字符串叶子。集合级声明不冒充单记录依据。准确引用仍不证明其蕴含关系。
+- `explanations:[{kind,basis:{kind,quoteIndexes}}]`的kind限linear-approximation-sufficient、quadratic-predictive-structure、sampling-variation、measurement-or-record-artifact；至少前两项。basis.kind为task-defined或untested-proposal，quoteIndexes可为空，不为填依据拼不相关摘要。宿主生成适用条件、可观察预测、不支持及未定情形；预测提议未确立机制。
+- `indistinguishable`限sampling-vs-shape、measurement-vs-shape、record-dependence-vs-shape、prediction-vs-causal-mechanism；至少最后一项。按实际限制选择，不新增拟合来识别解释。
+- `measurements`恰两个role（predictor/outcome），分别包含meaningQuoteIndexes、`unit:{status:"source-reported"|"unknown",quoteIndex:number|null}`、`scale:{kind:"ordinal-score"|"quantitative"|"unknown",quoteIndex:number|null}`、analysisChoice（numeric-as-recorded/ordinal-treated-as-equally-spaced）、aggregationQuoteIndex（或null）、gaps。已知单位/量表要准确引用，unknown用null；序数按等距数值分析须显式选择。gaps限physical-unit、measurement-procedure、calibration、individual-rating-error、measurement-error-model。只展示原文，不重写人数/范围或由变量名猜单位；校准/误差预算未在本流程量化。
+- `literatureDispositions`准确覆盖每条ledger记录：`{sourcePath,pointer,contentLevel,fullText,decision,reasonCodes,basisQuoteIndexes}`。contentLevel为metadata/abstract/unknown；fullText独立为not-provided/not-established。decision为context-only/excluded-population/full-text-unavailable/eligible-no-extractable-numbers。reasonCodes限topic-relevant、different-population、different-predictor-or-measurement、method-background-only、full-text-not-retrieved、no-extractable-quantitative-evidence。引用须同sourcePath、recordPointer=pointer；无依据时保留unknown，不能引用另一条记录证明本条。未取回全文不等于全文排除或可靠性评估。同DOI记录仍逐条保留、report合并、study未知。有限综合按具体处置生成，不称穷尽检索。
+
+compiler-v6从完整正式表格纯解析计数，不拟合；生成整篇planningDocument与briefPlanningFields。原始记录数、去重数量、floor划分、完整有序判据和not-estimated精度只从同源结构生成。无独立事前方差/效应依据时prospectiveInputs=null、feasibility=not-estimated，不能声称样本量可达、算过power/MDE。source选择不是科学已通过，仍需独立语义核验。
+
+### 准确物化与程序首段
+
+成功compile后，分别`workspace_write`，均用准确compileCallId及expectedDigest：
+
+1. protocolSource:{compileCallId,document:"protocol"}保存整篇协议。
+2. protocolSource:{compileCallId,document:"planning-notes"}保存整篇规范notes。
+3. protocolSource:{compileCallId,document:"implementation"}加`implementationBody`，只提供候选函数正文，须定义`def run_analysis(data_bytes, input_kind):`。宿主置入首字节SHA guard与精确bridge。不得在正文覆盖保留名、另设argv入口或在guard前放代码。input_kind的准确值为development-json（开发夹具）或formal-csv（正式表格）；根据这个已验证值适配JSON/CSV，不靠文件扩展名；拟合/预测只消费传入bytes。共享fit/predict函数、实际参数与序列化仍由完整源码审查。
+
+完整脚本固定以`python -I -S script inputPath`运行，不能-c/-m/前置代码/其它数据或另传预期hash。首段按合同中的逻辑path与准确SHA验证输入bytes，错误在调用候选前退出；隔离标准库导入不从候选目录加载hashlib/sitecustomize。输入guard不证明正文没有另读数据、泄漏或虚构预测，仍独立核源码链。fit implementation digest用完整实际脚本，不是body或snapshot摘要。
+
+三文件都要正常workspace_read完整回读，draftFiles用真实draftReadId，draftRoles恰protocol/notes/implementation各一。`research_brief_save`推荐只传顶层`{expectedRevisionId,status:"ready",planningSource:{compileCallId},draftFiles,draftRoles}`，省略`methodContract`；宿主从该成功回执取完整准确specification，并从唯一protocol角色取路径。显式传`methodContract:{protocolPath,specification}`时仍须逐项一致，不能传摘要壳；`status`和`planningSource`必须在顶层，不能嵌入methodContract。宿主同源填入完整问题、假设、步骤、限制和成功标准，不手抄或追加另一套数量/规则。协议文件名按真实角色路径，不固定文件名。ready仍需正常用户确认，计算/整合逐项准确批准。
+
+ready后原compile锚不移动。已确认计划保存planningOrigin；必要失败返修只对该brief的实现路径用`protocolSource:{briefId,document:"implementation"}`与新implementationBody、expectedDigest，正常批准并重新实际回读，再prepare新候选。不能改冻结科学spec、protocol/notes、复用旧实现readId或把新bytes说成旧draft。
+
+## 一份闭合的程序输出合同
+
+候选程序只写以下三个JSON文件，成功stdout/stderr均为空。日志也是输出，不能在那里另发统计量或判定。失败诊断会原样保留。
+
+1. `metrics.json`：恰好三个绑定键、有限JSON数字，分别为baseline RMSE、candidate RMSE、正向差；不含额外计数、CI或标签。开发`metricArtifact`指向它。
+2. `witness.artifactPath`：只含recordsPointer所需祖先对象及原始预测数组。每行恰好四个映射字段，ID非空且唯一，响应与两预测有限；不得另塞metrics/verdict或解释。例如`{"testPredictions":[{"rowId":"...","observed":1,"baselinePrediction":0.8,"candidatePrediction":0.9}]}`。
+3. `provenanceArtifact`：闭合形状如下，不能增加任意诊断或文字字段：
+
+```json
+{"trainRowIds":["..."],"normalization":{"predictor":{"center":0,"scale":1}},"models":{"baseline":{"coefficients":[0,1]},"candidate":{"coefficients":[0,1,0.1]}},"implementation":{"path":"compare.py","entryPoint":"shared_fit_predict","digest":"源码文件的64位SHA256"}}
+```
+
+center有限，scale正有限，系数有限，按常数项到高次项排列；作用于`x'=(x-center)/scale`，预测直接在原响应量纲中，无响应缩放。使用实际训练参数，不能填示例数值。训练ID须完整对应开发夹具train集合，预测ID及observed须对应test集合。
+
+`expectedArtifacts`列上述三个候选路径。路径彼此不同且不能占用宿主保留路径。全部输出枚举并归档；未知文件、未知字段、非空成功日志会使检查失败，原件保留供诊断，不会被静默过滤成成功。该限制只适用于此有界profile。
+
+宿主复算后统一生成`methods-results.json`及既有方法附件，并导出`methods-facts.json`、`methods-facts.md`和test-only `predictions.csv`。候选程序不要写这些保留文件。CSV与事实块来自同一已验证见证/判据；CI、SE、宽度和判定不在程序中另算另一套。所有输出仍受正常大小预算。
+
+## 运行、实质审查与交付
+
+已确认v5计划的`development_prepare`推荐传`commandSource:"confirmed-method"`并省略`command`；宿主从当前同root的固定brief/fixtureRef派生准确五项argv，不重抄夹具UUID。两字段互斥；仍明确提供固定image、resources、`metricArtifact`和原三种`expectedArtifacts`，完整实际命令在准确审批前展示。来源/源码/当前brief变化须重新准备，不能复用旧批准。旧显式开发命令仍使用返回的`inputPath`并逐字核对，不会自动纠正错路径。宿主注入唯一夹具，准备、启动、归档和重开核对固定来源；仍需正常批准。正式Run使用另外获准的冻结真实输入，不把开发夹具集合套到正式数据；两阶段沿同一指标、区间和判据实现。
+
+新审查清单包括固定brief全文、全部候选文件、实际产物及完整日志、宿主事实和边界例。全部读完只证明范围覆盖，不能证明科学正确。审查者沿五个评估领域，对每个开放表面定位科学断言，并与实际fact/rule/case作对照；用实际结果或边界反例检查泛化规则。任何科学冲突或未解决的关键缺口都须reject/revise，不能因宿主主结果正确而把同批错误文字降为非阻断或留待正式Run。
+
+协议和事实块只证明所列受支持计算。实际训练来源、共享代码、单位意义、独立实体、独立测试对、有限矩、近似区间适用性与领域效用仍需独立科学核对。相同DOI只关联报告候选，不推定同一研究；study身份未知不记为零研究。
+
+正式结果后实际读取完整methods-facts、见证、输入事实与来源，再用既有artifact_create的互斥formalReportSource:{runId}物化同源完整报告，不传content。仍按现有准确审批保存并artifact_read完整回读。报告的数量、规则、精度、实际计算与冻结解释均同源；正式审查packet另固定提供原始人工要求全文，不只简化brief。准确报告版本仍须按原预算独立审查；开发accept不覆盖最终报告。合成检查不是科研发现，操作门槛不是已验证领域效用，区间宽度不是事前功效或保证精度。
+
+审查结果需要保留时，可用formalReportSource:{runId,reviewId}物化准确意见留存版；该版按原审查状态准确留存，disputed/阻断仍为blocked、未完成科学纠正，不把追加反馈当修正。若领域解释超出本受控profile而存在科学阻断，停止交付并保留失败，不能任意body绕过或声称问题已关闭。
+
+## 正式目标的准确指标来源
+
+本发行声明 `metricsSourceVersion:1`。当前根的受支持closed paired计划确认后，新根正式目标的contract使用以下结构化片段（仍明确给出runner/image/command/datasetVersion/evaluationProtocolVersion/expectedArtifacts和资源；片段不推导这些字段）：
+
+```json
+{"contract":{"metricsSource":"confirmed-method"}}
+```
+
+`metricsSource`与`metrics`互斥。宿主按准确confirmed brief把q.metrics的三个**值**作为实际指标键，使用完整q.outcomeUnit及min/min/max，并在正常准确审批中显示解析后contract；不要把baselineRmse/candidateRmse/gain角色名当实际输出键。错误显式键、单位或方向会在新发行有界方法审批前拒绝，不自动改写。持久契约只有具体metrics，父实验仍严格继承原契约。来源改变使原待执行批准失效；这不是Run批准、额外预算或新计算授权。旧pin显式模式保持。
+
+## 六项测量来源评估（measurementAssessmentVersion:1）
+
+新profile仍用paired-rmse-plan-v3，planningProfile为paired-plan-claims-v2。每个measurements项在原字段外必须增加assessments:{meaning,scale,aggregation}；各值仅为unassessed、source-bound或not-established-in-fixed-scope。例如未知来源的明确处置为`"assessments":{"meaning":"not-established-in-fixed-scope","scale":"not-established-in-fixed-scope","aggregation":"not-established-in-fixed-scope"}`，不是把空索引自动解释为缺失。unassessed可用于编译反馈，但不能ready。
+
+source-bound必须由该role和该维自己的原meaningQuoteIndexes、scale.quoteIndex或aggregationQuoteIndex绑定逐字源；不得借其它维度索引。not-established-in-fixed-scope须保持对应空/unknown/null，表示已评估完整固定范围但尚未建立，语义缺失仍待独立审查。宿主由本次完整成功读取/继承的compileSources派生planningFacts.measurementAssessment.scope；不能自选缩小范围或漏掉字典。来源量表与ordinal-treated-as-equally-spaced分析假设分开；物理单位、校准、误差与power等真未知继续保留。只改口头单位标签不能补上六项实质评估。
+
+新profile的candidate及formal review另需measurementReview:{references:[{readId,quote}],comparisons:[{role,dimension,referenceIndexes,finding,conclusion}]}。共享references最多48项，只能使用本attempt真实原始source_input（正式审查fixed_input）逐字唯一引用；恰两role×三维。source-bound对照本维已绑定的原文；未建立声明的referenceIndexes须覆盖宿主scope全部原始文件。accept前六项须consistent；矛盾/未定必须保留阻断，不能只引host-derived或matched。原文引用/覆盖不自动证明语义完整、缺失或科学正确，评价次数不得升级为不同人数。
+
+## 固定开发执行覆盖 paired-gain-domain-v1
+
+当前发行的新完整paired计划须在quantitative明确加入 `"developmentValidation":"paired-gain-domain-v1"`。宿主同一获批开发job、同一1CPU/512MiB/120s总资源内，按原fixture训练组与同一个 `run_analysis(data_bytes, input_kind)` 实际调用primary、zero、negative三例；不增加seed/model搜索，不挂载正式CSV。input_kind仍只有development-json/formal-csv。
+
+zero/negative输入是宿主bridge从primary实际预测与原test x有限派生的JSON对象rows；train行及顺序保持，test行加倍且rowId为派生ID。候选必须保留任意有限gain（包括0与负数），两RMSE仍需正有限。不要把gain要求>0、夹零或用epsilon换结论。规范bridge保留每case实际raw3/input字节，完成全套后才发布主raw3；宿主独立重建并核验准确gain分支、正SE及相同拟合预测。无法表示或重现须fail closed，不能换seed/加拟合机会。
+
+编译输入片段：`{"developmentValidation":"paired-gain-domain-v1","inputDigestCheck":"canonical-python-prefix-v1"}`（合并到原quantitative，其余科学选择保持）。开发审批预览给出三次有限调用及同一总资源范围；正式formal-csv仍只原调用一次，输出仍metrics.json/analysis.json/固定provenance。有限执行覆盖不等于所有Python行为或科学结论通过，所有case实际原文仍须独立审查。
+
+## 固定紧凑审查（reviewExpressionVersion:1）
+
+ 固定reviewFormat=compact-review-v1：同一assessment只有一个references:[{readId,quote}]共享表；checks恰含原五区，每项{area,finding,referenceIndexes,blockingGaps}。measurementReview:{comparisons:[{role,dimension,referenceIndexes,finding,conclusion}]}恰含predictor/outcome各meaning/scale/aggregation六轴，引用必须是实际原始来源，不能用host标签自证含义。pre_run另有surfaceComparisons平数组[{claimIndex,authorityIndex,caseId,finding,conclusion}]，claimIndex/authorityIndex指共享表，target由真实claim引用派生，每个openSurface仍要实质对照。post_run_report不传surfaceComparisons。逐字唯一引用只放一次，每区原最多12条、六轴原最多48条来源、每表面原最多16项不变。候选五区仍引用candidate；实现区另引用实际测试和原始请求，输入区另引用固定source；每区继续引用其相应host事实，首precision反例不能遗漏。正式五区引用准确报告，实现/区间区另引实际Run归档，输入区另引Run源和host_facts，实现区另引原始请求。完整读取全部固定来源、case raw和空日志；只有本attempt成功SDK递送的reviewReadId可引用。宿主核受控marker机械位置，模型仍必须给出五区、六轴和每开放表面的具体finding/缺口/对照，不以consistent或host matched代替科学判断。发现矛盾或资料不足应reject/disputed/blocked并保留实读引用，不得accept或defer当前缺口。
+
+结构化片段：`{"format":"compact-review-v1","stage":"pre_run","references":[{"readId":"实际成功递送页的reviewReadId","quote":"该页逐字唯一原文"}],"checks":[{"area":"implementation_and_tests","finding":"实质核对结果","referenceIndexes":[0],"blockingGaps":[]}],"measurementReview":{"comparisons":[{"role":"predictor","dimension":"meaning","referenceIndexes":[0],"finding":"原文实质解释","conclusion":"unresolved"}]},"surfaceComparisons":[{"claimIndex":0,"authorityIndex":1,"caseId":"actual","finding":"真实对照","conclusion":"unresolved"}],"deferredChecks":[]}`。片段只演示形状，不是完整可通过结果；仍需五区、六轴和全部开放表面。新任务固定该format，不允许省略或降级；旧pin任务保持原格式。
+
+## 固定目标读取（reviewTargetReadVersion:1）
+
+新审查固定readRoutingVersion=1。task_context_read/inspect为每个目标派生readInput={reviewId,targetId,cursor:0,limit:64000}。候选阶段只用development_review_source_read，正式阶段只用formal_report_review_source_read，原样使用本阶段readInput并按返回end继续；targetId由宿主精确路由到固定候选、原始请求、输入或归档，不能猜kind、path或artifact UUID。原始全文、空日志、当前attempt及成功SDK送达要求不变；清单不等于已读或科学通过。

@@ -22,7 +22,8 @@
     "test:live": "node --test --test-concurrency=1 tests/live/*.test.mjs",
     "verify:build": "node scripts/verify-build.mjs",
     "demo:campaign": "node dist/apps/cli/index.js demo-campaign",
-    "test:upgrade": "node scripts/verify-legacy-upgrade.mjs"
+    "test:upgrade": "node scripts/verify-legacy-upgrade.mjs",
+    "typecheck:wip": "tsc -p tsconfig.wip.json"
   },
   "devDependencies": {
     "@earendil-works/pi-ai": "0.87.1",

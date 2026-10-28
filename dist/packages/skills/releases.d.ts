@@ -1,5 +1,5 @@
 import type { Role } from '../domain/types.js';
-import type { SkillPrerequisite, MethodRequirement } from './types.js';
+import type { SkillPrerequisite } from './types.js';
 interface ArchivedSkill {
     id: string;
     name: string;
@@ -10,7 +10,7 @@ interface ArchivedSkill {
     resources: readonly {
         path: string;
         digest: string;
-        methodRequirements?: readonly MethodRequirement[];
+        methodRequirements?: readonly string[];
     }[];
     source?: {
         repository: string;

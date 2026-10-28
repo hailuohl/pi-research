@@ -92,7 +92,7 @@ export declare const CAPABILITIES: readonly [{
     readonly notes: "有界分析、用户消息优先与未知用量保留；由实际任务触发目标验收，不以开发/审查会话代替自动综合实测。";
 }, {
     readonly id: "workbench";
-    readonly name: "科研工作台";
+    readonly name: "研究工作台";
     readonly stage: "M6";
     readonly status: "partial";
     readonly verification: "React构建及既有浏览器科研流程已有历史证据";

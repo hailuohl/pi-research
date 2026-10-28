@@ -217,6 +217,11 @@ const index = [
         "bundleId": "92adf4d0f0bfa17cd7c8ff8e00578d556c018feaa921ec31952c104fed70c6e1",
         "manifestDigest": "92adf4d0f0bfa17cd7c8ff8e00578d556c018feaa921ec31952c104fed70c6e1",
         "fileDigest": "0b69ddc5379b9809b169245f2facdea06f21ba0d7e0f6ae280a88c2669644c80"
+    },
+    {
+        "bundleId": "3301d03e99d733a987b74b4c51dc4f7a9f92577bd7483445a24da577fba730a6",
+        "manifestDigest": "3301d03e99d733a987b74b4c51dc4f7a9f92577bd7483445a24da577fba730a6",
+        "fileDigest": "d24768ac5c191728b5295b26062b918855343c779d7d2b9bd657e3c82bfc9558"
     }
 ];
 export const BUILTIN_RELEASES = index.map(entry => ({

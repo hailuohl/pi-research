@@ -23,7 +23,7 @@ export function resolveSkillBinding(app:ResearchApp,actor:Actor,pid:string) {
     return {session,bundleId};
 }
 export function readCatalog(app:ResearchApp,actor:Actor,pid:string) {const {session,bundleId}=resolveSkillBinding(app,actor,pid);return app.skills.bundleCatalog(pid,session.role,bundleId);}
-export function readSkill(app:ResearchApp,actor:Actor,pid:string,id:string,resource?:string) {const {session,bundleId}=resolveSkillBinding(app,actor,pid);return app.skills.bundleRead(pid,session.role,bundleId,id,resource);}
+export function readSkill(app:ResearchApp,actor:Actor,pid:string,id:string,resource?:string) {const {session,bundleId}=resolveSkillBinding(app,actor,pid),read=app.skills.bundleRead(pid,session.role,bundleId,id,resource);if(actor.type==='agent')app.skills.ensureBundleRuntimeCompatible(pid,bundleId);return read;}
 function missingSkills(app:ResearchApp,pid:string,role:Session['role'],bundleId:string,skillIds:string[],automation=false,allowedArtifacts?:Set<string>,continuation=false):SkillMissing[] {
     const missing:SkillMissing[]=[],catalog=app.skills.bundleCatalog(pid,role,bundleId),tools=new Set(new ToolDispatcher(app).definitions(role,automation,undefined,continuation).map(t=>t.name));
     try{app.skills.ensureBundleStartAllowed(pid,bundleId);}catch(e){const x=asError(e);missing.push({skillId:'',kind:'binding',value:bundleId,reason:`${x.code} — ${x.message}`});}

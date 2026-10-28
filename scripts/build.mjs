@@ -1,8 +1,19 @@
 import {spawnSync} from 'node:child_process';
-import {existsSync, cpSync, mkdirSync, readFileSync,readdirSync,rmSync} from 'node:fs';
+import {existsSync, cpSync, mkdirSync, readFileSync,writeFileSync,readdirSync,rmSync} from 'node:fs';
 import {resolve,relative} from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
+function canonicalizeGeneratedText(dir) {
+  for (const entry of readdirSync(dir, {withFileTypes: true})) {
+    const path = resolve(dir, entry.name);
+    if (entry.isDirectory()) canonicalizeGeneratedText(path);
+    else if (entry.isFile() && /\.(?:[cm]?js|d\.ts|map|css|html|json|svg|txt)$/i.test(entry.name)) {
+      const bytes = readFileSync(path);
+      // Latin-1 roundtrips bytes so only CRLF changes, never other text bytes.
+      if (bytes.includes('\r\n')) writeFileSync(path, Buffer.from(bytes.toString('latin1').replace(/\r\n/g, '\n'), 'latin1'));
+    }
+  }
+}
 const nodeVersion = readFileSync(resolve(root, '.node-version'), 'utf8').trim();
 if (process.versions.node !== nodeVersion) {
   console.error(`BUILD_NODE_MISMATCH: reproducible builds require Node ${nodeVersion}; found ${process.versions.node}`);
@@ -45,4 +56,5 @@ if (!typecheck) {
   await build({entryPoints:entries,outdir:resolve(output,'assets'),format:'esm',platform:'browser',target:'es2020',jsx:'automatic',bundle:false,logLevel:'warning'});
   await build({entryPoints:[resolve(source,'main.tsx')],outfile:resolve(output,'assets/main.js'),format:'esm',platform:'browser',target:'es2020',jsx:'automatic',bundle:true,minify:true,keepNames:true,define:{'process.env.NODE_ENV':'"production"'},legalComments:'eof',logLevel:'warning'});
   cpSync(resolve(root,'node_modules/react/LICENSE'),resolve(output,'LICENSE.react.txt'));
+  canonicalizeGeneratedText(resolve(root,'dist'));
 }

@@ -21,7 +21,7 @@ export interface SkillText {
         path: string;
         blob: string;
     };
-    methodRequirements?: MethodRequirement[];
+    methodRequirements?: string[];
 }
 export interface SkillRead extends SkillText {
     prerequisites?: SkillText[];

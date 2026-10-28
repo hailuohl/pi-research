@@ -25,7 +25,8 @@ export function resolveSkillBinding(app, actor, pid) {
     return { session, bundleId };
 }
 export function readCatalog(app, actor, pid) { const { session, bundleId } = resolveSkillBinding(app, actor, pid); return app.skills.bundleCatalog(pid, session.role, bundleId); }
-export function readSkill(app, actor, pid, id, resource) { const { session, bundleId } = resolveSkillBinding(app, actor, pid); return app.skills.bundleRead(pid, session.role, bundleId, id, resource); }
+export function readSkill(app, actor, pid, id, resource) { const { session, bundleId } = resolveSkillBinding(app, actor, pid), read = app.skills.bundleRead(pid, session.role, bundleId, id, resource); if (actor.type === 'agent')
+    app.skills.ensureBundleRuntimeCompatible(pid, bundleId); return read; }
 function missingSkills(app, pid, role, bundleId, skillIds, automation = false, allowedArtifacts, continuation = false) {
     const missing = [], catalog = app.skills.bundleCatalog(pid, role, bundleId), tools = new Set(new ToolDispatcher(app).definitions(role, automation, undefined, continuation).map(t => t.name));
     try {

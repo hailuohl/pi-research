@@ -2,7 +2,7 @@ import {filePolicy} from '../../storage/file-policy.js';
 import {recordAttachmentRead} from '../../research-workflows/attachment-inputs.js';
 import {workspaceText,assertWorkspaceReader,type WorkspaceTextInput,type WorkspaceText} from '../../research-workflows/workspace-read-delivery.js';
 import {prepareTaskModels,inspectThinkingPolicy,type PreparedTaskModels} from '../../pi-adapter/thinking-policy.js';
-import {readCatalog,readSkill,inspectSessionSkills,selectSessionSkills} from '../../skills/runtime.js';
+import {readCatalog,readSkill,resolveSkillBinding,inspectSessionSkills,selectSessionSkills} from '../../skills/runtime.js';
 import {attachmentScope,readAttachment} from '../../pi-adapter/attachments.js';
 import {digest} from '../../storage/store.js';
 import {routePaperId, parseSearch} from '../../connectors/contracts.js';
@@ -81,6 +81,7 @@ function paperReplay(c: OperationContext, x: Record<string, unknown>) {
 
 function authorizeRegistered(c: OperationContext, name: string, x: Record<string, unknown>) {
     c.app.textCorpusGrants.authorizeContent(c.actor,c.projectId,name,x);
+    if(name==='research_skill_read'&&c.actor.type==='agent'){const {bundleId}=resolveSkillBinding(c.app,c.actor,c.projectId);c.app.skills.ensureBundleRuntimeCompatible(c.projectId,bundleId);}
     if(name==='workspace_text_prepare')c.app.workspaceInputs.authorize(c.actor,c.projectId,c.session!.id);
     if(name==='artifact_text_prepare'||(name==='artifact_read'||name==='evidence_register')&&x.readProtocol==='fixed-text-v1')c.app.artifactTexts.authorize(c.actor,c.projectId,x.artifactId as string);
     if(name==='evidence_read'){const e=c.app.store.get<import('../../domain/types.js').Evidence>('evidence',x.evidenceId as string,c.projectId);if(e.fixedText)c.app.artifactTexts.authorize(c.actor,c.projectId,e.artifactId);}

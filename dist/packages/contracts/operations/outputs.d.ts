@@ -5511,12 +5511,15 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
             readonly methodRequirements: {
-                readonly maxItems?: number | undefined;
                 readonly type: "array";
                 readonly items: {
-                    readonly enum: readonly ["literature-identity", "quantitative-decision", "structured-paired-protocol", "closed-paired-evidence"];
+                    readonly type: "string";
+                    readonly minLength: 1;
+                    readonly maxLength: 100;
+                    readonly pattern: "^[a-z][a-z0-9-]*$";
                 };
-                readonly minItems: number;
+                readonly maxItems: 16;
+                readonly uniqueItems: true;
             };
             readonly prerequisites: {
                 readonly type: "array";
@@ -5558,12 +5561,15 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                         readonly methodRequirements: {
-                            readonly maxItems?: number | undefined;
                             readonly type: "array";
                             readonly items: {
-                                readonly enum: readonly ["literature-identity", "quantitative-decision", "structured-paired-protocol", "closed-paired-evidence"];
+                                readonly type: "string";
+                                readonly minLength: 1;
+                                readonly maxLength: 100;
+                                readonly pattern: "^[a-z][a-z0-9-]*$";
                             };
-                            readonly minItems: number;
+                            readonly maxItems: 16;
+                            readonly uniqueItems: true;
                         };
                     };
                     readonly required: ("id" | "content" | "digest" | "bundleId" | "resource")[];

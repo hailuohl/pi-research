@@ -128,9 +128,16 @@ test('queued agent Git rechecks revoked WorkingGrant; explicit owner retry prese
 });
 
 test('an owner in a second ResearchApp revokes the persisted live full grant and stops the first app command',async()=>{
- const s=fixture();let other;try{mode(s,'confirm');s.app.hostAccess.enable(USER,s.session.id,{expectedVersion:0,acknowledgedSameUserAccess:true});const a=actor(s),started=join(s.dir,'live-command.txt'),pending=call(s,a,'host_execute',{argv:[process.execPath,'-e',"require('node:fs').writeFileSync(process.argv[1],'started');setInterval(()=>{},1000)",started],cwd:s.dir},'cross-owner-live'),rejected=assert.rejects(pending,{code:'HOST_ACCESS_REVOKED'});for(let n=0;n<150&&!existsSync(started);n++)await new Promise(r=>setTimeout(r,20));assert.equal(readFileSync(started,'utf8'),'started');
+ const s=fixture();let other,bodyFailed=false;try{mode(s,'confirm');s.app.hostAccess.enable(USER,s.session.id,{expectedVersion:0,acknowledgedSameUserAccess:true});const a=actor(s),started=join(s.dir,'live-command.txt'),pending=call(s,a,'host_execute',{argv:[process.execPath,'-e',"require('node:fs').writeFileSync(process.argv[1],'started');setTimeout(()=>process.exit(97),30000);setInterval(()=>{},1000)",started],cwd:s.dir},'cross-owner-live'),rejected=assert.rejects(pending,{code:'HOST_ACCESS_REVOKED'});for(let n=0;n<150&&!existsSync(started);n++)await new Promise(r=>setTimeout(r,20));assert.equal(readFileSync(started,'utf8'),'started');
  other=new ResearchApp(s.dir,process.cwd());assert.equal(other.hostAccess.status(USER,s.session.id).enabled,false);assert.equal(s.app.store.get('host-access',s.session.id).state,'enabled');assert.equal(s.app.store.list('host-command')[0].state,'running');const status=other.sessionPermissions.status(USER,s.session.id);other.sessionPermissions.set(USER,s.session.id,{mode:'readOnly',expectedVersion:status.version,expectedHostVersion:status.hostAccess.version});assert.equal(s.app.store.get('host-access',s.session.id).state,'revoked');assert.equal(s.app.hostAccess.status(USER,s.session.id).enabled,false);assert.throws(()=>call(s,a,'host_execute',{argv:[process.execPath,'-e','console.log(1)'],cwd:s.dir},'new-after-revoke'),{code:'HOST_ACCESS_REVOKED'});await rejected;assert.ok(['cancelled','unknown'].includes(s.app.store.list('host-command')[0].state));assert.equal(s.app.store.list('host-command').length,1);
- }finally{other?.close();await s.app.hostAccess.stop();s.close();}
+ }catch(error){bodyFailed=true;throw error;}finally{
+  try{other?.close();await s.app.hostAccess.stop();
+   // An unknown stop retains the process; let this fixture expire before removing its Windows cwd.
+   const pid=s.app.store.list('host-command')[0]?.pid,deadline=Date.now()+35000;
+   if(pid)for(;;){try{process.kill(pid,0);}catch(error){if(error.code==='ESRCH')break;throw error;}assert.ok(Date.now()<deadline,`Fixture process ${pid} did not exit; retaining ${s.dir}`);await new Promise(r=>setTimeout(r,50));}
+   s.close();
+  }catch(error){if(bodyFailed)console.error('Fixture cleanup also failed; preserving the original error and fixture:',s.dir,error);else throw error;}
+ }
 });
 
 test('a fixed write larger than normal message input can be approved and executed exactly without copying the body to follow_up',()=>{

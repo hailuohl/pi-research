@@ -607,7 +607,7 @@ class App extends React.Component {
             /* @__PURE__ */ jsx("span", { children: "\u03C0" }),
             /* @__PURE__ */ jsxs("div", { children: [
               "\u7814\u821F\u03C0",
-              /* @__PURE__ */ jsx("small", { children: "\u79D1\u7814\u5DE5\u4F5C\u53F0" })
+              /* @__PURE__ */ jsx("small", { children: "\u7814\u7A76\u5DE5\u4F5C\u53F0" })
             ] })
           ] }),
           /* @__PURE__ */ jsx("button", { id: "navigation-close", className: "icon-button mobile-navigation", "aria-label": "\u5173\u95ED\u5BFC\u822A", onClick: this.toggleNavigation, children: /* @__PURE__ */ jsx(Icon, { name: "close" }) })
