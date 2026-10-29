@@ -122,8 +122,8 @@ npm run test:live
 
 - [当前阶段目标与完成状态](docs/PROJECT-GOAL.zh-CN.md)
 - [后端入口、可用范围与环境限制](docs/BACKEND-READINESS.zh-CN.md)
-- [技术报告](docs/技术报告.md)
-- [开源及第三方资源使用清单](docs/开源及第三方资源使用清单.md)
+- [技术报告](docs/技术报告.md)（[docx 版](docs/技术报告.docx)）
+- [开源及第三方资源使用清单](docs/开源及第三方资源使用清单.md)（[docx 版](docs/开源及第三方资源使用清单.docx)）
 - [实际任务结果、人工步骤及CLI回查](docs/acceptance/flow-wine-grouped-trial/RESULT.md) · [机器证据](docs/acceptance/flow-wine-grouped-trial/evidence.json)
 - [适配细节、技能及连接器映射](docs/openresearch/ADAPTATION.md)
 - [验证记录与未验收项](docs/openresearch/VALIDATION.md)
