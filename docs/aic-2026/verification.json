@@ -94,17 +94,41 @@
     }
   ],
   "acceptance": [
-    "Official eight chapters and evidence-linked original/third-party boundary",
-    "Anonymous PDF body <=15 pages and <=10 MB with AI-use disclosure; no fabricated results",
-    "Current and optional resources separated; inactive items excluded from current table",
-    "Artifact QA, independent review, explicit-path commit and verified private-branch push"
+    "Eight official chapters; judge-facing highlights and evidence-linked original/third-party boundary.",
+    "Separate resource inventory; technical report includes three supplied proof pages; main code baseline and approved project AI-use disclosure preserved.",
+    "Proof summaries match the supplied scans; no invented quantitative benefit; no school or advisor identities visible in the proofs.",
+    "OpenResearch app/runtime is not listed as a dependency; current adapted skills, protocols and assets retain accurate upstream attribution.",
+    "PDF QA, independent review, explicit-path commit and verified private-branch push."
   ],
   "documentOnlyRevision": {
-    "baselineCommit": "908d6e939e81c2662f5c2223208cc35357d0e87a",
-    "scope": "Correct AI-use disclosure to project development with Codex, ZCode, GPT-6, GLM-5.3 and DeepSeek series; remove report-authoring resources from competition inventory.",
+    "baselineCommit": "8aa0ebfdea82af0f5a00b0e48393e1c5892db6a6",
+    "scope": "Judge-focused report; main baseline; separate resource inventory; add three company application proofs; clarify OpenResearch as adapted source/materials only.",
     "productChanged": false,
     "priorProductChecksReused": true,
     "fullProductTestsRerun": false,
     "modelNamesSource": "User project-use clarification on 2026-10-30"
+  },
+  "sourceBaseline": {
+    "ref": "main",
+    "commit": "8bbcf296449a839bb5090b69131a1a46ebec5278",
+    "verifiedBy": "GitHub API main ref and git diff --exit-code origin/main -- apps packages scripts package.json package-lock.json skills .node-version",
+    "productSourceMatches": true
+  },
+  "applicationProofs": {
+    "count": 3,
+    "manifest": "application-proof-manifest.json",
+    "rawPdfFilesPreserved": true,
+    "claims": "Application-use statements only; no invented productivity metrics.",
+    "externalAuthenticityCheck": false
+  },
+  "openresearchScopeCheck": {
+    "result": "Adapted source and assets remain in current main; no full application runtime, database, CLI or hosted service.",
+    "evidence": [
+      "packages/skills/manifest.ts",
+      "packages/connectors/providers.ts:1",
+      "THIRD_PARTY_NOTICES.md",
+      "skills/piresearch/pi-research-figures/PROVENANCE.md",
+      "apps/web/public/source-logos/source.json"
+    ]
   }
 }

@@ -1,10 +1,11 @@
-"""Render the AIC report and its full resource annex from reviewed JSON sources.
+"""Render the AIC report and a separate resource inventory from reviewed JSON sources.
 
 Requires reportlab and pypdf. Supply an OFL-licensed Noto Sans SC TrueType font.
 No product services, credentials, databases or research jobs are accessed.
 """
 import argparse
 import hashlib
+import io
 import json
 import re
 from pathlib import Path
@@ -17,6 +18,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
 from reportlab.platypus import (Flowable, Image, KeepTogether, LongTable, PageBreak,
                                Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle)
 from pypdf import PdfReader, PdfWriter
@@ -179,7 +181,7 @@ def frame(kind, body_pages=0):
         c.line(MARGIN, PAGE_H-41, PAGE_W-MARGIN, PAGE_H-41)
         c.setStrokeColor(colors.HexColor(TOKENS["line"])); c.setLineWidth(0.4)
         c.line(MARGIN, 38, PAGE_W-MARGIN, 38)
-        label = f"正文 {n-1}" if kind == "report" and n <= body_pages+1 else f"参考与证据 {n-body_pages-1}" if kind == "report" else f"资源附件 {n}"
+        label = f"正文 {n-1}" if kind == "report" and n <= body_pages+1 else f"参考与证据 {n-body_pages-1}" if kind == "report" else f"资源清单 {n}"
         c.drawString(MARGIN, 24, "2026-10-30  ·  0.3.2-experimental")
         c.drawRightString(PAGE_W-MARGIN, 24, label)
         c.restoreState()
@@ -200,11 +202,11 @@ def cover(content, inventory):
             Paragraph("研舟π<br/>可追溯科研智能体", style("coverTitle", 31, 45, spaceAfter=22)),
             p("技术报告", "h1"), Spacer(1, 20),
             p("参赛方向  " + content["direction"]), p("日期  " + content["date"]),
-            p("代码版本  " + inventory["packageVersion"] + "  ·  feature/report", "small"),
-            p("分析基线  " + inventory["baselineCommit"], "small"), Spacer(1, 27),
+            p("代码版本  " + inventory["packageVersion"] + "  ·  以 main 为基准", "small"),
+            p("基准提交  " + inventory["baselineCommit"][:8], "small"), Spacer(1, 27),
             p("作品简介", "h2"), p(content["summary"]),
-            Spacer(1, 12), p("正文按官方八章组织；其后为参考与证据，以及完整资源使用清单附件。团队信息按要求暂不列入。", "small"),
-            p("本材料记录软件原型、历史实测和本次检查的各自边界。", "small")]
+            Spacer(1, 12), p("核心亮点", "h2"),
+            p("科研闭环：从研究需求推进到真实运行与成果交付。\n证据回查：报告中的结果可追溯到固定输入、源码和产物。\n执行可控：精确授权、独立审查与历史保留贯穿流程。", "small")]
 
 
 def report_story(content, inventory, verification):
@@ -232,20 +234,21 @@ def report_story(content, inventory, verification):
                     ["环境", "Windows；Node 24.18.0；npm实际11.16.0（packageManager声明11.17.0）。"],
                     ["未在本轮执行", "外部模型live、真实Docker/SSH/GPU、浏览器交互和科研数值重跑。历史证据单列。"]
                 ], [0.36,0.64]))
-    story.extend([PageBreak(), Marker("references"), p("附录 参考与证据", "h1"),
-                  p("代码链接固定到分析基线；资源附件与本报告一起提供。仓库当前为private，外部访问需要合法授权。行号与详细资源来源见resource-inventory.json。", "small")])
+    story.extend([PageBreak(), Marker("references"), p("参考与证据", "h1"),
+                  p("代码以 main 为基准，源码链接固定到基准提交。详细第三方资源另见独立《开源及第三方资源使用清单》。", "small")])
     for r in content["references"]:
         url = r.get("url")
         if r.get("path"):
             url = "https://github.com/hailuohl/pi-research/blob/" + inventory["baselineCommit"] + "/" + quote(r["path"], safe="/")
         if r.get("local"):
-            url = "https://github.com/hailuohl/pi-research/blob/feature/report/docs/aic-2026/" + r["local"]
-        story.append(rich(safe("["+r["id"]+"] "+r["title"])+"<br/>"+link(url), "small"))
+            story.append(KeepTogether([p("["+r["id"]+"] "+r["title"]+"\n配套材料 "+r["local"], "small")]))
+        else:
+            story.append(KeepTogether([rich(safe("["+r["id"]+"] "+r["title"])+"<br/>"+link(url), "small")]))
     story.extend([p("数据署名与引用", "h2"),
                   p("Wine Quality：Cortez, P., Cerdeira, A., Almeida, F., Matos, T., & Reis, J. (2009). UCI Machine Learning Repository. DOI 10.24432/C56S3T，CC BY 4.0。报告引用红酒子集的既有分组试用结果，划分及模型处理由项目另述。", "small"),
                   p("Anscombe：F. J. Anscombe (1973), Graphs in Statistical Analysis, DOI 10.1080/00031305.1973.10478966；数值来源R datasets的anscombe资料，R说明另引Tufte (1990)。不转载原论文图页；数据专门许可与精确上游修订未在本轮独立证实。", "small"),
-                  p("附后的资源使用清单", "h2"),
-                  p("资源附件与独立PDF为同一份内容，覆盖主要资源、条件接入、报告所引用数据、npm锁定组件和可选编译器锁定组件。主表不把历史停用包或仅在文档中提及的框架列为现用。", "small")])
+                  p("独立资源清单", "h2"),
+                  p("《开源及第三方资源使用清单》单独提供，涵盖资源来源、版本、许可、使用方式、自主开发边界及锁定组件索引。", "small")])
     return story
 
 
@@ -261,12 +264,13 @@ def group(r):
 
 
 def resource_story(inv):
-    s = [Marker("resources"), p("技术报告附件", "chapter"), p("开源及第三方资源使用清单", "h1"),
+    s = [Marker("resources"), p("配套独立材料", "chapter"), p("开源及第三方资源使用清单", "h1"),
          p("作品  研舟π可追溯科研智能体"),
          p("核对日期 2026-10-30；代码版本 " + inv["packageVersion"], "small"),
-         p("基线 " + inv["baselineCommit"], "small"),
+         p("以 main 为基准  " + inv["baselineCommit"], "small"),
          p("披露口径", "h2"),
          p("清单依据当前源码、实际调用链、锁文件与许可文件形成。现用资源、按需接入和报告引用数据分别列明。代码支持或SDK带有某个客户端，不代表该服务实际调用过；锁定可选平台包不表示当前主机安装或执行。历史停用包不列入现用主表。"),
+         p("OpenResearch口径：本项目不使用或分发其应用运行时、数据库、CLI及托管服务。下文仅记录当前仍保留的技能/文献协议改编、绘图资源和素材出处，不将OpenResearch整套项目列为运行框架。", "small"),
          p(f"主表共{len(inv['resources'])}项披露记录（包含项目开发辅助工具与模型），另附153条npm锁定路径和257项可选文稿编译器锁定组件。11个npm直接依赖中，两个Pi包虽声明于devDependencies，应用AI运行时仍会调用；不能据dev标志判断它们无需安装。"),
          table(["状态含义", "本清单的使用方式"], [["已核对", "仅对明确列出的版本、源码、许可文件或安装事实确认，不表示整个系统获合规认证。"], ["待补齐 / 部分核验", "列明实际告知、授权或组件核验缺口；不以锁字段或资源可下载替代授权。"], ["按需配置", "当前代码已经接线，启用与安装由用户选择；本次没有据此冒称已执行。"], ["报告引用", "历史实验数据用于本报告证据，不是应用的默认运行依赖；保留原日期与实验环境。"]], [0.27,0.73]),
          p("本次发现的具体待办", "h2"),
@@ -317,9 +321,36 @@ def resource_story(inv):
         deb_rows.append([f"D{i:03d}", ("html", link(r["url"], r["name"])), r["version"], "逐包许可待核验"])
     s.append(table(["索引", "组件名称 来源链接", "固定版本", "许可状态"], deb_rows, [0.1,0.37,0.34,0.19], compact=True))
     s.extend([p("J 成果访问与开放方式", "h1"),
-              rich(link("https://github.com/hailuohl/pi-research") + "<br/>分支 feature/report。仓库为private，源码中自有部分采用MIT，第三方部分沿各自许可；评审访问仍需单独核验。", "small"),
-              p("本附件不包含密钥、认证、运行数据库、原始对话、论文全文、模型权重、工具安装包或容器镜像。已停用资源、仅参考项目和未实现服务未列现用主表。锁内平台条件候选单列，不与现用资源合并计数。", "small")])
+              rich(link("https://github.com/hailuohl/pi-research") + "<br/>代码以 main 为基准。仓库为private，源码中自有部分采用MIT，第三方部分沿各自许可；评审访问仍需单独核验。", "small"),
+              p("本清单不包含密钥、认证、运行数据库、原始对话、论文全文、模型权重、工具安装包或容器镜像。已停用资源、仅参考项目和未实现服务未列现用主表。锁内平台条件候选单列，不与现用资源合并计数。", "small")])
     return s
+
+
+def append_application_proofs(writer):
+    manifest = load("application-proof-manifest.json")
+    count = 0
+    for item in manifest["proofs"]:
+        path = HERE / item["file"]
+        if digest(path) != item["sha256"]:
+            raise RuntimeError("Application proof differs from supplied source: " + str(path))
+        reader = PdfReader(path)
+        if len(reader.pages) != 1:
+            raise RuntimeError("Expected one-page application proof: " + str(path))
+        writer.append(reader, outline_item="应用证明 " + item["id"] + "  " + item["organization"])
+        page = writer.pages[-1]
+        w, h = float(page.mediabox.width), float(page.mediabox.height)
+        buf = io.BytesIO()
+        c = canvas.Canvas(buf, pagesize=(w, h))
+        c.setFont("NotoSC", 8)
+        c.setFillColor(colors.HexColor(TOKENS["muted"]))
+        c.drawString(MARGIN, h-34, "研舟π  应用证明 " + item["id"] + "  " + item["organization"])
+        c.drawString(MARGIN, 24, "应用单位盖章材料  ·  正文内容按原件保留")
+        c.drawRightString(w-MARGIN, 24, "应用证明 " + str(count+1))
+        c.save()
+        buf.seek(0)
+        page.merge_page(PdfReader(buf).pages[0])
+        count += 1
+    return count
 
 
 def main():
@@ -338,7 +369,7 @@ def main():
     assert len(content["workName"]) <= 20
     assert len(content["summary"]) <= 300
     body = args.scratch / "technical-body.pdf"
-    resource = HERE / "开源及第三方资源使用清单.pdf"
+    resource = HERE / "开源及第三方资源使用清单-独立版.pdf"
     build(body, report_story(content, inv, verification), "report", len(content["pages"]))
     body_marks = {k:v for k,v in MARKS.items() if k.startswith("body-")}
     expected={f"body-{i+1}":i+2 for i in range(len(content["pages"]))}
@@ -348,15 +379,16 @@ def main():
     build(resource, resource_story(inv), "resources")
     writer=PdfWriter()
     writer.append(body, outline_item="技术报告 正文与证据")
-    writer.append(resource, outline_item="附件 开源及第三方资源使用清单")
+    proof_pages = append_application_proofs(writer)
     writer.add_metadata({"/Title":"研舟π可追溯科研智能体 技术报告", "/Author":"", "/Subject":"2026 AIC AI+开源 匿名技术材料"})
-    final=HERE / "研舟π技术报告-修订版.pdf"
+    final=HERE / "研舟π技术报告-评审版.pdf"
     with final.open("wb") as f: writer.write(f)
     summary={"workNameChars":len(content["workName"]), "summaryChars":len(content["summary"]),
              "bodyPages":len(content["pages"]), "coverPages":1, "referencePages":body_pages-len(content["pages"])-1,
-             "resourcePages":len(PdfReader(resource).pages), "combinedPages":len(PdfReader(final).pages),
+             "resourcePages":len(PdfReader(resource).pages), "reportPages":len(PdfReader(final).pages), "resourceEmbedded":False,
+             "applicationProofPages":proof_pages,
              "bodyMarkers":body_marks, "files":{p.name:{"bytes":p.stat().st_size,"sha256":digest(p)} for p in (final,resource)}}
-    (HERE / "artifact-checks.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+    (HERE / "artifact-checks.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2)+"\n",encoding="utf-8",newline="\n")
     print(json.dumps(summary,ensure_ascii=False))
 
 

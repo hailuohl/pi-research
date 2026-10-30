@@ -3,7 +3,7 @@
   "date": "2026-10-30",
   "baselineCommit": "8bbcf296449a839bb5090b69131a1a46ebec5278",
   "packageVersion": "0.3.2-experimental",
-  "note": "现用资源主表与按需/报告数据分开；完整锁清单包含平台条件候选，不等于当前使用清单。已停用库不列现用。",
+  "note": "现用资源主表与按需/报告数据分开；OpenResearch仅为仍保留的技能、协议和素材之改编来源，不使用其整套应用或托管服务。已停用库不列现用；锁内平台条件候选不等于当前实际使用。",
   "resources": [
     {
       "name": "marked",
@@ -353,13 +353,13 @@
       ]
     },
     {
-      "name": "OpenResearch research skills/protocol adaptation",
+      "name": "科研技能与文献协议改编（上游：OpenResearch）",
       "version": "3037f727e80e0ab20c61a87c613a50dde009a835; selected follow-up references a243fa5da6a884ed11d64bf502ab62c86ff13b0b",
       "type": "adapted-source",
       "status": "current-shipped",
       "source": "https://github.com/alphaXiv/OpenResearch",
       "license": "MIT",
-      "use": "当前skills/piresearch十三技能；连接器将src/client.rs部分文献协议移植为TS；feedback/experiment-tree另注明后续revision参考",
+      "use": "当前skills/piresearch十三技能及部分文献线协议的源码改编；不是OpenResearch应用运行时、数据库、CLI或托管服务依赖。feedback/experiment-tree另注明后续revision参考。",
       "obligations": "保留alphaXiv版权与MIT许可；不得称上游背书或完整功能复刻",
       "originalBoundary": "复用研究方法/技能与线协议；独立改写中文内容、工具接口、角色、审批、存储、取消、限额；不包含ORX应用运行时、数据库、CLI、账号或云服务",
       "compliance": "已有来源清单、精确commit/blob和MIT许可；未重新下载比对全部blob",
@@ -402,7 +402,7 @@
       ]
     },
     {
-      "name": "OpenResearch figure references/templates/style assets",
+      "name": "绘图方法与样式素材（上游：OpenResearch）",
       "version": "3037f727e80e0ab20c61a87c613a50dde009a835",
       "type": "adapted-source-resource",
       "status": "current-shipped-on-demand",
@@ -8399,5 +8399,6 @@
       "url": "https://pmc.ncbi.nlm.nih.gov/tools/textmining/",
       "claim": "PMC approved automated interfaces include E-Utilities; article-specific license applies"
     }
-  ]
+  ],
+  "baselineRef": "main"
 }

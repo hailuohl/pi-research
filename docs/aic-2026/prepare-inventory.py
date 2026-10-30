@@ -43,6 +43,11 @@ def main():
     }
     # Keep report wording accurate: this report cites Group II results, not a fresh 44-point calculation.
     for r in resources:
+        if r["name"] == "OpenResearch research skills/protocol adaptation":
+            r["name"] = "科研技能与文献协议改编（上游：OpenResearch）"
+            r["use"] = "当前skills/piresearch十三技能及部分文献线协议的源码改编；不是OpenResearch应用运行时、数据库、CLI或托管服务依赖。feedback/experiment-tree另注明后续revision参考。"
+        if r["name"] == "OpenResearch figure references/templates/style assets":
+            r["name"] = "绘图方法与样式素材（上游：OpenResearch）"
         if r["name"] in service_uses:
             r["use"] = service_uses[r["name"]]
         if r["name"].startswith("Anscombe"):
@@ -98,8 +103,8 @@ def main():
                          "use": "编译器配置的root包或必需传递依赖；不代表当前主机已安装",
                          "originalBoundary": "上游未修改组件", "obligations": "按实际版权文件保留告知并履行适用源码/再分发义务",
                          "compliance": "版本/URL/大小/SHA-256已锁定；逐包许可与源码渠道待核验"})
-    inventory = dict(formatVersion=1, date="2026-10-30", baselineCommit=audit["baselineCommit"], packageVersion=pkg["version"],
-                     note="现用资源主表与按需/报告数据分开；完整锁清单包含平台条件候选，不等于当前使用清单。已停用库不列现用。",
+    inventory = dict(formatVersion=1, date="2026-10-30", baselineRef="main", baselineCommit=audit["baselineCommit"], packageVersion=pkg["version"],
+                     note="现用资源主表与按需/报告数据分开；OpenResearch仅为仍保留的技能、协议和素材之改编来源，不使用其整套应用或托管服务。已停用库不列现用；锁内平台条件候选不等于当前实际使用。",
                      resources=resources, npmLocked=rows, optionalCompilerLocked=deb_rows,
                      summary={"resourceEntries": len(resources), "npmDirect": len(direct), "npmLockedPaths": len(rows),
                               "npmInstalledPaths": sum(x["installed"] for x in rows), "npmLicenseMetadata": dict(Counter(x["license"] for x in rows)),

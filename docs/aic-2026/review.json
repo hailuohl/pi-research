@@ -1,35 +1,42 @@
 {
   "date": "2026-10-30",
-  "baselineCommit": "908d6e939e81c2662f5c2223208cc35357d0e87a",
-  "branch": "feature/report",
+  "baselineCommit": "8aa0ebfdea82af0f5a00b0e48393e1c5892db6a6",
+  "codeBaseline": {
+    "ref": "main",
+    "commit": "8bbcf296449a839bb5090b69131a1a46ebec5278"
+  },
   "result": "pass",
   "blockers": [],
   "nonBlockingFindings": [],
-  "scope": "独立只读复核项目开发AI辅助披露修订；仅写此结果，不修改产品或交付文件。",
-  "model": {
-    "requestedModel": "gpt-6.1-sol",
-    "requestedEffort": "medium",
+  "verificationGaps": [],
+  "scope": "独立只读复核评审重点改写、main口径、独立资源清单、三份企业应用证明及实际改编来源披露；仅写本结果。",
+  "requestedModel": "gpt-6.1-sol",
+  "requestedEffort": "high",
+  "runtimeEcho": {
     "actualModel": "运行时未回显",
-    "actualEffort": "运行时未回显"
+    "actualEffort": "运行时未回显",
+    "status": "已请求，运行时未回显；不以代理自报身份代替核验。"
   },
   "snapshot": {
     "path": "docs/aic-2026/review-snapshot.json",
-    "sha256": "77e28f477c48c58852dbffba012a268c8f9c5fecb65eb0bac072561016202016",
-    "fileCount": 11,
+    "sha256": "b9150580ff72907408afbd7e255187f85275add6d87ff48e4de6cab5415ac73e",
+    "fileCount": 15,
     "allHashesMatch": true
   },
   "checks": {
-    "disclosure": "4.8及资源第39项包含Codex、ZCode、GPT-6、GLM-5.3、DeepSeek系列，说明开发辅助及审核修改验证责任。3.3/7.3同步，无报告生成、主会话或子代理配置旧叙述。未将这些工具模型说成应用默认模型、开源权重或历史实验模型。",
-    "sourceDiff": "report-content.json仅3段文字变化；原资源前38项及npm/compiler锁定索引未变，删除报告生成核验工具行，主要资源40变39。产品源码无本批差异，四份旧文档删除为既有在途状态。",
-    "artifact": "正文11页；总47页；独立资源33页；技术PDF1005617字节，小于10MB。附件逐页提取文本与独立资源PDF完全相同；文件规格及SHA256与artifact-checks/visual-qa/snapshot一致。",
-    "preservation": "除物理页4/6/11/15/28以外，删除一页后的对应页正文文本一致，后续仅资源附件页码递减。未记录团队名、编号或实际成员分工。npm锁定路径153，compiler组件257。",
-    "visual": "查看已有渲染PNG物理页4/6/11/15/28，无裁切、重叠或缺字；未重复渲染。",
-    "verification": "verification.json保留1948总/1922通过/0失败/26跳过及661文件干净构建证据，并明确本次无产品改动、复用旧检查、未重跑全量测试。"
+    "focusAndFacts": "八章完整，封面及第一章前置科研闭环、证据回查、受控执行三项亮点，自主实现与上游贡献分别说明。红酒表格与既有evidence.json数值一致；19.96%明确为固定分组划分上OLS相对训练均值基线的MSE差异。旧Pi版本、确定性模型交互、requires_review和多智能体对照缺口保留。开发AI披露符合已确认工具模型范围，未补团队身份与成员分工。",
+    "mainAndSeparation": "git diff --exit-code origin/main -- apps packages scripts package.json package-lock.json skills .node-version退出0，无产品源码差异。两PDF提取文本和链接注释无feature/report。报告无N001/D001锁索引或资源清单outline；资源PDF独立33页。固定代码及历史证据引用路径在main基准提交中存在且与工作区一致。",
+    "applicationProofs": "实际目读三份原扫描及报告渲染。武汉星衡智电未载应用起始时间；武汉磐电、武汉嘉兰川载明2026年7月至今。正文场景摘要与原文吻合，未加入完成率、节省工时、费用或性能增益。可见原件未见学校名称、学校LOGO或导师信息。三份交付原PDF与.validation/application-proofs来源文件字节一致；报告16–18页解码图像哈希与对应原件一致，页边导航未遮挡正文、日期或盖章。",
+    "openresearch": "packages/skills/manifest.ts含13条固定3037f727来源；THIRD_PARTY_NOTICES.md:57、figures/PROVENANCE.md、source-logos/source.json及连接器源码支持仍存在技能、部分协议、绘图/素材改编。清单第14/15项按实际改编来源列示，未声称使用上游完整应用运行时、数据库、CLI或托管服务。保留真实来源署名符合当前main。",
+    "artifacts": "报告18页=封面1+正文12+参考2+证明3；独立资源33页。报告1331827字节、资源331102字节，均小于10MB；artifact-checks、visual-qa及snapshot的文件SHA256和规格吻合。作品名11字、简介250字。主要资源39、npm锁定路径153、可选compiler组件257。资源除变化页1/6/33以外30页提取文本在页脚标签归一后与旧版一致。",
+    "visual": "复用已完成的正文全页检查；本轮查看新contact-01/03/04/05、resource-01/06/33和三份完整来源扫描。新增概览、参考及证明页无可见裁切、重叠或缺字，导航与章页定位一致。",
+    "verification": "核对原npm-test.log及clean-build summary哈希、测试末尾汇总和构建摘要，1948总/1922通过/0失败/26跳过及661一致产物证据真实存在。当前仅文档改动，verification明确复用既有产品检查且未重跑。四份既有旧docx/md删除未纳入本次编辑。"
   },
   "notRun": [
-    "产品测试及干净构建（本次复用上一批证据）",
-    "服务、模型、浏览器及真实运行链路",
-    "既有上游许可缺口扩展审计"
+    "产品全量测试、干净构建及科研数值重跑（复用适用于未变产品源码的既有证据）",
+    "服务、外部模型、浏览器及真实Docker/SSH/GPU任务",
+    "企业证明外部真实性鉴定及全量上游许可再审计"
   ],
-  "inheritedLimits": "既有marked告知、专门数据授权及可选编译器逐包核验缺口保持原披露，不作本轮新增阻断。"
+  "inheritedLimits": "marked分发告知、素材/Anscombe专门数据许可、可选编译器逐包义务、共同权属及评审访问缺口保持披露，未在本轮新增或宣称解决。",
+  "integrationNote": "主代理按既定流程以本结果替换上一轮docs/aic-2026/review.json后提交；旧review.json不属于本次冻结快照。"
 }

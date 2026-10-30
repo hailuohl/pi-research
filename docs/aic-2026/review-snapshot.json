@@ -1,17 +1,23 @@
 {
-  "baselineCommit": "908d6e939e81c2662f5c2223208cc35357d0e87a",
-  "scope": "AI-use disclosure revision; unchanged facts and product tests reuse the accepted prior batch.",
+  "baselineCommit": "8aa0ebfdea82af0f5a00b0e48393e1c5892db6a6",
+  "codeBaselineRef": "main",
+  "codeBaselineCommit": "8bbcf296449a839bb5090b69131a1a46ebec5278",
+  "scope": "Only report editing, resource scope clarification, proof inclusion and metadata; prior product validation reused.",
   "files": {
-    "README.md": "bbbaa39eb89f2dbc51af44ab8a7a45fdb5569e35b675c4f2e9221f47de2d4a73",
-    "docs/aic-2026/DELIVERY.txt": "a687c7ee754d24f739af5bad8287a4160c8ae775a6c2a3f553c5a108dacddb70",
-    "docs/aic-2026/artifact-checks.json": "5e62b48f102c9cb52c60f462e81ce62d8f74154220f99051c568db24fee29931",
-    "docs/aic-2026/build-reports.py": "6252284825047a5cd4a25313f51069642a538f08a996b792fb8fef0f82d4a0b4",
-    "docs/aic-2026/prepare-inventory.py": "cd026d4c7e710b8ffb1905d7ae7a314e89316be7978b3b94ffe9288b7e69591e",
-    "docs/aic-2026/report-content.json": "dcaba97da4e26ae60bb5731c3ccbbf5756321ace69672329107552d264a1643b",
-    "docs/aic-2026/resource-inventory.json": "ddc1389b222d5a985ce18cfd18449ea607cd28ef5120992e332f5e8d1b5a9e3c",
-    "docs/aic-2026/verification.json": "228c2919b2b71012a80c0018dc461674f81d0a7ba627f40a3df837c77f6111fb",
-    "docs/aic-2026/visual-qa.json": "fd844e5a17b34b474fb60272b70628fe947f902edfd7509772005c5454528845",
-    "docs/aic-2026/研舟π技术报告-修订版.pdf": "cbe64b5f5722e6039fef1c42862f81d1293d5ee7b0f21f583e73be8ee4166e1b",
-    "docs/aic-2026/开源及第三方资源使用清单.pdf": "e4c148600dfb37e936d5dcf1d3a2ed34153c3a882f1770de6685380b0776da52"
+    "README.md": "7c1d2fb4d6d8abbc0f0747617be358484b94fa1d7994f2e0085356ac1d904d87",
+    "docs/aic-2026/DELIVERY.txt": "710097767c8442c6737a333c6108b0adf76c68994da56e486e146f1492e70e0c",
+    "docs/aic-2026/artifact-checks.json": "02b99771ea7a7e8bd571f4a0b45f9bb1583ed1435cd115a47adfb275c5ab22c5",
+    "docs/aic-2026/build-reports.py": "6131fbc44a2ac46df1959097928f5988368edb6962b6a4c6ea7158f3d4c42c66",
+    "docs/aic-2026/prepare-inventory.py": "fb4f99085191a64444ae3a6d4fdb41619e336c9eab1f46686762ebd3afbd0b5e",
+    "docs/aic-2026/report-content.json": "c23dfba8f9139b4d50afeab7134350a9198d1a1541736271aab2608b5ab2b1a6",
+    "docs/aic-2026/resource-inventory.json": "c061a14741bb753278064c564430a67c1bef46f2833703659112a1ad5a76747a",
+    "docs/aic-2026/verification.json": "29cd7f0a10cddaedd17c3cf05815f4ce1e70561b7639406651f6e51a9978baed",
+    "docs/aic-2026/visual-qa.json": "f1d8dd1027085ab2bf247e8996a6500f635f83fd6278e6ddd6e7315163af0f57",
+    "docs/aic-2026/研舟π技术报告-评审版.pdf": "bb1f86252a82faaec72182ce4b3e9bd7028d7ec8d21ced0c6f0801896940deb6",
+    "docs/aic-2026/开源及第三方资源使用清单-独立版.pdf": "2bd137e2bde3e6c843d281feb040fbf601681e14af5550116ba14692991c9398",
+    "docs/aic-2026/application-proof-manifest.json": "11103418ea628a26e68e2b0a019a42e4d349c404863614d8561b89babf88b36f",
+    "docs/aic-2026/application-proofs/proof-01.pdf": "a0c8f494215b7d69e691522e5c312a6436c05f9f44d1718584ecd0c2647fbe5d",
+    "docs/aic-2026/application-proofs/proof-02.pdf": "b4b6c893f79c8304a5fbbdeef949126db790c5cf7ea076c91a9d27ad6ef0eb2e",
+    "docs/aic-2026/application-proofs/proof-03.pdf": "f3f4d0b86e78e48568f4a7f3a5418f90b73fe4f19ecec390463a036221c6253f"
   }
 }

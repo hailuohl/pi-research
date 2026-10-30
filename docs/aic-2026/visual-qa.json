@@ -1,35 +1,39 @@
 {
   "date": "2026-10-30",
   "result": "pass",
-  "scope": "Project AI-use disclosure correction only",
-  "priorEvidenceCommit": "908d6e939e81c2662f5c2223208cc35357d0e87a",
-  "priorVisualQAReusedForUnchangedPages": true,
-  "renderedAndInspectedPages": [
-    4,
-    6,
-    11,
-    15,
-    28
-  ],
-  "combinedPages": 47,
+  "scope": "Judge-facing highlights, main baseline, separate resource PDF, three company proofs and precise OpenResearch adaptation disclosure.",
+  "priorEvidenceCommit": "8aa0ebfdea82af0f5a00b0e48393e1c5892db6a6",
+  "reportPages": 18,
+  "bodyPages": 12,
+  "applicationProofPages": 3,
   "resourcePages": 33,
-  "bodyPages": 11,
+  "resourceEmbedded": false,
+  "visualInspection": {
+    "technicalReport": "All original report pages previously inspected; fresh contact sheets1/3/4/5 inspected after proof additions and text changes; report pages5-8 retain prior-reviewed layout. Three full source proof pages were read visually before inclusion.",
+    "resourceInventory": "Changed pages1/6/33 inspected; remaining30 pages match the previous accepted resource PDF after footer-label normalization."
+  },
   "checks": {
-    "requiredProjectToolsAndModelsPresent": true,
-    "reportAuthoringDisclosureRemoved": true,
-    "reportAuthoringResourceRemoved": true,
+    "mainBaselineVerified": "GitHub main ref is8bbcf296449a839bb5090b69131a1a46ebec5278; product source diff empty.",
+    "noFeatureReportTextInEitherPdf": true,
+    "noResourceIndexOrResourceOutlineInTechnicalReport": true,
     "resourceEntries": 39,
-    "unchangedPageTextVerifiedAgainstPriorPdf": true,
-    "annexEqualsStandalone": true,
-    "npmIndexCount": 153,
-    "debianIndexCount": 257,
-    "withinPageAndSizeLimits": true,
-    "fontGlyphCoverage": "pass"
+    "npmIndices": 153,
+    "compilerIndices": 257,
+    "fontGlyphCoverage": "pass",
+    "outOfPageTextBoxes": 0,
+    "summaryChars": 250,
+    "scientificComparisonScopePreserved": true,
+    "priorAIUseDisclosurePreserved": true,
+    "bothFilesWithin10MB": true,
+    "proofPdfBytesMatchSuppliedFiles": true,
+    "proofImageStreamsPreservedInReport": true,
+    "proofSummariesVisuallyChecked": true,
+    "noSchoolOrAdvisorInformationVisibleInProofs": true,
+    "openresearchScope": "No upstream app runtime; retained adapted skills/protocols and assets attributed."
   },
-  "rawRenderDir": ".validation/aic-20261030/ai-use-revision/render",
+  "rawRenderDir": ".validation\\aic-20261030\\judge-edition\\render",
   "files": {
-    "研舟π技术报告-修订版.pdf": "cbe64b5f5722e6039fef1c42862f81d1293d5ee7b0f21f583e73be8ee4166e1b",
-    "开源及第三方资源使用清单.pdf": "e4c148600dfb37e936d5dcf1d3a2ed34153c3a882f1770de6685380b0776da52"
-  },
-  "outputNote": "The prior technical PDF is locked by a reader; the revised report has a distinct filename and README points to it."
+    "研舟π技术报告-评审版.pdf": "bb1f86252a82faaec72182ce4b3e9bd7028d7ec8d21ced0c6f0801896940deb6",
+    "开源及第三方资源使用清单-独立版.pdf": "2bd137e2bde3e6c843d281feb040fbf601681e14af5550116ba14692991c9398"
+  }
 }

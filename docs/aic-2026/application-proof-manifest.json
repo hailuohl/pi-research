@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-30",
+  "source": "团队提供的三份盖章应用证明扫描PDF",
+  "sourceArchiveName": "研舟π应用证明—武汉磐电科技股份有限公司等3个文件.zip",
+  "handling": "原PDF文件原样保存；报告合并时仅在原件空白页边叠加导航标题和页码，无正文、盖章和日期修改。",
+  "anonymityCheck": "三份可见页面均未见学校名称、学校LOGO或指导教师信息。",
+  "evidenceScope": "证明支持应用单位所述使用场景，不提供独立量化评测或效率提升数据；未作外部真实性鉴定。",
+  "proofs": [
+    {
+      "id": "A1",
+      "organization": "武汉星衡智电科技有限公司",
+      "file": "application-proofs/proof-01.pdf",
+      "sha256": "a0c8f494215b7d69e691522e5c312a6436c05f9f44d1718584ecd0c2647fbe5d",
+      "pages": 1,
+      "applicationPeriod": "未载明起始时间"
+    },
+    {
+      "id": "A2",
+      "organization": "武汉磐电科技股份有限公司",
+      "file": "application-proofs/proof-02.pdf",
+      "sha256": "b4b6c893f79c8304a5fbbdeef949126db790c5cf7ea076c91a9d27ad6ef0eb2e",
+      "pages": 1,
+      "applicationPeriod": "2026年7月至今（按证明所载）"
+    },
+    {
+      "id": "A3",
+      "organization": "武汉嘉兰川科技有限公司",
+      "file": "application-proofs/proof-03.pdf",
+      "sha256": "f3f4d0b86e78e48568f4a7f3a5418f90b73fe4f19ecec390463a036221c6253f",
+      "pages": 1,
+      "applicationPeriod": "2026年7月至今（按证明所载）"
+    }
+  ]
+}
