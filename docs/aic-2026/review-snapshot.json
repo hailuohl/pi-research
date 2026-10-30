@@ -1,0 +1,17 @@
+{
+  "baselineCommit": "8bbcf296449a839bb5090b69131a1a46ebec5278",
+  "freeze": "Review target frozen after final PDFs and QA; pre-existing report deletions excluded.",
+  "files": {
+    "README.md": "cc6f94cffe3b5e2ca1c86150cbe12ec5da06b750e7e3994c83b674975dcefeb7",
+    "docs/aic-2026/artifact-checks.json": "4635fa8f3396a25d33082e88690df2d9feebf9463bad5e096874d17d93101760",
+    "docs/aic-2026/build-reports.py": "383ace55726c33dd0608d107db45a2619599c9ae62965dcf9a20c8ad7978053e",
+    "docs/aic-2026/DELIVERY.txt": "7b3cab7062695af548d251ed79175aecd7075f8607f85ac9a99c13d34d86165c",
+    "docs/aic-2026/prepare-inventory.py": "40c555b12e65e3daa855ebbdd33980eab0d10f7fd822b1d5f0cad88507bb9ec2",
+    "docs/aic-2026/report-content.json": "be39215fc03afd8a84d65478597edb0656337c67bb8ac12ac8183f74c0b06027",
+    "docs/aic-2026/resource-inventory.json": "0e8cb73eeaabab85b69664e08a6ff34a28a134b25f73083e2d951f67d64ed109",
+    "docs/aic-2026/verification.json": "0d0b507e12e07bff7224d58711a8243c370e506c2046123e2eb52b089f2f225b",
+    "docs/aic-2026/visual-qa.json": "6a4c5ab64a1f7e544e3e3c63b47805df537ce960cc5dc63a71fa0fac61eeeedf",
+    "docs/aic-2026/开源及第三方资源使用清单.pdf": "0a9729a4feb581359afe6b2fde2bcf8151dc3636a305397f9b3602917480fe98",
+    "docs/aic-2026/研舟π技术报告.pdf": "bb3c700befb7995fcb7984965c0c46707358034beb5bb569697490e21e194bff"
+  }
+}

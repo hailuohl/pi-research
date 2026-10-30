@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-30",
+  "result": "pass",
+  "renderer": "Poppler pdftoppm 26.07.0, PNG scale-to 1150",
+  "combinedPages": 48,
+  "resourcePages": 34,
+  "bodyPages": 11,
+  "visualInspection": "All pages reviewed using eight contact sheets; detailed review of body pages and changed glyph. Readable hierarchy and repeated table headers; no observed clipping, overlap or missing glyph. Historical screenshots labelled with date and scope.",
+  "automatedChecks": {
+    "pageMarkersConsecutive": true,
+    "bodyWithin15Pages": true,
+    "bothPdfsWithin10MB": true,
+    "annexTextEqualsStandalone": true,
+    "npmIndexCount": 153,
+    "debianIndexCount": 257,
+    "noReplacementCharacters": true,
+    "fontSourceGlyphCoverage": "pass",
+    "outOfPageTextBoxes": 0,
+    "sourceReferencesExist": true,
+    "authorMetadataEmpty": true
+  },
+  "anonymity": "Team name, number and member division omitted at user request. No team school name, school logo or advisor identity found in authored pages or the inspected public-software screenshots.",
+  "rawRenderDir": ".validation/aic-20261030/render",
+  "files": {
+    "开源及第三方资源使用清单.pdf": "0a9729a4feb581359afe6b2fde2bcf8151dc3636a305397f9b3602917480fe98",
+    "研舟π技术报告.pdf": "bb3c700befb7995fcb7984965c0c46707358034beb5bb569697490e21e194bff"
+  }
+}

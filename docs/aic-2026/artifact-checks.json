@@ -1,0 +1,32 @@
+{
+  "workNameChars": 11,
+  "summaryChars": 247,
+  "bodyPages": 11,
+  "coverPages": 1,
+  "referencePages": 2,
+  "resourcePages": 34,
+  "combinedPages": 48,
+  "bodyMarkers": {
+    "body-1": 2,
+    "body-2": 3,
+    "body-3": 4,
+    "body-4": 5,
+    "body-5": 6,
+    "body-6": 7,
+    "body-7": 8,
+    "body-8": 9,
+    "body-9": 10,
+    "body-10": 11,
+    "body-11": 12
+  },
+  "files": {
+    "研舟π技术报告.pdf": {
+      "bytes": 1008115,
+      "sha256": "bb3c700befb7995fcb7984965c0c46707358034beb5bb569697490e21e194bff"
+    },
+    "开源及第三方资源使用清单.pdf": {
+      "bytes": 333175,
+      "sha256": "0a9729a4feb581359afe6b2fde2bcf8151dc3636a305397f9b3602917480fe98"
+    }
+  }
+}

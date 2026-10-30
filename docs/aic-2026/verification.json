@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-30",
+  "baselineCommit": "8bbcf296449a839bb5090b69131a1a46ebec5278",
+  "scope": "Report/source audit and artifact creation only; product source unchanged; pre-existing four report deletions preserved outside this batch.",
+  "tests": {
+    "total": 1948,
+    "pass": 1922,
+    "fail": 0,
+    "skip": 26,
+    "command": "npm test",
+    "exitCode": 0,
+    "durationMs": 991206.616,
+    "rawLog": ".validation/aic-20261030/npm-test.log",
+    "logSha256": "b7829adfafaf6b47d90f157b95ce1b7f452e738ab91f2634c7eaced3262ca59a",
+    "reportedSkipDescriptions": [
+      "POSIX backup preserves distinct case-sensitive sibling paths",
+      "real IPC, Docker failure/repair and two trusted Run subprocesses continue one frozen goal exactly once",
+      "optional formal Docker supervisor: success, integrity limits, cancellation, timeout and created recovery",
+      "isolated compiler: pdflatex",
+      "isolated compiler: xelatex",
+      "isolated compiler: lualatex",
+      "isolated compiler: chinese",
+      "isolated compiler: lua-chinese-budget",
+      "isolated compiler: bibtex",
+      "isolated compiler: biber",
+      "isolated compiler: missing-image",
+      "isolated compiler: missing-package",
+      "isolated compiler: undefined-reference",
+      "isolated compiler: shell-blocked",
+      "isolated compiler: lua-blocked",
+      "isolated compiler: forged-result",
+      "isolated compiler: lua-forged-host-result",
+      "isolated compiler: pdf-before-error",
+      "isolated compiler: absolute-write-blocked",
+      "isolated compiler: biber-remote-blocked",
+      "isolated compiler: biber-nonutf8-control",
+      "isolated compiler: timeout",
+      "optional real Docker preserves ordinary and executable source modes",
+      "POSIX source modes reflect actual exec bits and writes retain exact normal permission bits"
+    ],
+    "skipNote": "Aggregate count is the runner summary; descriptions contain only explicit skip lines in the console reporter. Skipped tests are not passes."
+  },
+  "cleanBuild": {
+    "status": "通过",
+    "command": "npm run verify:build",
+    "identical": true,
+    "files": 661,
+    "steps": [
+      {
+        "name": "npm-ci",
+        "exitCode": 0
+      },
+      {
+        "name": "build",
+        "exitCode": 0
+      },
+      {
+        "name": "typecheck",
+        "exitCode": 0
+      }
+    ],
+    "rawSummary": "D:/工作/pi-research/.validation/clean-build-Hpgqlj/summary.json",
+    "summarySha256": "052d6e400583f2dfb2d8f21fffe01bc269b52dba1eef03268455790d2e7e27e9",
+    "distManifestSha256": "620e20cbf01b21cfad872708cedf335c15e230c90a94cc9c89c47066a0d80028"
+  },
+  "environment": {
+    "node": "24.18.0",
+    "npmActual": "11.16.0",
+    "npmDeclared": "11.17.0",
+    "platform": "win32",
+    "dockerOnPath": false
+  },
+  "notRunThisBatch": [
+    "External provider live tests",
+    "Real Docker/SSH/GPU jobs",
+    "Browser UI",
+    "Research numerical experiments",
+    "Application manuscript compilation"
+  ],
+  "repository": {
+    "fullName": "hailuohl/pi-research",
+    "isPrivate": true,
+    "verifiedBy": "gh repo view --json",
+    "reviewerAccessVerified": false,
+    "githubConnector": "404; verified successfully via existing GitHub CLI session"
+  },
+  "models": [
+    {
+      "task": "resource_audit",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high",
+      "actualModel": "runtime not echoed",
+      "actualEffort": "runtime not echoed"
+    }
+  ],
+  "acceptance": [
+    "Official eight chapters and evidence-linked original/third-party boundary",
+    "Anonymous PDF body <=15 pages and <=10 MB with AI-use disclosure; no fabricated results",
+    "Current and optional resources separated; inactive items excluded from current table",
+    "Artifact QA, independent review, explicit-path commit and verified private-branch push"
+  ]
+}
