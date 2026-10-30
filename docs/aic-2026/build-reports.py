@@ -255,7 +255,7 @@ def group(r):
     if t in ("npm-transitive-browser", "npm-transitive-runtime", "adapted-source", "adapted-source-resource", "adapted-algorithm-source", "static-assets", "static-brand-assets"): return 1
     if t in ("runtime-tool", "development-tool"): return 2
     if t.startswith("historical-public"): return 5
-    if t == "report-authoring-tool": return 6
+    if t == "development-ai-tools": return 6
     if t == "external-service-adapter" or t == "optional-external-model-services": return 4
     return 3
 
@@ -267,11 +267,11 @@ def resource_story(inv):
          p("基线 " + inv["baselineCommit"], "small"),
          p("披露口径", "h2"),
          p("清单依据当前源码、实际调用链、锁文件与许可文件形成。现用资源、按需接入和报告引用数据分别列明。代码支持或SDK带有某个客户端，不代表该服务实际调用过；锁定可选平台包不表示当前主机安装或执行。历史停用包不列入现用主表。"),
-         p(f"主表共{len(inv['resources'])}项披露记录（包含报告制作工具），另附153条npm锁定路径和257项可选文稿编译器锁定组件。11个npm直接依赖中，两个Pi包虽声明于devDependencies，应用AI运行时仍会调用；不能据dev标志判断它们无需安装。"),
+         p(f"主表共{len(inv['resources'])}项披露记录（包含项目开发辅助工具与模型），另附153条npm锁定路径和257项可选文稿编译器锁定组件。11个npm直接依赖中，两个Pi包虽声明于devDependencies，应用AI运行时仍会调用；不能据dev标志判断它们无需安装。"),
          table(["状态含义", "本清单的使用方式"], [["已核对", "仅对明确列出的版本、源码、许可文件或安装事实确认，不表示整个系统获合规认证。"], ["待补齐 / 部分核验", "列明实际告知、授权或组件核验缺口；不以锁字段或资源可下载替代授权。"], ["按需配置", "当前代码已经接线，启用与安装由用户选择；本次没有据此冒称已执行。"], ["报告引用", "历史实验数据用于本报告证据，不是应用的默认运行依赖；保留原日期与实验环境。"]], [0.27,0.73]),
          p("本次发现的具体待办", "h2"),
          p("marked完整分发告知需补齐；论文源logo的原站版权/商标范围、可选编译器逐包许可及Anscombe专门数据许可尚未全面核验。正文已披露这些限制。本次为分析与材料制作，没有修改产品许可文件或第三方资产。", "small")]
-    titles = ["A 当前直接npm依赖", "B 当前传递资源与改编内容", "C 运行与构建底座", "D 当前按需工具及运行环境", "E 已接线的可选外部服务", "F 本报告引用的历史数据", "G 本次报告制作工具"]
+    titles = ["A 当前直接npm依赖", "B 当前传递资源与改编内容", "C 运行与构建底座", "D 当前按需工具及运行环境", "E 已接线的可选外部服务", "F 本报告引用的历史数据", "G 项目开发中的AI辅助工具与模型"]
     index = 0
     for g, title in enumerate(titles):
         rs = [r for r in inv["resources"] if group(r) == g]
@@ -350,7 +350,7 @@ def main():
     writer.append(body, outline_item="技术报告 正文与证据")
     writer.append(resource, outline_item="附件 开源及第三方资源使用清单")
     writer.add_metadata({"/Title":"研舟π可追溯科研智能体 技术报告", "/Author":"", "/Subject":"2026 AIC AI+开源 匿名技术材料"})
-    final=HERE / "研舟π技术报告.pdf"
+    final=HERE / "研舟π技术报告-修订版.pdf"
     with final.open("wb") as f: writer.write(f)
     summary={"workNameChars":len(content["workName"]), "summaryChars":len(content["summary"]),
              "bodyPages":len(content["pages"]), "coverPages":1, "referencePages":body_pages-len(content["pages"])-1,

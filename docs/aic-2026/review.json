@@ -1,168 +1,35 @@
 {
-  "task": "AIC-REVIEW",
   "date": "2026-10-30",
-  "scope": "Independent read-only review of technical report and third-party resource inventory; not product security redesign, legal clearance, external model validation, or competition submission.",
-  "baselineCommit": "8bbcf296449a839bb5090b69131a1a46ebec5278",
+  "baselineCommit": "908d6e939e81c2662f5c2223208cc35357d0e87a",
   "branch": "feature/report",
-  "snapshot": "docs/aic-2026/review-snapshot.json",
-  "snapshotSha256": "60f037306b235ea4067d968b3069ca9246f612888268809eb357e70b6b9e8759",
-  "allFrozenHashesMatch": true,
-  "requestedConfiguration": {
-    "model": "gpt-6.1-sol",
-    "effort": "high",
-    "actualModel": "runtime not echoed",
-    "actualEffort": "runtime not echoed"
+  "result": "pass",
+  "blockers": [],
+  "nonBlockingFindings": [],
+  "scope": "独立只读复核项目开发AI辅助披露修订；仅写此结果，不修改产品或交付文件。",
+  "model": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "medium",
+    "actualModel": "运行时未回显",
+    "actualEffort": "运行时未回显"
   },
-  "result": "pass-with-disclosed-gaps",
-  "blockingFindings": [],
-  "newNonBlockingFindings": [],
-  "acceptance": [
-    {
-      "criterion": 1,
-      "result": "pass",
-      "evidence": "Official two AIC PDFs re-read; eight authored chapters present. package.json/Pi runtime/connector defaults/MMR implementation/13-skill manifest/163 exported input schemas match. Originality boundaries distinguish Pi, OpenResearch and narrow PaperQA adaptation. Wine historical values and scope match committed evidence; grouped MSE reduction is 19.9633%, not agent performance gain. Anscombe and revocation claims match committed QA records and explicitly identify deterministic local model replies."
-    },
-    {
-      "criterion": 2,
-      "result": "pass",
-      "evidence": "pypdf independently reads 48 combined pages: cover1 + body11 + references2 + annex34; standalone annex34. Sizes 1008115 and 333175 bytes. Author metadata empty. AI tool use and team-confirmation limitations disclosed. Reviewed existing final contact sheets 01/02/08; no observed clipping or author/school/advisor identifiers. Full page visual QA reused from frozen visual-qa.json; no new render performed."
-    },
-    {
-      "criterion": 3,
-      "result": "pass-with-disclosed-gaps",
-      "evidence": "40 main records have all required resource/version/type/source/license/use/obligations/original-boundary/status fields. All153 nonroot npm lock paths and versions/license/source/integrity match package-lock; installed versions match their declared record. All257 compiler entries match original lock name/version/architecture/file/url/bytes/sha256. Five source hashes match. PDF indexes N001-N153 and D001-D257 complete; combined annex text equals standalone. Current/optional/historical/report-tool groups do not claim inactive PyMuPDF or unused SDK providers as current use. Licenses marked pending are not treated as completed clearance."
-    },
-    {
-      "criterion": 4,
-      "result": "review-pass; main-agent commit/push pending",
-      "evidence": "npm-test raw log hash and final totals match verification.json:1948 total/1922 pass/0 fail/26 skipped. Clean-build summary hash matches; npm-ci/build/typecheck exit0, identical661 files. Did not repeat full tests/build or operate services. Frozen11-file hashes remain unchanged at review completion."
-    }
+  "snapshot": {
+    "path": "docs/aic-2026/review-snapshot.json",
+    "sha256": "77e28f477c48c58852dbffba012a268c8f9c5fecb65eb0bac072561016202016",
+    "fileCount": 11,
+    "allHashesMatch": true
+  },
+  "checks": {
+    "disclosure": "4.8及资源第39项包含Codex、ZCode、GPT-6、GLM-5.3、DeepSeek系列，说明开发辅助及审核修改验证责任。3.3/7.3同步，无报告生成、主会话或子代理配置旧叙述。未将这些工具模型说成应用默认模型、开源权重或历史实验模型。",
+    "sourceDiff": "report-content.json仅3段文字变化；原资源前38项及npm/compiler锁定索引未变，删除报告生成核验工具行，主要资源40变39。产品源码无本批差异，四份旧文档删除为既有在途状态。",
+    "artifact": "正文11页；总47页；独立资源33页；技术PDF1005617字节，小于10MB。附件逐页提取文本与独立资源PDF完全相同；文件规格及SHA256与artifact-checks/visual-qa/snapshot一致。",
+    "preservation": "除物理页4/6/11/15/28以外，删除一页后的对应页正文文本一致，后续仅资源附件页码递减。未记录团队名、编号或实际成员分工。npm锁定路径153，compiler组件257。",
+    "visual": "查看已有渲染PNG物理页4/6/11/15/28，无裁切、重叠或缺字；未重复渲染。",
+    "verification": "verification.json保留1948总/1922通过/0失败/26跳过及661文件干净构建证据，并明确本次无产品改动、复用旧检查、未重跑全量测试。"
+  },
+  "notRun": [
+    "产品测试及干净构建（本次复用上一批证据）",
+    "服务、模型、浏览器及真实运行链路",
+    "既有上游许可缺口扩展审计"
   ],
-  "verificationGaps": [
-    {
-      "location": "docs/aic-2026/report-content.json: chapter7.1; resource-inventory.json: marked and Literature source logos records",
-      "status": "already disclosed; not a new report blocker",
-      "risk": "Actual software distribution notice/brand-rights clearance remains incomplete. scripts/build.mjs copies React LICENSE, while marked full MIT plus Markdown notice is not explicitly distributed. Report accurately records this; no blanket compliance claim accepted."
-    },
-    {
-      "location": "docs/aic-2026/resource-inventory.json: optionalCompilerLocked, Anscombe and external-service records",
-      "status": "already disclosed; not a new report blocker",
-      "risk": "257 compiler package combined licenses/source channels, dedicated numeric-data license/exact R revision, and actual remote service terms/use are not fully cleared. Do not represent locks or publicly reachable content as legal clearance."
-    },
-    {
-      "location": "docs/aic-2026/report-content.json: chapters4.8,6.2,8.2; verification.json:notRunThisBatch",
-      "status": "outside this report-authoring batch; explicitly incomplete",
-      "risk": "Team human rights/content sign-off, reviewer account access, demonstration video, current external-provider/Docker/SSH/GPU validation and scientific agent comparison were not performed. This review does not make materials ready for formal competition submission."
-    }
-  ],
-  "officialSources": [
-    "https://www.aicomp.cn/wp-content/uploads/2026/08/附件1_AIC·AI开源竞赛规则及作品提交要求0812.pdf",
-    "https://www.aicomp.cn/wp-content/uploads/2026/08/附件2_AIC·AI开源技术报告参考大纲260812.pdf"
-  ],
-  "checksNotRepeated": [
-    "full npm test",
-    "clean build",
-    "historical research computation",
-    "external model requests",
-    "Docker/SSH/GPU jobs",
-    "browser service/UI session",
-    "PDF rasterization"
-  ],
-  "mutations": "Only .validation/aic-20261030/independent-review.json was added; product and frozen deliverables untouched.",
-  "stagedNormalizationReview": {
-    "result": "pass",
-    "stagedFiles": 12,
-    "binaryPdfFiles": 2,
-    "textFiles": 10,
-    "frozenWorkingHashesStillMatch": true,
-    "rule": ".gitattributes: * text=auto eol=lf; *.pdf binary",
-    "semantics": "All staged text bytes equal worktree bytes after CRLF-to-LF conversion only; PDF bytes identical. No content/semantic changes.",
-    "perFile": [
-      {
-        "path": "README.md",
-        "kind": "text",
-        "relation": "identical",
-        "workingSha256": "cc6f94cffe3b5e2ca1c86150cbe12ec5da06b750e7e3994c83b674975dcefeb7",
-        "stagedSha256": "cc6f94cffe3b5e2ca1c86150cbe12ec5da06b750e7e3994c83b674975dcefeb7"
-      },
-      {
-        "path": "docs/aic-2026/DELIVERY.txt",
-        "kind": "text",
-        "relation": "identical",
-        "workingSha256": "7b3cab7062695af548d251ed79175aecd7075f8607f85ac9a99c13d34d86165c",
-        "stagedSha256": "7b3cab7062695af548d251ed79175aecd7075f8607f85ac9a99c13d34d86165c"
-      },
-      {
-        "path": "docs/aic-2026/artifact-checks.json",
-        "kind": "text",
-        "relation": "CRLF-to-LF only",
-        "workingSha256": "4635fa8f3396a25d33082e88690df2d9feebf9463bad5e096874d17d93101760",
-        "stagedSha256": "7a361db1cc21431f1c35524e8c3662c1b19a064885d48079776f631d0382d6d0"
-      },
-      {
-        "path": "docs/aic-2026/build-reports.py",
-        "kind": "text",
-        "relation": "identical",
-        "workingSha256": "383ace55726c33dd0608d107db45a2619599c9ae62965dcf9a20c8ad7978053e",
-        "stagedSha256": "383ace55726c33dd0608d107db45a2619599c9ae62965dcf9a20c8ad7978053e"
-      },
-      {
-        "path": "docs/aic-2026/prepare-inventory.py",
-        "kind": "text",
-        "relation": "identical",
-        "workingSha256": "40c555b12e65e3daa855ebbdd33980eab0d10f7fd822b1d5f0cad88507bb9ec2",
-        "stagedSha256": "40c555b12e65e3daa855ebbdd33980eab0d10f7fd822b1d5f0cad88507bb9ec2"
-      },
-      {
-        "path": "docs/aic-2026/report-content.json",
-        "kind": "text",
-        "relation": "CRLF-to-LF only",
-        "workingSha256": "be39215fc03afd8a84d65478597edb0656337c67bb8ac12ac8183f74c0b06027",
-        "stagedSha256": "7324085425d2dd835796477445ef6e41f8eed3b7bdf893adb2a3232603be22ba"
-      },
-      {
-        "path": "docs/aic-2026/resource-inventory.json",
-        "kind": "text",
-        "relation": "CRLF-to-LF only",
-        "workingSha256": "0e8cb73eeaabab85b69664e08a6ff34a28a134b25f73083e2d951f67d64ed109",
-        "stagedSha256": "3b9e99b8d99d622c27782140e1615f1e2356da2687c76c10928b6a0701e473f5"
-      },
-      {
-        "path": "docs/aic-2026/review-snapshot.json",
-        "kind": "text",
-        "relation": "CRLF-to-LF only",
-        "workingSha256": "60f037306b235ea4067d968b3069ca9246f612888268809eb357e70b6b9e8759",
-        "stagedSha256": "fdaed6bb626134c0e63235988d9edb5ba606e28a2c8d74934c2908e94b88881a"
-      },
-      {
-        "path": "docs/aic-2026/verification.json",
-        "kind": "text",
-        "relation": "CRLF-to-LF only",
-        "workingSha256": "0d0b507e12e07bff7224d58711a8243c370e506c2046123e2eb52b089f2f225b",
-        "stagedSha256": "0b68fab64d3f9ad001299bd355ec0749ac28e4eefedc9a57d31ca7019df9660c"
-      },
-      {
-        "path": "docs/aic-2026/visual-qa.json",
-        "kind": "text",
-        "relation": "CRLF-to-LF only",
-        "workingSha256": "6a4c5ab64a1f7e544e3e3c63b47805df537ce960cc5dc63a71fa0fac61eeeedf",
-        "stagedSha256": "430ee9d3338468f25f35d6019458539ec8626b84cf3f5c534d57457debabee99"
-      },
-      {
-        "path": "docs/aic-2026/开源及第三方资源使用清单.pdf",
-        "kind": "binary PDF",
-        "relation": "identical",
-        "workingSha256": "0a9729a4feb581359afe6b2fde2bcf8151dc3636a305397f9b3602917480fe98",
-        "stagedSha256": "0a9729a4feb581359afe6b2fde2bcf8151dc3636a305397f9b3602917480fe98"
-      },
-      {
-        "path": "docs/aic-2026/研舟π技术报告.pdf",
-        "kind": "binary PDF",
-        "relation": "identical",
-        "workingSha256": "bb3c700befb7995fcb7984965c0c46707358034beb5bb569697490e21e194bff",
-        "stagedSha256": "bb3c700befb7995fcb7984965c0c46707358034beb5bb569697490e21e194bff"
-      }
-    ],
-    "deliveryRecord": "Main agent may save both original frozen worktree SHA-256 and normalized staged SHA-256 in docs/aic-2026/review.json. Those hashes identify different byte representations; original review-snapshot.json and frozen working files remain unchanged."
-  }
+  "inheritedLimits": "既有marked告知、专门数据授权及可选编译器逐包核验缺口保持原披露，不作本轮新增阻断。"
 }

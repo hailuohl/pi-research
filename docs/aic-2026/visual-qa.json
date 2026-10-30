@@ -1,28 +1,35 @@
 {
   "date": "2026-10-30",
   "result": "pass",
-  "renderer": "Poppler pdftoppm 26.07.0, PNG scale-to 1150",
-  "combinedPages": 48,
-  "resourcePages": 34,
+  "scope": "Project AI-use disclosure correction only",
+  "priorEvidenceCommit": "908d6e939e81c2662f5c2223208cc35357d0e87a",
+  "priorVisualQAReusedForUnchangedPages": true,
+  "renderedAndInspectedPages": [
+    4,
+    6,
+    11,
+    15,
+    28
+  ],
+  "combinedPages": 47,
+  "resourcePages": 33,
   "bodyPages": 11,
-  "visualInspection": "All pages reviewed using eight contact sheets; detailed review of body pages and changed glyph. Readable hierarchy and repeated table headers; no observed clipping, overlap or missing glyph. Historical screenshots labelled with date and scope.",
-  "automatedChecks": {
-    "pageMarkersConsecutive": true,
-    "bodyWithin15Pages": true,
-    "bothPdfsWithin10MB": true,
-    "annexTextEqualsStandalone": true,
+  "checks": {
+    "requiredProjectToolsAndModelsPresent": true,
+    "reportAuthoringDisclosureRemoved": true,
+    "reportAuthoringResourceRemoved": true,
+    "resourceEntries": 39,
+    "unchangedPageTextVerifiedAgainstPriorPdf": true,
+    "annexEqualsStandalone": true,
     "npmIndexCount": 153,
     "debianIndexCount": 257,
-    "noReplacementCharacters": true,
-    "fontSourceGlyphCoverage": "pass",
-    "outOfPageTextBoxes": 0,
-    "sourceReferencesExist": true,
-    "authorMetadataEmpty": true
+    "withinPageAndSizeLimits": true,
+    "fontGlyphCoverage": "pass"
   },
-  "anonymity": "Team name, number and member division omitted at user request. No team school name, school logo or advisor identity found in authored pages or the inspected public-software screenshots.",
-  "rawRenderDir": ".validation/aic-20261030/render",
+  "rawRenderDir": ".validation/aic-20261030/ai-use-revision/render",
   "files": {
-    "开源及第三方资源使用清单.pdf": "0a9729a4feb581359afe6b2fde2bcf8151dc3636a305397f9b3602917480fe98",
-    "研舟π技术报告.pdf": "bb3c700befb7995fcb7984965c0c46707358034beb5bb569697490e21e194bff"
-  }
+    "研舟π技术报告-修订版.pdf": "cbe64b5f5722e6039fef1c42862f81d1293d5ee7b0f21f583e73be8ee4166e1b",
+    "开源及第三方资源使用清单.pdf": "e4c148600dfb37e936d5dcf1d3a2ed34153c3a882f1770de6685380b0776da52"
+  },
+  "outputNote": "The prior technical PDF is locked by a reader; the revised report has a distinct filename and README points to it."
 }

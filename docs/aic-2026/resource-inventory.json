@@ -1053,27 +1053,15 @@
       ]
     },
     {
-      "name": "Codex生成式AI辅助",
-      "version": "本次Codex会话；服务端实际模型版本未独立回显",
-      "type": "report-authoring-tool",
-      "source": "https://openai.com/policies/terms-of-use/",
-      "license": "账户适用的OpenAI服务条款；不是模型权重的开源授权",
-      "use": "本次源码/依赖核对、文字与排版生成、文件检查；资源审计和独立复核请求Sol/high，记录实际工具证据。",
-      "obligations": "遵守所用账户条款；合理审核生成代码/文本、来源与权利；不能据此宣称团队独占全部生成内容。",
-      "originalBoundary": "本次文档内容为基于证据的AI辅助整理；团队最终人工权属和内容确认未由本轮核实。",
-      "compliance": "已披露用途与核验过程；不虚构未回显模型或团队已完成人工签字。",
-      "evidence": []
-    },
-    {
-      "name": "报告生成与核验工具",
-      "version": "Python 3.12.14；ReportLab 4.4.9；pypdf 6.10.0；Pillow 12.3.0；fontTools 4.68.0；Poppler 26.07.0；Noto Sans SC下载于2026-10-30",
-      "type": "report-authoring-tool",
-      "source": "https://pypi.org/project/reportlab/4.4.9/ ; https://pypi.org/project/pypdf/6.10.0/ ; https://github.com/google/fonts/tree/main/ofl/notosanssc",
-      "license": "Python PSF；ReportLab BSD；pypdf BSD-3-Clause；Pillow MIT-CMU；fontTools MIT；Poppler GPL系列及组件告知；Noto OFL-1.1",
-      "use": "只用于本次报告PDF排版、字形子集嵌入和文件检查，不是应用运行依赖；不随材料分发工具安装包或完整字体文件。",
-      "obligations": "遵守各工具许可，保留Noto字体名称与OFL来源；若再分发工具或字体文件另附完整许可。",
-      "originalBoundary": "图文排版及架构示意依据项目源码整理，历史截图来自仓库软件验收。",
-      "compliance": "本次工具版本已读取；字体OFL文本已下载核对，PDF按页渲染检查。",
+      "name": "项目开发中的AI辅助工具与模型",
+      "version": "Codex、ZCode（工具版本未细分）；GPT-6、GLM-5.3、DeepSeek系列（子型号未细分）",
+      "type": "development-ai-tools",
+      "source": "团队项目开发使用说明（2026-10-30补充）",
+      "license": "适用各工具和模型服务条款；不包含模型权重再分发授权",
+      "use": "项目开发过程中适当使用Codex、ZCode，以及GPT-6、GLM-5.3和DeepSeek系列模型，辅助方案讨论、代码编写、问题定位和测试改进。",
+      "obligations": "遵守相应工具和模型服务条款；对采用的生成内容进行审核、修改与验证，并核查引用来源与权利。",
+      "originalBoundary": "辅助工具与模型为第三方资源；项目需求、架构设计、功能整合及结果验收由团队负责。",
+      "compliance": "使用情况依据团队说明记录；开发辅助用途与应用运行时模型配置、历史实验模型分别列示。",
       "evidence": []
     }
   ],
@@ -8329,7 +8317,7 @@
     }
   ],
   "summary": {
-    "resourceEntries": 40,
+    "resourceEntries": 39,
     "npmDirect": 11,
     "npmLockedPaths": 153,
     "npmInstalledPaths": 128,

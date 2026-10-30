@@ -98,5 +98,13 @@
     "Anonymous PDF body <=15 pages and <=10 MB with AI-use disclosure; no fabricated results",
     "Current and optional resources separated; inactive items excluded from current table",
     "Artifact QA, independent review, explicit-path commit and verified private-branch push"
-  ]
+  ],
+  "documentOnlyRevision": {
+    "baselineCommit": "908d6e939e81c2662f5c2223208cc35357d0e87a",
+    "scope": "Correct AI-use disclosure to project development with Codex, ZCode, GPT-6, GLM-5.3 and DeepSeek series; remove report-authoring resources from competition inventory.",
+    "productChanged": false,
+    "priorProductChecksReused": true,
+    "fullProductTestsRerun": false,
+    "modelNamesSource": "User project-use clarification on 2026-10-30"
+  }
 }

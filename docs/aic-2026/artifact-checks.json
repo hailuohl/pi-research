@@ -4,8 +4,8 @@
   "bodyPages": 11,
   "coverPages": 1,
   "referencePages": 2,
-  "resourcePages": 34,
-  "combinedPages": 48,
+  "resourcePages": 33,
+  "combinedPages": 47,
   "bodyMarkers": {
     "body-1": 2,
     "body-2": 3,
@@ -20,13 +20,13 @@
     "body-11": 12
   },
   "files": {
-    "研舟π技术报告.pdf": {
-      "bytes": 1008115,
-      "sha256": "bb3c700befb7995fcb7984965c0c46707358034beb5bb569697490e21e194bff"
+    "研舟π技术报告-修订版.pdf": {
+      "bytes": 1005617,
+      "sha256": "cbe64b5f5722e6039fef1c42862f81d1293d5ee7b0f21f583e73be8ee4166e1b"
     },
     "开源及第三方资源使用清单.pdf": {
-      "bytes": 333175,
-      "sha256": "0a9729a4feb581359afe6b2fde2bcf8151dc3636a305397f9b3602917480fe98"
+      "bytes": 330807,
+      "sha256": "e4c148600dfb37e936d5dcf1d3a2ed34153c3a882f1770de6685380b0776da52"
     }
   }
 }

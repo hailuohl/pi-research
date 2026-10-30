@@ -68,11 +68,8 @@ def main():
                    "项目可选私密仓库配置和已提交代码同步；本次由主代理交付文档，不把该推送当成产品发布功能live验收。", "遵守账号、内容与访问条款；保留CLI许可；保证提交内容有权提供且评审期间可访问。", "托管及CLI非原创；仓库状态、受限同步和回执恢复适配由项目实现。", "CLI核实仓库private；评审账号访问尚未验证，产品远端写入仍不能由本次人工推送代替验收。", [("packages/workspace/github-command.ts", 1), ("packages/connectors/catalog.ts", 12)]),
         supplement("NVIDIA驱动与CUDA Driver接口", "按用户目标；本轮不读取驱动版本", "optional-device-runtime", "https://docs.nvidia.com/cuda/eula/index.html", "NVIDIA适用的专有软件许可与驱动条款；不标开源",
                    "可选NVIDIA UUID预留、容器可见性及可信本地GPU运行；向量加法历史验收调用Driver接口。", "按目标驱动和实际分发组件核对授权；本项目不分发驱动、CUDA SDK或模型权重。", "驱动与GPU非原创；固定设备声明、并发预留、预检和监管接线为项目实现。", "已有指定硬件历史证据；本次未核验驱动就绪、训练框架或任意外部目标。", [("packages/runners/gpu.ts", 1), ("scripts/nvidia-vector-add.py", 1)]),
-        supplement("Codex生成式AI辅助", "本次Codex会话；服务端实际模型版本未独立回显", "report-authoring-tool", "https://openai.com/policies/terms-of-use/", "账户适用的OpenAI服务条款；不是模型权重的开源授权",
-                   "本次源码/依赖核对、文字与排版生成、文件检查；资源审计和独立复核请求Sol/high，记录实际工具证据。", "遵守所用账户条款；合理审核生成代码/文本、来源与权利；不能据此宣称团队独占全部生成内容。", "本次文档内容为基于证据的AI辅助整理；团队最终人工权属和内容确认未由本轮核实。", "已披露用途与核验过程；不虚构未回显模型或团队已完成人工签字。", []),
-        supplement("报告生成与核验工具", "Python 3.12.14；ReportLab 4.4.9；pypdf 6.10.0；Pillow 12.3.0；fontTools 4.68.0；Poppler 26.07.0；Noto Sans SC下载于2026-10-30", "report-authoring-tool", "https://pypi.org/project/reportlab/4.4.9/ ; https://pypi.org/project/pypdf/6.10.0/ ; https://github.com/google/fonts/tree/main/ofl/notosanssc",
-                   "Python PSF；ReportLab BSD；pypdf BSD-3-Clause；Pillow MIT-CMU；fontTools MIT；Poppler GPL系列及组件告知；Noto OFL-1.1",
-                   "只用于本次报告PDF排版、字形子集嵌入和文件检查，不是应用运行依赖；不随材料分发工具安装包或完整字体文件。", "遵守各工具许可，保留Noto字体名称与OFL来源；若再分发工具或字体文件另附完整许可。", "图文排版及架构示意依据项目源码整理，历史截图来自仓库软件验收。", "本次工具版本已读取；字体OFL文本已下载核对，PDF按页渲染检查。", [])
+        supplement("项目开发中的AI辅助工具与模型", "Codex、ZCode（工具版本未细分）；GPT-6、GLM-5.3、DeepSeek系列（子型号未细分）", "development-ai-tools", "团队项目开发使用说明（2026-10-30补充）", "适用各工具和模型服务条款；不包含模型权重再分发授权",
+                   "项目开发过程中适当使用Codex、ZCode，以及GPT-6、GLM-5.3和DeepSeek系列模型，辅助方案讨论、代码编写、问题定位和测试改进。", "遵守相应工具和模型服务条款；对采用的生成内容进行审核、修改与验证，并核查引用来源与权利。", "辅助工具与模型为第三方资源；项目需求、架构设计、功能整合及结果验收由团队负责。", "使用情况依据团队说明记录；开发辅助用途与应用运行时模型配置、历史实验模型分别列示。", [])
     ])
 
     rows = []
