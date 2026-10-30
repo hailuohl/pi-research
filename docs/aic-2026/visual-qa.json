@@ -1,39 +1,41 @@
 {
   "date": "2026-10-30",
+  "reportDate": "2026-10-29",
   "result": "pass",
-  "scope": "Judge-facing highlights, main baseline, separate resource PDF, three company proofs and precise OpenResearch adaptation disclosure.",
-  "priorEvidenceCommit": "8aa0ebfdea82af0f5a00b0e48393e1c5892db6a6",
-  "reportPages": 18,
-  "bodyPages": 12,
+  "scope": "Official attachment2 cover and judge-facing improvements from attachment1 review.",
+  "reportPages": 20,
+  "coverPages": 1,
+  "bodyPages": 14,
+  "referencePages": 2,
   "applicationProofPages": 3,
   "resourcePages": 33,
   "resourceEmbedded": false,
   "visualInspection": {
-    "technicalReport": "All original report pages previously inspected; fresh contact sheets1/3/4/5 inspected after proof additions and text changes; report pages5-8 retain prior-reviewed layout. Three full source proof pages were read visually before inclusion.",
-    "resourceInventory": "Changed pages1/6/33 inspected; remaining30 pages match the previous accepted resource PDF after footer-label normalization."
+    "technicalReport": "All20 freshly rendered pages inspected via five contact sheets and full cover. Pages4/13 re-rendered and inspected individually after final wording changes.",
+    "officialCover": "Original official PDF cover retained; filled fields and date visually checked. Team ID left blank.",
+    "proofs": "Three prior-reviewed scans retained; image payloads equal original supplied PDFs."
   },
   "checks": {
-    "mainBaselineVerified": "GitHub main ref is8bbcf296449a839bb5090b69131a1a46ebec5278; product source diff empty.",
-    "noFeatureReportTextInEitherPdf": true,
-    "noResourceIndexOrResourceOutlineInTechnicalReport": true,
-    "resourceEntries": 39,
-    "npmIndices": 153,
-    "compilerIndices": 257,
+    "teamName": "研舟",
+    "direction": "（一）开源赋能的AI应用创新",
+    "coverDate": "2026-10-29",
+    "teamId": "blank; not supplied",
+    "mainBaseline": "8bbcf296449a839bb5090b69131a1a46ebec5278; GitHub main ref verified; product diff empty.",
+    "eightOfficialChapters": true,
+    "independentResourcePdfUnchanged": true,
+    "proofImageStreamsPreserved": true,
+    "noFeatureReportText": true,
+    "noResourceIndicesInReport": true,
+    "noTemplateInstructionPagesInReport": true,
     "fontGlyphCoverage": "pass",
     "outOfPageTextBoxes": 0,
-    "summaryChars": 250,
+    "summaryChars": 261,
     "scientificComparisonScopePreserved": true,
-    "priorAIUseDisclosurePreserved": true,
-    "bothFilesWithin10MB": true,
-    "proofPdfBytesMatchSuppliedFiles": true,
-    "proofImageStreamsPreservedInReport": true,
-    "proofSummariesVisuallyChecked": true,
-    "noSchoolOrAdvisorInformationVisibleInProofs": true,
-    "openresearchScope": "No upstream app runtime; retained adapted skills/protocols and assets attributed."
+    "bothFilesWithin10MB": true
   },
-  "rawRenderDir": ".validation\\aic-20261030\\judge-edition\\render",
+  "rawRenderDir": ".validation\\aic-20261030\\template-edition\\render",
   "files": {
-    "研舟π技术报告-评审版.pdf": "bb1f86252a82faaec72182ce4b3e9bd7028d7ec8d21ced0c6f0801896940deb6",
+    "研舟π技术报告-附件二模板版.pdf": "fb107d1456a37c6962325b21bc180bce5ddd58a9e14be7f0bee1eab3223f5fed",
     "开源及第三方资源使用清单-独立版.pdf": "2bd137e2bde3e6c843d281feb040fbf601681e14af5550116ba14692991c9398"
   }
 }

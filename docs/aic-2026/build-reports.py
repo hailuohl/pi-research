@@ -16,6 +16,7 @@ from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
@@ -31,6 +32,8 @@ WIDTH = PAGE_W - 2 * MARGIN
 TOKENS = {"accent": "#2A5A6B", "ink": "#171B1E", "muted": "#58636B",
           "tint": "#F1F5F6", "line": "#D9E0E3", "body": 11, "leading": 17}
 MARKS = {}
+REPORT_DATE = "2026-10-30"
+REPORT_LOGO = None
 
 
 def load(name):
@@ -176,13 +179,21 @@ def frame(kind, body_pages=0):
         if kind == "report" and n == 1:
             c.restoreState(); return
         c.setFillColor(colors.HexColor(TOKENS["muted"])); c.setFont("NotoSC", 8)
-        c.drawString(MARGIN, PAGE_H-34, "研舟π  AIC 2026  " + ("技术报告" if kind == "report" else "开源及第三方资源使用清单"))
-        c.setStrokeColor(colors.HexColor(TOKENS["accent"])); c.setLineWidth(0.8)
-        c.line(MARGIN, PAGE_H-41, PAGE_W-MARGIN, PAGE_H-41)
+        if kind == "report" and REPORT_LOGO:
+            c.drawImage(ImageReader(io.BytesIO(REPORT_LOGO)), 79.44, PAGE_H-49, width=33, height=14, mask="auto")
+            c.setFillColor(colors.black); c.setFont("NotoSC", 8)
+            c.drawRightString(516, PAGE_H-47.69, "第八届全球校园人工智能算法精英大赛·算法主题赛")
+            c.setStrokeColor(colors.black); c.setLineWidth(0.45)
+            c.line(79.44, PAGE_H-52, 516, PAGE_H-52)
+        else:
+            c.drawString(MARGIN, PAGE_H-34, "研舟π  AIC 2026  " + ("技术报告" if kind == "report" else "开源及第三方资源使用清单"))
+            c.setStrokeColor(colors.HexColor(TOKENS["accent"])); c.setLineWidth(0.8)
+            c.line(MARGIN, PAGE_H-41, PAGE_W-MARGIN, PAGE_H-41)
         c.setStrokeColor(colors.HexColor(TOKENS["line"])); c.setLineWidth(0.4)
         c.line(MARGIN, 38, PAGE_W-MARGIN, 38)
-        label = f"正文 {n-1}" if kind == "report" and n <= body_pages+1 else f"参考与证据 {n-body_pages-1}" if kind == "report" else f"资源清单 {n}"
-        c.drawString(MARGIN, 24, "2026-10-30  ·  0.3.2-experimental")
+        label = f"正文 {n-1}" if kind == "report" and n <= body_pages+1 else f"附录 {n-body_pages-1}" if kind == "report" else f"资源清单 {n}"
+        c.setFillColor(colors.HexColor(TOKENS["muted"])); c.setFont("NotoSC", 8)
+        c.drawString(MARGIN, 24, (REPORT_DATE if kind == "report" else "2026-10-30") + "  ·  0.3.2-experimental")
         c.drawRightString(PAGE_W-MARGIN, 24, label)
         c.restoreState()
     return draw
@@ -234,8 +245,8 @@ def report_story(content, inventory, verification):
                     ["环境", "Windows；Node 24.18.0；npm实际11.16.0（packageManager声明11.17.0）。"],
                     ["未在本轮执行", "外部模型live、真实Docker/SSH/GPU、浏览器交互和科研数值重跑。历史证据单列。"]
                 ], [0.36,0.64]))
-    story.extend([PageBreak(), Marker("references"), p("参考与证据", "h1"),
-                  p("代码以 main 为基准，源码链接固定到基准提交。详细第三方资源另见独立《开源及第三方资源使用清单》。", "small")])
+    story.extend([PageBreak(), Marker("references"), p("九、附录", "h1"), p("参考与证据", "h2"),
+                  p("代码以 main 为基准，源码链接固定到基准提交。第三方清单作为本报告独立附件提供，不合入本PDF；应用证明在本附录后逐页保留。", "small")])
     for r in content["references"]:
         url = r.get("url")
         if r.get("path"):
@@ -353,15 +364,49 @@ def append_application_proofs(writer):
     return count
 
 
+def filled_template_cover(content, template):
+    reader = PdfReader(template)
+    if digest(template) != content["officialTemplate"]["sha256"]:
+        raise RuntimeError("Official attachment2 differs from the reviewed template")
+    page = reader.pages[0]
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=(float(page.mediabox.width), float(page.mediabox.height)))
+    c.setFillColor(colors.black)
+    values = [(content["teamName"], 446.21), (content.get("teamId", ""), 416.091),
+              (content["workName"], 385.85), (content["direction"], 355.731)]
+    for value, y in values:
+        if not value:
+            continue
+        size = min(15.95, 238 / pdfmetrics.stringWidth(value, "NotoSC", 1))
+        c.setFont("NotoSC", size)
+        c.drawString(277, y, value)
+    match = re.fullmatch(r"2026年(\d{1,2})月(\d{1,2})日", content["date"])
+    if not match:
+        raise RuntimeError("Cover date must match the 2026 template fields")
+    c.setFont("Times-Roman", 15)
+    c.drawString(304.8, 222.41, match[1])
+    c.drawString(336.6, 222.41, match[2])
+    c.save(); buf.seek(0)
+    page.merge_page(PdfReader(buf).pages[0])
+    return page
+
+
 def main():
+    global REPORT_DATE, REPORT_LOGO
     parser = argparse.ArgumentParser()
     parser.add_argument("--font", type=Path, required=True)
     parser.add_argument("--scratch", type=Path, required=True)
+    parser.add_argument("--official-template", type=Path, required=True, help="Reviewed official attachment2 PDF")
+    parser.add_argument("--report-only", action="store_true", help="Keep the existing separate resource PDF unchanged")
     args = parser.parse_args()
     args.scratch.mkdir(parents=True, exist_ok=True)
     pdfmetrics.registerFont(TTFont("NotoSC", str(args.font)))
     setup_styles()
     content, inv, verification = load("report-content.json"), load("resource-inventory.json"), load("verification.json")
+    REPORT_DATE = content["reportDate"]
+    template = PdfReader(args.official_template)
+    if template.pages[0].images:
+        REPORT_LOGO = template.pages[0].images[0].data
     cmap = pdfmetrics.getFont("NotoSC").face.charToGlyph
     missing = sorted({c for c in json.dumps([content, inv], ensure_ascii=False) if ord(c) > 32 and ord(c) not in cmap})
     if missing:
@@ -376,17 +421,30 @@ def main():
     if body_marks != expected:
         raise RuntimeError("Main pages overflowed planned readable layout: " + repr(body_marks))
     body_pages = len(PdfReader(body).pages)
-    build(resource, resource_story(inv), "resources")
+    if not args.report_only:
+        build(resource, resource_story(inv), "resources")
+    elif not resource.is_file():
+        raise RuntimeError("--report-only requires the previously delivered resource PDF")
     writer=PdfWriter()
-    writer.append(body, outline_item="技术报告 正文与证据")
+    writer.add_page(filled_template_cover(content, args.official_template))
+    writer.add_outline_item("技术报告 封面", 0)
+    writer.append(body, pages=(1, body_pages), outline_item="技术报告 正文与证据")
+    last_chapter = None
+    for i, page in enumerate(content["pages"]):
+        if page["chapter"] != last_chapter:
+            writer.add_outline_item(page["chapter"], i+1)
+            last_chapter = page["chapter"]
+    writer.add_outline_item("九、附录 参考与证据", MARKS["references"]-1)
     proof_pages = append_application_proofs(writer)
-    writer.add_metadata({"/Title":"研舟π可追溯科研智能体 技术报告", "/Author":"", "/Subject":"2026 AIC AI+开源 匿名技术材料"})
-    final=HERE / "研舟π技术报告-评审版.pdf"
+    writer.add_metadata({"/Title":"研舟π可追溯科研智能体 技术报告", "/Author":content["teamName"], "/Subject":"2026 AIC AI+开源 技术报告"})
+    final=HERE / "研舟π技术报告-附件二模板版.pdf"
     with final.open("wb") as f: writer.write(f)
     summary={"workNameChars":len(content["workName"]), "summaryChars":len(content["summary"]),
              "bodyPages":len(content["pages"]), "coverPages":1, "referencePages":body_pages-len(content["pages"])-1,
              "resourcePages":len(PdfReader(resource).pages), "reportPages":len(PdfReader(final).pages), "resourceEmbedded":False,
              "applicationProofPages":proof_pages,
+             "teamName":content["teamName"], "reportDate":REPORT_DATE, "direction":content["direction"],
+             "officialCoverUsed":True, "officialTemplateSha256":digest(args.official_template),
              "bodyMarkers":body_marks, "files":{p.name:{"bytes":p.stat().st_size,"sha256":digest(p)} for p in (final,resource)}}
     (HERE / "artifact-checks.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2)+"\n",encoding="utf-8",newline="\n")
     print(json.dumps(summary,ensure_ascii=False))

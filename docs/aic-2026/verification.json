@@ -94,19 +94,22 @@
     }
   ],
   "acceptance": [
-    "Eight official chapters; judge-facing highlights and evidence-linked original/third-party boundary.",
-    "Separate resource inventory; technical report includes three supplied proof pages; main code baseline and approved project AI-use disclosure preserved.",
-    "Proof summaries match the supplied scans; no invented quantitative benefit; no school or advisor identities visible in the proofs.",
-    "OpenResearch app/runtime is not listed as a dependency; current adapted skills, protocols and assets retain accurate upstream attribution.",
-    "PDF QA, independent review, explicit-path commit and verified private-branch push."
+    "Actual official attachment2 cover filled: team研舟, requested direction and2026-10-29; unknown team ID blank; eight official chapters.",
+    "AI role/output checks, original design comparison and reuse/maintenance improved using existing source and evidence; no fabricated gains or team roles.",
+    "Main baseline retained; project AI-use disclosure and three source proofs preserved; resource inventory remains a separate unchanged PDF.",
+    "PDF under10MB, readable figures/tables, no page overflow or school/advisor identities, artifact records consistent.",
+    "Independent review, explicit-path commit and verified private-branch push; product tests reused without claiming rerun."
   ],
   "documentOnlyRevision": {
-    "baselineCommit": "8aa0ebfdea82af0f5a00b0e48393e1c5892db6a6",
-    "scope": "Judge-focused report; main baseline; separate resource inventory; add three company application proofs; clarify OpenResearch as adapted source/materials only.",
+    "baselineCommit": "c5ebc43988f4dabdad35ecbf98bc737204de6862",
+    "scope": "Recheck official attachments; fill actual attachment2 cover; improve judge-facing AI/evidence/reuse descriptions.",
     "productChanged": false,
     "priorProductChecksReused": true,
     "fullProductTestsRerun": false,
-    "modelNamesSource": "User project-use clarification on 2026-10-30"
+    "reportDate": "2026-10-29",
+    "teamName": "研舟",
+    "direction": "（一）开源赋能的AI应用创新",
+    "teamId": "not provided; blank"
   },
   "sourceBaseline": {
     "ref": "main",
@@ -130,5 +133,12 @@
       "skills/piresearch/pi-research-figures/PROVENANCE.md",
       "apps/web/public/source-logos/source.json"
     ]
+  },
+  "officialTemplate": {
+    "source": "official-alignment.json",
+    "teamName": "研舟",
+    "date": "2026-10-29",
+    "direction": "（一）开源赋能的AI应用创新",
+    "teamIdProvided": false
   }
 }

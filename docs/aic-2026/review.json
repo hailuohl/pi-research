@@ -1,42 +1,102 @@
 {
   "date": "2026-10-30",
-  "baselineCommit": "8aa0ebfdea82af0f5a00b0e48393e1c5892db6a6",
-  "codeBaseline": {
-    "ref": "main",
-    "commit": "8bbcf296449a839bb5090b69131a1a46ebec5278"
-  },
+  "task": "AIC attachment2 template edition independent read-only review",
   "result": "pass",
+  "scope": "Frozen report/source documentation changes only; no product modification or product test rerun.",
   "blockers": [],
-  "nonBlockingFindings": [],
-  "verificationGaps": [],
-  "scope": "独立只读复核评审重点改写、main口径、独立资源清单、三份企业应用证明及实际改编来源披露；仅写本结果。",
-  "requestedModel": "gpt-6.1-sol",
-  "requestedEffort": "high",
-  "runtimeEcho": {
-    "actualModel": "运行时未回显",
-    "actualEffort": "运行时未回显",
-    "status": "已请求，运行时未回显；不以代理自报身份代替核验。"
-  },
-  "snapshot": {
-    "path": "docs/aic-2026/review-snapshot.json",
-    "sha256": "b9150580ff72907408afbd7e255187f85275add6d87ff48e4de6cab5415ac73e",
-    "fileCount": 15,
-    "allHashesMatch": true
-  },
-  "checks": {
-    "focusAndFacts": "八章完整，封面及第一章前置科研闭环、证据回查、受控执行三项亮点，自主实现与上游贡献分别说明。红酒表格与既有evidence.json数值一致；19.96%明确为固定分组划分上OLS相对训练均值基线的MSE差异。旧Pi版本、确定性模型交互、requires_review和多智能体对照缺口保留。开发AI披露符合已确认工具模型范围，未补团队身份与成员分工。",
-    "mainAndSeparation": "git diff --exit-code origin/main -- apps packages scripts package.json package-lock.json skills .node-version退出0，无产品源码差异。两PDF提取文本和链接注释无feature/report。报告无N001/D001锁索引或资源清单outline；资源PDF独立33页。固定代码及历史证据引用路径在main基准提交中存在且与工作区一致。",
-    "applicationProofs": "实际目读三份原扫描及报告渲染。武汉星衡智电未载应用起始时间；武汉磐电、武汉嘉兰川载明2026年7月至今。正文场景摘要与原文吻合，未加入完成率、节省工时、费用或性能增益。可见原件未见学校名称、学校LOGO或导师信息。三份交付原PDF与.validation/application-proofs来源文件字节一致；报告16–18页解码图像哈希与对应原件一致，页边导航未遮挡正文、日期或盖章。",
-    "openresearch": "packages/skills/manifest.ts含13条固定3037f727来源；THIRD_PARTY_NOTICES.md:57、figures/PROVENANCE.md、source-logos/source.json及连接器源码支持仍存在技能、部分协议、绘图/素材改编。清单第14/15项按实际改编来源列示，未声称使用上游完整应用运行时、数据库、CLI或托管服务。保留真实来源署名符合当前main。",
-    "artifacts": "报告18页=封面1+正文12+参考2+证明3；独立资源33页。报告1331827字节、资源331102字节，均小于10MB；artifact-checks、visual-qa及snapshot的文件SHA256和规格吻合。作品名11字、简介250字。主要资源39、npm锁定路径153、可选compiler组件257。资源除变化页1/6/33以外30页提取文本在页脚标签归一后与旧版一致。",
-    "visual": "复用已完成的正文全页检查；本轮查看新contact-01/03/04/05、resource-01/06/33和三份完整来源扫描。新增概览、参考及证明页无可见裁切、重叠或缺字，导航与章页定位一致。",
-    "verification": "核对原npm-test.log及clean-build summary哈希、测试末尾汇总和构建摘要，1948总/1922通过/0失败/26跳过及661一致产物证据真实存在。当前仅文档改动，verification明确复用既有产品检查且未重跑。四份既有旧docx/md删除未纳入本次编辑。"
-  },
-  "notRun": [
-    "产品全量测试、干净构建及科研数值重跑（复用适用于未变产品源码的既有证据）",
-    "服务、外部模型、浏览器及真实Docker/SSH/GPU任务",
-    "企业证明外部真实性鉴定及全量上游许可再审计"
+  "nonBlockingFindings": [
+    {
+      "location": "docs/aic-2026/report-content.json sections 6.4, 7.1 and 8.2",
+      "finding": "Existing distribution notices, asset/data permissions and optional compiler package obligations remain unfinished and are explicitly disclosed. This revision neither resolves nor misrepresents those prior items.",
+      "disposition": "Keep as follow-up before the corresponding public distribution; outside this document revision."
+    }
   ],
-  "inheritedLimits": "marked分发告知、素材/Anscombe专门数据许可、可选编译器逐包义务、共同权属及评审访问缺口保持披露，未在本轮新增或宣称解决。",
-  "integrationNote": "主代理按既定流程以本结果替换上一轮docs/aic-2026/review.json后提交；旧review.json不属于本次冻结快照。"
+  "verificationGaps": [
+    {
+      "location": "Report cover; official-alignment.json remainingGaps",
+      "gap": "Team number was not provided; cover correctly leaves it blank.",
+      "blockingThisRevision": false
+    },
+    {
+      "location": "Report sections 6.3 and 7.1",
+      "gap": "Private repository reviewer access is not established by this review; the report correctly identifies access as pending confirmation.",
+      "blockingThisRevision": false
+    },
+    {
+      "location": "Report sections 3.2, 5.3, 5.7 and 8.2",
+      "gap": "No same-task/same-model/same-budget scientific quality or platform benefit comparison exists. The report states this limitation and confines the Wine improvement to OLS versus the training-mean baseline on one fixed grouped split.",
+      "blockingThisRevision": false
+    },
+    {
+      "location": "Application proof manifest and report pages 18-20",
+      "gap": "External authenticity of the supplied company proof scans was not independently established; original image preservation and faithful summary were checked.",
+      "blockingThisRevision": false
+    },
+    {
+      "location": "official-alignment.json remainingGaps; report section 8.2",
+      "gap": "Demonstration video and submission-platform access requirements remain outside this PDF revision.",
+      "blockingThisRevision": false
+    }
+  ],
+  "snapshot": {
+    "baselineCommit": "c5ebc43988f4dabdad35ecbf98bc737204de6862",
+    "codeBaselineRef": "main",
+    "codeBaselineCommit": "8bbcf296449a839bb5090b69131a1a46ebec5278",
+    "manifest": "docs/aic-2026/review-snapshot.json",
+    "manifestHashVerification": "All nine delivery files and six evidence files match the SHA-256 values recorded in the frozen manifest.",
+    "verifiedFileCount": 15,
+    "report": "docs/aic-2026/研舟π技术报告-附件二模板版.pdf",
+    "reportSha256": "fb107d1456a37c6962325b21bc180bce5ddd58a9e14be7f0bee1eab3223f5fed",
+    "resourceSha256": "2bd137e2bde3e6c843d281feb040fbf601681e14af5550116ba14692991c9398",
+    "excludedExistingChanges": "Four pre-existing docs-root DOCX/Markdown deletions; not included in this review. Previous review.json is the prior edition and is not used as this edition's review result."
+  },
+  "acceptance": [
+    {
+      "id": 1,
+      "result": "pass",
+      "evidence": "Official attachment2 SHA-256 matches the recorded original. Build diff merges a fill overlay onto that original first page; original extracted cover text remains intact. Visual comparison confirms team 研舟, requested direction, date 2026-10-29 and blank team number. Body has the eight official chapter headings, followed by an appendix; no template instruction pages or empty resource tables were included."
+    },
+    {
+      "id": 2,
+      "result": "pass",
+      "evidence": "Reviewed actual prose/build diff and relevant main source/evidence: task reviewOf dependencies and acceptance separation, fixed plan/source bindings, existing reference paths and reuse files, skill manifest and OpenResearch attribution, Wine evidence and deterministic-model interaction records. Added claims match those sources; the single-answer comparison defines its functional baseline and does not rank products. No invented team allocation, upstream contribution or measured platform benefit was found. Wine evidence records 19.963347359394092% MSE reduction for the stated model comparison."
+    },
+    {
+      "id": 3,
+      "result": "pass",
+      "evidence": "Main commit and 0.3.2-experimental wording retained. Codex/ZCode/GPT-6/GLM-5.3/DeepSeek development-use disclosure remains in sections 4.8 and 7.3. Three original proof PDFs and separate resource PDF match frozen hashes. Each appended proof image digest matches its corresponding original scan. Company summaries match the visible proof text, without numerical benefit claims. No school name, school logo or advisor identity was observed in the reviewed report pages."
+    },
+    {
+      "id": 4,
+      "result": "pass",
+      "evidence": "pypdf independently confirms 20 pages and 1,566,131 bytes: one cover, fourteen body pages, two reference pages and three proofs. Inspected all twenty pages through five contact sheets, original/full filled covers, and final individual pages 4 and 13. No visible overflow, clipping, overlapping text or template instruction residue was found. Artifact, visual QA, delivery and source records agree on count, date, scope and report digest."
+    },
+    {
+      "id": 5,
+      "result": "pass",
+      "evidence": "git diff --exit-code main -- apps packages scripts package.json package-lock.json skills .node-version returned exit 0 with no differences. This batch's changed files are documentation/report inputs and outputs. verification.json explicitly marks prior product checks as reused and fullProductTestsRerun=false; this review did not run product tests, services or browser flows."
+    }
+  ],
+  "checksActuallyPerformed": [
+    "Read official attachment1/2 extracted text and visually compared official and filled cover.",
+    "Inspected git status, actual scoped git diff, HEAD/main commits and empty product-source diff against main.",
+    "Computed frozen-manifest hashes for all fifteen listed files; all matched.",
+    "Parsed final report with pypdf for size, page count, cover text and original-proof image equality.",
+    "Read report JSON, build changes, delivery/specification records and necessary main-source/evidence paths.",
+    "Confirmed every referenced code/evidence path and the explicit reuse entries exist.",
+    "Viewed all twenty final rendered pages via five contact sheets; viewed cover and pages 4/13 individually."
+  ],
+  "notRun": [
+    "Product full regression, clean build, live providers, Docker/SSH/GPU or browser checks; prior applicable evidence reused.",
+    "Scientific experiments, same-budget model evaluation or company-proof external authentication.",
+    "Full license audit, reviewer-access grant or contest submission."
+  ],
+  "modelConfiguration": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "requestSource": "Parent task handoff specifies Sol/high independent review.",
+    "actualModel": "runtime not echoed",
+    "actualEffort": "runtime not echoed",
+    "verificationStatus": "Requested configuration recorded; actual runtime model/effort not verified. Agent self-identification is not evidence."
+  }
 }

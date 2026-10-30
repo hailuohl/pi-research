@@ -1,13 +1,18 @@
 {
   "workNameChars": 11,
-  "summaryChars": 250,
-  "bodyPages": 12,
+  "summaryChars": 261,
+  "bodyPages": 14,
   "coverPages": 1,
   "referencePages": 2,
   "resourcePages": 33,
-  "reportPages": 18,
+  "reportPages": 20,
   "resourceEmbedded": false,
   "applicationProofPages": 3,
+  "teamName": "研舟",
+  "reportDate": "2026-10-29",
+  "direction": "（一）开源赋能的AI应用创新",
+  "officialCoverUsed": true,
+  "officialTemplateSha256": "8c3c03d47d6312828d5e60b08112c04b5ad77746863939e6496872f43e4ea87d",
   "bodyMarkers": {
     "body-1": 2,
     "body-2": 3,
@@ -20,12 +25,14 @@
     "body-9": 10,
     "body-10": 11,
     "body-11": 12,
-    "body-12": 13
+    "body-12": 13,
+    "body-13": 14,
+    "body-14": 15
   },
   "files": {
-    "研舟π技术报告-评审版.pdf": {
-      "bytes": 1331827,
-      "sha256": "bb1f86252a82faaec72182ce4b3e9bd7028d7ec8d21ced0c6f0801896940deb6"
+    "研舟π技术报告-附件二模板版.pdf": {
+      "bytes": 1566131,
+      "sha256": "fb107d1456a37c6962325b21bc180bce5ddd58a9e14be7f0bee1eab3223f5fed"
     },
     "开源及第三方资源使用清单-独立版.pdf": {
       "bytes": 331102,

@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-30",
+  "reportDate": "2026-10-29",
+  "teamName": "研舟",
+  "direction": "（一）开源赋能的AI应用创新",
+  "teamIdProvided": false,
+  "sources": [
+    {
+      "title": "附件1 竞赛规则及作品提交要求",
+      "url": "https://www.aicomp.cn/wp-content/uploads/2026/08/附件1_AIC·AI开源竞赛规则及作品提交要求0812.pdf",
+      "sha256": "2d334608ae75a71be01a44438e6f3dcb1a60b4ac3c85acf785a30408383ab3b3"
+    },
+    {
+      "title": "附件2 技术报告参考大纲",
+      "url": "https://www.aicomp.cn/wp-content/uploads/2026/08/附件2_AIC·AI开源技术报告参考大纲260812.pdf",
+      "sha256": "8c3c03d47d6312828d5e60b08112c04b5ad77746863939e6496872f43e4ea87d",
+      "coverPage": 1
+    }
+  ],
+  "implementation": [
+    "Reuse and fill the actual first page of official attachment2; preserve its event cover and fields; leave unknown team ID blank.",
+    "Align eight chapter headings; strengthen AI roles/checks, resource selection, defined single-question baseline, concrete reuse paths and maintenance.",
+    "Keep current code/evidence facts, main baseline, existing proof scans and the separate resource attachment."
+  ],
+  "remainingGaps": [
+    "No same-model/same-task/same-budget platform benefit evaluation; Wine error reduction remains OLS versus training-mean on one fixed grouped split.",
+    "Reviewer access to private repository and team ID not verified/provided; no video created in this batch.",
+    "Existing license/attribution tasks remain disclosed; this editing batch does not change product assets or establish external proof authenticity."
+  ]
+}
