@@ -3,34 +3,88 @@
   "date": "2026-11-15",
   "timezone": "Asia/Shanghai",
   "artifact": "研舟π科研Harness创新性说明.docx",
-  "artifactSha256": "a9d9bf8e63e9cd9e98c9c0179730ddeea59f475b5212075819d1b7d61f6ec852",
-  "sourceHead": "5f365a991f0e83ca3935829713c6aa50a0864913",
-  "scope": "新增中文创新性说明及本记录，未修改产品代码、依赖、前端或在途文件。",
+  "artifactSha256": "4bc3fbf158b098e39a66f8fa2925056e554583f0e7e158e7ab6b19b1da19a1c4",
+  "sourceHead": "50b51274fa73b273c8067b6a465d4d8587d94ada",
+  "scope": "根据用户补充修订同一创新性文档：加入任务难度驱动的子代理思考深度分配、大文件受控读取及Scientific Agent Skills适配；更新总述、比较、验证建议、介绍与引用。仅修改文档和本记录。",
   "acceptance": [
-    {"criterion": "自包含说明科研 harness 创新及通用框架已有能力", "status": "passed"},
-    {"criterion": "区分已实现、历史验证与建议实验，不将可追溯等同科学正确", "status": "passed"},
-    {"criterion": "E1至E4及ResearchClawBench数字、快照和适用范围准确，引用可定位", "status": "passed"},
-    {"criterion": "DOCX可编辑，无占位或敏感内容，逐页视觉检查通过", "status": "passed"}
+    {
+      "criterion": "三项补充进入核心判断、比较表、专节、验证建议和项目介绍",
+      "status": "passed"
+    },
+    {
+      "criterion": "区分用户补充的新版能力、本地旧版机制及历史验证",
+      "status": "passed"
+    },
+    {
+      "criterion": "不虚构选档收益、完整大数据计算或第三方方法原创性，保留上游归属",
+      "status": "passed"
+    },
+    {
+      "criterion": "可编辑、14个引用可定位、无敏感占位且7页视觉检查通过",
+      "status": "passed"
+    }
   ],
   "verification": {
     "authoring": "python-docx重新打开、ZIP完整性、标题、3张表和关键内容断言通过",
-    "references": "8个超链接可定位，项目引用固定到sourceHead",
-    "packagedRenderer": {"status": "failed", "reason": "render_docx.py未找到LibreOffice soffice.exe"},
-    "fallbackRenderer": {"status": "passed", "method": "本机Word.Application COM只读导出PDF，bundled pypdfium2生成PNG", "cleanupNote": "导出及文档关闭成功；应用退出调用返回RPC不可用，未影响PDF和页图"},
-    "visualInspection": {"status": "passed", "pages": 5, "inspectedPages": [1, 2, 3, 4, 5], "findings": "已修复初稿空白页、短溢出页和标题继承边线；最终无裁切、重叠或缺字"},
-    "productBuildAndRegression": {"status": "not_run", "reason": "本批仅新增文档，不变更运行代码或构建输入"},
-    "newResearchBenchmarks": {"status": "not_run", "reason": "历史实验按原记录引用，本批不新增科研效果主张"}
+    "references": "14个超链接，12个项目来源用git cat-file逐一确认存在且固定到sourceHead；2个外部页面沿用首版已核对来源",
+    "packagedRenderer": {
+      "status": "not_run",
+      "reason": "复用首版已确认的环境限制：render_docx.py缺LibreOffice。直接使用已验证的本机Word导出路径。"
+    },
+    "fallbackRenderer": {
+      "status": "passed",
+      "method": "本机Word.Application COM只读导出PDF，bundled pypdfium2生成PNG",
+      "cleanupNote": "导出及文档关闭成功；应用退出调用返回RPC不可用，未影响PDF和页图"
+    },
+    "visualInspection": {
+      "status": "passed",
+      "pages": 7,
+      "inspectedPages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "findings": "正文、表格、标题和14条参考链接均可读，无空白页、短溢出页、裁切、重叠或缺字。"
+    },
+    "productBuildAndRegression": {
+      "status": "not_run",
+      "reason": "本批仅修订文档，不变更运行代码或构建输入"
+    },
+    "newResearchBenchmarks": {
+      "status": "not_run",
+      "reason": "历史实验按原记录引用，本批不新增科研效果主张"
+    },
+    "sourceChecks": "思考档位设计/冻结实现，大文件batch2a与batch3a记录，当前技能边界、统计方法资源及MIT许可已核对",
+    "upstreamWebFetch": {
+      "status": "failed",
+      "reason": "固定提交的GitHub网页无法获取；归属与许可仅以项目留存的来源声明和LICENSE核对，不声称已联网核验上游原件。"
+    }
   },
   "independentReview": {
     "taskName": "innovation_document_review",
     "requestedModel": "gpt-6.1-sol",
     "requestedReasoningEffort": "high",
     "runtimeVerification": "已请求，运行时未回显",
-    "scope": "只读核对文档、固定源码、调用链、实验原记录和引用；修订后仅复查受影响部分",
-    "resolvedFindings": ["E4未测试任务来源撤销传播的边界", "补齐E3同步校验计时及口径", "不可变方案仅适用于采用研究方案的活动"],
-    "finalArtifactSha256": "a9d9bf8e63e9cd9e98c9c0179730ddeea59f475b5212075819d1b7d61f6ec852",
-    "remainingBlockers": []
+    "scope": "原独立Sol会话仅复核新增三项及关联增量，未重复审查未变旧机制；最终文档冻结后进行只读检查",
+    "resolvedFindings": [],
+    "finalArtifactSha256": "4bc3fbf158b098e39a66f8fa2925056e554583f0e7e158e7ab6b19b1da19a1c4",
+    "remainingBlockers": [],
+    "nonBlockingFollowups": [
+      "可补充旧版无合适档位候选时继承主会话档位；当前正文已说明依赖模型实际能力与配置，本轮不扩改。"
+    ]
   },
-  "limits": ["未做完整创新性查新", "未证明科研质量或效率优于同条件通用agent", "历史评测不能代表当前版本效果"],
-  "localQaEvidence": "工作区上级tmp/innovation-harness-20261115，未将渲染中间件或原始日志纳入提交"
+  "limits": [
+    "未取得完整新版代码或运行验证",
+    "未新增自动选档/大文件/技能适配收益对照",
+    "旧版本科研跑分不代表当前表现",
+    "未做完整创新性查新"
+  ],
+  "localQaEvidence": "工作区上级tmp/innovation-harness-20261115，修订版页图在render-v2；原版render-final保留，未重复复制原始日志。",
+  "revision": 2,
+  "previousRevisionCommit": "50b51274fa73b273c8067b6a465d4d8587d94ada",
+  "sourceDistinction": "新版能力由项目负责人补充；本地旧版代码与历史验收只用于解释已记录机制，不代表完整新版验证或性能。"
 }
