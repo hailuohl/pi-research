@@ -3,30 +3,30 @@
   "date": "2026-11-15",
   "timezone": "Asia/Shanghai",
   "artifact": "研舟π科研Harness创新性说明.docx",
-  "artifactSha256": "4bc3fbf158b098e39a66f8fa2925056e554583f0e7e158e7ab6b19b1da19a1c4",
-  "sourceHead": "50b51274fa73b273c8067b6a465d4d8587d94ada",
-  "scope": "根据用户补充修订同一创新性文档：加入任务难度驱动的子代理思考深度分配、大文件受控读取及Scientific Agent Skills适配；更新总述、比较、验证建议、介绍与引用。仅修改文档和本记录。",
+  "artifactSha256": "1d12b55d265d7803abce25b692c1f24a0d782696eac8a615d4c1cbe43cf53792",
+  "sourceHead": "4f6eeb6a8a1ec401edcab79364fa129132b47910",
+  "scope": "将新增方法契约、宿主复算、证据阅读义务审查及开发正式隔离与已有能力整合为六方面；核心总述、比较表、两个核心章节和项目介绍突出方法契约与宿主复算；仅修改同一文档和本记录。",
   "acceptance": [
     {
-      "criterion": "三项补充进入核心判断、比较表、专节、验证建议和项目介绍",
+      "criterion": "新增四项与原有创新合并去重，方法契约和宿主复算位于核心位置",
       "status": "passed"
     },
     {
-      "criterion": "区分用户补充的新版能力、本地旧版机制及历史验证",
+      "criterion": "准确限定方法模板、数值核验、区间假设及阶段隔离，不把机械检查说成科学正确",
       "status": "passed"
     },
     {
-      "criterion": "不虚构选档收益、完整大数据计算或第三方方法原创性，保留上游归属",
+      "criterion": "区分旧版实现与用户新版说明，历史数据未作为新实验，判定案例明确为示意",
       "status": "passed"
     },
     {
-      "criterion": "可编辑、14个引用可定位、无敏感占位且7页视觉检查通过",
+      "criterion": "可编辑，20个引用可定位，4张表与7页排版通过检查",
       "status": "passed"
     }
   ],
   "verification": {
-    "authoring": "python-docx重新打开、ZIP完整性、标题、3张表和关键内容断言通过",
-    "references": "14个超链接，12个项目来源用git cat-file逐一确认存在且固定到sourceHead；2个外部页面沿用首版已核对来源",
+    "authoring": "python-docx重新打开、ZIP完整性、标题、4张表、六组创新及核心章节顺序断言通过",
+    "references": "20个超链接；18个项目目标经git cat-file逐一核对存在并固定到sourceHead，2个外部链接沿用本会话已核对页面",
     "packagedRenderer": {
       "status": "not_run",
       "reason": "复用首版已确认的环境限制：render_docx.py缺LibreOffice。直接使用已验证的本机Word导出路径。"
@@ -48,7 +48,7 @@
         6,
         7
       ],
-      "findings": "正文、表格、标题和14条参考链接均可读，无空白页、短溢出页、裁切、重叠或缺字。"
+      "findings": "整合稿7页逐页检查通过；最终仅修订第1页文字并重验该页，第2至7页PNG逐字节相同，复用原视觉结论。无空白页、溢出、裁切、重叠或缺字。"
     },
     "productBuildAndRegression": {
       "status": "not_run",
@@ -58,33 +58,33 @@
       "status": "not_run",
       "reason": "历史实验按原记录引用，本批不新增科研效果主张"
     },
-    "sourceChecks": "思考档位设计/冻结实现，大文件batch2a与batch3a记录，当前技能边界、统计方法资源及MIT许可已核对",
-    "upstreamWebFetch": {
-      "status": "failed",
-      "reason": "固定提交的GitHub网页无法获取；归属与许可仅以项目留存的来源声明和LICENSE核对，不声称已联网核验上游原件。"
-    }
+    "sourceChecks": "静态核对方法契约、配对统计复算、候选和宿主输出职责、开发夹具、实际Run归档、五区审查、阅读义务及相关调用链和测试定义；未执行产品测试。"
   },
   "independentReview": {
     "taskName": "innovation_document_review",
     "requestedModel": "gpt-6.1-sol",
     "requestedReasoningEffort": "high",
     "runtimeVerification": "已请求，运行时未回显",
-    "scope": "原独立Sol会话仅复核新增三项及关联增量，未重复审查未变旧机制；最终文档冻结后进行只读检查",
-    "resolvedFindings": [],
-    "finalArtifactSha256": "4bc3fbf158b098e39a66f8fa2925056e554583f0e7e158e7ab6b19b1da19a1c4",
+    "scope": "原独立Sol会话只读核对整合后的冻结文档、相关源码与测试定义；一处自动核验对象表述收紧后，仅限定复查该段及实际变化范围。",
+    "resolvedFindings": [
+      "第1节自动核验对象明确限定为执行输入/协议与候选关键指标，而非报告自由文本的所有数字和科学解释。",
+      "上一版选档无合适候选时继承主会话的非阻断说明已纳入。"
+    ],
+    "finalArtifactSha256": "1d12b55d265d7803abce25b692c1f24a0d782696eac8a615d4c1cbe43cf53792",
     "remainingBlockers": [],
     "nonBlockingFollowups": [
-      "可补充旧版无合适档位候选时继承主会话档位；当前正文已说明依赖模型实际能力与配置，本轮不扩改。"
+      "可进一步展开配对区间的完整统计假设；当前已说明渐近性、不涵盖训练/重拟合不确定性及不能证明iid等适用边界，本轮不扩写。"
     ]
   },
   "limits": [
-    "未取得完整新版代码或运行验证",
-    "未新增自动选档/大文件/技能适配收益对照",
-    "旧版本科研跑分不代表当前表现",
+    "未取得完整新版代码或新增运行验证",
+    "仅静态核对产品源码和测试定义，未运行产品回归",
+    "未新增方法契约/宿主复算或其它能力的科研收益对照",
+    "历史评测不代表当前版本表现",
     "未做完整创新性查新"
   ],
-  "localQaEvidence": "工作区上级tmp/innovation-harness-20261115，修订版页图在render-v2；原版render-final保留，未重复复制原始日志。",
-  "revision": 2,
-  "previousRevisionCommit": "50b51274fa73b273c8067b6a465d4d8587d94ada",
+  "localQaEvidence": "工作区上级tmp/innovation-harness-20261115；revision_v3.py、document-text-v3.txt、authoring-check-v3.json、render-check-v3.json、final-page-comparison.json及render-v3-final保留，未复制进Git。",
+  "revision": 3,
+  "previousRevisionCommit": "4f6eeb6a8a1ec401edcab79364fa129132b47910",
   "sourceDistinction": "新版能力由项目负责人补充；本地旧版代码与历史验收只用于解释已记录机制，不代表完整新版验证或性能。"
 }
