@@ -1,0 +1,36 @@
+{
+  "task": "Pi Research 科研 harness 创新性说明",
+  "date": "2026-11-15",
+  "timezone": "Asia/Shanghai",
+  "artifact": "研舟π科研Harness创新性说明.docx",
+  "artifactSha256": "a9d9bf8e63e9cd9e98c9c0179730ddeea59f475b5212075819d1b7d61f6ec852",
+  "sourceHead": "5f365a991f0e83ca3935829713c6aa50a0864913",
+  "scope": "新增中文创新性说明及本记录，未修改产品代码、依赖、前端或在途文件。",
+  "acceptance": [
+    {"criterion": "自包含说明科研 harness 创新及通用框架已有能力", "status": "passed"},
+    {"criterion": "区分已实现、历史验证与建议实验，不将可追溯等同科学正确", "status": "passed"},
+    {"criterion": "E1至E4及ResearchClawBench数字、快照和适用范围准确，引用可定位", "status": "passed"},
+    {"criterion": "DOCX可编辑，无占位或敏感内容，逐页视觉检查通过", "status": "passed"}
+  ],
+  "verification": {
+    "authoring": "python-docx重新打开、ZIP完整性、标题、3张表和关键内容断言通过",
+    "references": "8个超链接可定位，项目引用固定到sourceHead",
+    "packagedRenderer": {"status": "failed", "reason": "render_docx.py未找到LibreOffice soffice.exe"},
+    "fallbackRenderer": {"status": "passed", "method": "本机Word.Application COM只读导出PDF，bundled pypdfium2生成PNG", "cleanupNote": "导出及文档关闭成功；应用退出调用返回RPC不可用，未影响PDF和页图"},
+    "visualInspection": {"status": "passed", "pages": 5, "inspectedPages": [1, 2, 3, 4, 5], "findings": "已修复初稿空白页、短溢出页和标题继承边线；最终无裁切、重叠或缺字"},
+    "productBuildAndRegression": {"status": "not_run", "reason": "本批仅新增文档，不变更运行代码或构建输入"},
+    "newResearchBenchmarks": {"status": "not_run", "reason": "历史实验按原记录引用，本批不新增科研效果主张"}
+  },
+  "independentReview": {
+    "taskName": "innovation_document_review",
+    "requestedModel": "gpt-6.1-sol",
+    "requestedReasoningEffort": "high",
+    "runtimeVerification": "已请求，运行时未回显",
+    "scope": "只读核对文档、固定源码、调用链、实验原记录和引用；修订后仅复查受影响部分",
+    "resolvedFindings": ["E4未测试任务来源撤销传播的边界", "补齐E3同步校验计时及口径", "不可变方案仅适用于采用研究方案的活动"],
+    "finalArtifactSha256": "a9d9bf8e63e9cd9e98c9c0179730ddeea59f475b5212075819d1b7d61f6ec852",
+    "remainingBlockers": []
+  },
+  "limits": ["未做完整创新性查新", "未证明科研质量或效率优于同条件通用agent", "历史评测不能代表当前版本效果"],
+  "localQaEvidence": "工作区上级tmp/innovation-harness-20261115，未将渲染中间件或原始日志纳入提交"
+}
